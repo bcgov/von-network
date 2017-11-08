@@ -1,0 +1,40 @@
+version: '3'
+services:
+  # 
+  # Client
+  # 
+  client:
+    build: .
+    command: 'bash -c ''./scripts/start_client.sh'''
+    networks:
+      - von
+
+  # 
+  # Nodes
+  # 
+  node1:
+    build: .
+    command: 'bash -c ''./scripts/start_node.sh 1'''
+    networks:
+      - von
+    
+  node2:
+    build: .
+    command: 'bash -c ''./scripts/start_node.sh 2'''
+    networks:
+      - von
+
+  node3:
+    build: .
+    command: 'bash -c ''./scripts/start_node.sh 3'''
+    networks:
+      - von
+    
+  node4:
+    build: .
+    command: 'bash -c ''./scripts/start_node.sh 4'''
+    networks:
+      - von
+
+networks:
+  von:

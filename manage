@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
+export COMPOSE_PROJECT_NAME="von"
+
+cd "$SCRIPT_HOME"
+
+case "$1" in
+  start)
+      docker-compose up node1 node2 node3 node4
+    ;;
+  cli)
+      docker-compose run client
+    ;;
+  stop)
+      docker-compose stop
+    ;;
+  build)
+      docker-compose build
+    ;;
+  rebuild)
+      docker-compose build --no-cache
+    ;;
+  *)
+    echo $"Usage: $0 {start|cli|stop|build|rebuild}"
+    RETVAL=1
+esac
+
+cd - > /dev/null
