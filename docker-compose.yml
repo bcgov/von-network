@@ -5,6 +5,7 @@ services:
   # 
   client:
     build: .
+    image: von-base
     command: 'bash -c ''./scripts/start_client.sh'''
     networks:
       - von
@@ -14,24 +15,28 @@ services:
   # 
   node1:
     build: .
+    image: von-base
     command: 'bash -c ''./scripts/start_node.sh 1'''
     networks:
       - von
     
   node2:
     build: .
+    image: von-base
     command: 'bash -c ''./scripts/start_node.sh 2'''
     networks:
       - von
 
   node3:
     build: .
+    image: von-base
     command: 'bash -c ''./scripts/start_node.sh 3'''
     networks:
       - von
     
   node4:
     build: .
+    image: von-base
     command: 'bash -c ''./scripts/start_node.sh 4'''
     networks:
       - von
