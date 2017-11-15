@@ -15,7 +15,7 @@ case "$1" in
       if [ -z "$2" ]; then
         docker-compose run client
       else
-        IP=$2 docker-compose run client
+        docker-compose run -e IP=$2 client
       fi
     ;;
   stop)

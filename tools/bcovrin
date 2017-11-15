@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# This script requires Docker to be installed:
-# $ curl -fsSL get.docker.com -o get-docker.sh
-# $ sh get-docker.sh
-
-# To use:
-# run `bcovrin create`, then run `bcovrin start` 
-
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 
 cd "$SCRIPT_HOME"
