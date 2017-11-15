@@ -12,7 +12,11 @@ case "$1" in
       docker-compose up node1 node2 node3 node4
     ;;
   cli)
-      docker-compose run client
+      if [ -z if [ -z "$2" ]; then
+        docker-compose run client
+      else
+        IP=$2 docker-compose run client
+      fi
     ;;
   stop)
       docker-compose stop
