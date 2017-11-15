@@ -49,4 +49,4 @@ WORKDIR /home/indy
 ADD --chown=indy:indy . /home/indy
 
 EXPOSE 9701 9702 9703 9704 9705 9706 9707 9708
-ENV IP=${remote_ip}
+ENV IP ${remote_ip}
