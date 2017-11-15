@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# This script requires Docker to be installed:
+# $ curl -fsSL get.docker.com -o get-docker.sh
+# $ sh get-docker.sh
+
+set -e
+
+SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
+
+cd "$SCRIPT_HOME"
+
+case "$1" in
+  create)
+      curl https://raw.githubusercontent.com/hyperledger/indy-sdk/master/ci/indy-pool.dockerfile > Dockerfile
+      docker build -t indy .
+      docker create -d -p 9701:9701 -p  9702:9702 -p 9703:9703 -p 9704:9704 -p 9705:9705 -p 9706:9706 -p 9707:9707 -p 9708:9708 --name indy indy
+    ;;
+  start)
+      if !docker inspect indy > /dev/null; then
+        echo "Docker container not yet created. Creating..."
+        $0 create
+      fi
+      docker start indy
+    ;;
+  stop)
+      docker start indy
+    ;;
+  shell)
+      docker exec -it indy bash
+    ;;
+  *)
+    echo $"Usage: $0 {start|cli|stop|build|rebuild}"
+    RETVAL=1
+esac
+
+cd - > /dev/null

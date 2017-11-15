@@ -9,8 +9,6 @@ ARG indy_node_ver=1.2.198
 ARG python3_indy_crypto_ver=0.1.6
 ARG indy_crypto_ver=0.1.6
 
-ARG remote_ip=
-
 ENV LC_ALL="C.UTF-8"
 ENV LANG="C.UTF-8"
 ENV SHELL="/bin/bash"
@@ -49,6 +47,3 @@ USER indy
 WORKDIR /home/indy
 
 ADD --chown=indy:indy . /home/indy
-
-EXPOSE 9701 9702 9703 9704 9705 9706 9707 9708
-ENV IP ${remote_ip}
