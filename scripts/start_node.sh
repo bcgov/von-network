@@ -4,8 +4,6 @@ NODE_NUM="${1}"
 
 START_PORT=9700
 
-rm -rf .indy/*
-
 # Nodes discover each other internally
 IP1="$(getent hosts node1 | awk '{ print $1 }')"
 IP2="$(getent hosts node2 | awk '{ print $1 }')"
