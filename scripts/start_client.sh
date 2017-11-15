@@ -8,7 +8,7 @@ IP4="$(getent hosts node4 | awk '{ print $1 }')"
 
 # If we don't explicitely set IP, then discover nodes internally
 # (only used in development)
-if [ -z "$IP1" ]; then
+if [ -z "$IP" ]; then
     if [ -z "$IP1" ] || [ -z "$IP2" ] || [ -z "$IP3" ] || [ -z "$IP4" ]; then
         echo "Cannot discover node ips. Are the nodes running?"
         exit 1

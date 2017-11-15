@@ -12,7 +12,7 @@ IP4="$(getent hosts node4 | awk '{ print $1 }')"
 
 # If we don't explicitely set IP, then discover nodes internally
 # (only used in development)
-if [ -z "$IP1" ]; then
+if [ -z "$IP" ]; then
     echo generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
