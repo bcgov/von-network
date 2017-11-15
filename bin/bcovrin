@@ -4,7 +4,6 @@
 # $ curl -fsSL get.docker.com -o get-docker.sh
 # $ sh get-docker.sh
 
-set -e
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 
@@ -17,7 +16,7 @@ case "$1" in
       docker create -d -p 9701:9701 -p  9702:9702 -p 9703:9703 -p 9704:9704 -p 9705:9705 -p 9706:9706 -p 9707:9707 -p 9708:9708 --name indy indy
     ;;
   start)
-      if !docker inspect indy > /dev/null; then
+      if !(docker inspect indy > /dev/null); then
         echo "Docker container not yet created. Creating..."
         $0 create
       fi
@@ -30,7 +29,7 @@ case "$1" in
       docker exec -it indy bash
     ;;
   *)
-    echo $"Usage: $0 {start|cli|stop|build|rebuild}"
+    echo $"Usage: $0 {create|start|stop|shell}"
     RETVAL=1
 esac
 
