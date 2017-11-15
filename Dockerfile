@@ -9,6 +9,8 @@ ARG indy_node_ver=1.2.198
 ARG python3_indy_crypto_ver=0.1.6
 ARG indy_crypto_ver=0.1.6
 
+ARG remote_ip=
+
 ENV LC_ALL="C.UTF-8"
 ENV LANG="C.UTF-8"
 ENV SHELL="/bin/bash"
