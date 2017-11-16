@@ -19,6 +19,9 @@ services:
     command: 'bash -c ''./scripts/start_node.sh 1'''
     networks:
       - von
+    ports:
+      - 9701:9701
+      - 9702:9702
     
   node2:
     build: .
@@ -26,6 +29,9 @@ services:
     command: 'bash -c ''./scripts/start_node.sh 2'''
     networks:
       - von
+    ports:
+      - 9703:9703
+      - 9704:9704
 
   node3:
     build: .
@@ -33,6 +39,9 @@ services:
     command: 'bash -c ''./scripts/start_node.sh 3'''
     networks:
       - von
+    ports:
+      - 9705:9705
+      - 9706:9706
     
   node4:
     build: .
@@ -40,6 +49,9 @@ services:
     command: 'bash -c ''./scripts/start_node.sh 4'''
     networks:
       - von
+    ports:
+      - 9707:9707
+      - 9708:9708
 
 networks:
   von:
