@@ -68,7 +68,7 @@ chmod +x /usr/local/bin/docker-compose
 3. Download this repository:
 
 ```bash
-curl -L https://github.com/nrempel/von-network/archive/master.zip > bcovrin.zip && \
+curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip && \
     unzip bcovrin.zip && \
     cd von-network-master
 ```
