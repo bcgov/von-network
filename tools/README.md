@@ -37,3 +37,9 @@ chmod +x bcovrin
 ```bash
 ./bcovrin logs
 ```
+
+7. Running the CLI locally supports connecting to a remote node pool. Run on your local machine:
+
+```bash
+./manage cli <remote_ip>
+```
