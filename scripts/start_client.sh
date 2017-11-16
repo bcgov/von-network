@@ -1,4 +1,9 @@
 #!/bin/bash
 
-von_generate_transactions -i $IP
+if [ -z $IP ]; then
+    von_generate_transactions
+else
+    von_generate_transactions -i $IP
+fi
+
 indy
