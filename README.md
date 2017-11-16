@@ -5,7 +5,7 @@ A portable development level Indy Node network.
 
 1. First, install Docker. Download the installer for your operating system [here](https://store.docker.com/search?type=edition&offering=community). Once it is installed, keep the Docker daemon running in the background.
 
-2. Linux users will also need to [install docker-compose](https://github.com/docker/compose/releases. Mac and Windows users will have this already. 
+2. Linux users will also need to [install docker-compose](https://github.com/docker/compose/releases). Mac and Windows users will have this already. 
 
 3. Once Docker has been installed, open a terminal session and clone this repository:
 
