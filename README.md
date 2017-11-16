@@ -1,40 +1,103 @@
 # VON Network
 A portable development level Indy Node network.
 
-## Running the Network
+## Running the Network Locally
 
-First, install Docker. Download the installer for your operating system [here](https://store.docker.com/search?type=edition&offering=community). Once it is installed, keep the Docker daemon running in the background.
+1. First, install Docker. Download the installer for your operating system [here](https://store.docker.com/search?type=edition&offering=community). Once it is installed, keep the Docker daemon running in the background.
 
-Once Docker has been installed, open a terminal session and clone this repository:
+2. Linux users will also need to [install docker-compose](https://github.com/docker/compose/releases. Mac and Windows users will have this already. 
+
+3. Once Docker has been installed, open a terminal session and clone this repository:
 
 ```bash
 git clone <repository url> von-network
 ```
 
-Move to the new directory:
+4. Move to the new directory:
 
 ```bash
 cd von-network
 ```
 
-Now you can build the Dockerfile into an image which we will use to run containers (this process will take several minutes):
+5. Now you can build the Dockerfile into an image which we will use to run containers (this process will take several minutes):
 
 ```bash
 ./manage build
 ```
 
-Once the build process completes, you can test the build to make sure everything works properly:
+6. Once the build process completes, you can test the build to make sure everything works properly:
 
 ```bash
 ./manage start
 ```
 
-## Connecting to the Network
+## Running the Network on a VPS
+
+### Requirements
+
+- ubuntu 16.04
+- accepting incoming TCP connections on ports 9701-9708
+- root access
+
+1. Install unzip utility:
+
+```bash
+# Requires root privileges 
+apt install unzip
+```
+
+2. Install Docker and Docker Compose:
+
+```bash
+curl -fsSL get.docker.com -o get-docker.sh
+```
+
+```bash
+# Requires root privileges 
+sh get-docker.sh
+```
+
+```bash
+curl -L https://github.com/docker/compose/releases/download/1.17.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+```
+
+```bash
+chmod +x /usr/local/bin/docker-compose
+```
+
+3. Download this repository:
+
+```bash
+curl -L https://github.com/nrempel/von-network/archive/master.zip > bcovrin.zip && \
+    unzip bcovrin.zip && \
+    cd von-network-master
+```
+
+4. Build the Docker container:
+
+```bash
+./manage build
+```
+
+5. Run the network of nodes:
+
+```bash
+# This command requires the publicly accesible ip address of the machine
+./manage start <ip address>
+```
+
+## Connecting to the Network 
 
 Once the nodes are all running and have connected to each other, you can run the Indy client to test the connection in a separate terminal window:
 
 ```bash
 ./manage cli
+```
+
+If you want to connect to a remote indy-node pool, you can optionally supply an ip address. (Currently only supports a test network running on a single machine with a single ip address.)
+
+```bash
+./manage cli <ip address>
 ```
 
 The Indy CLI should boot up and you should see the following:

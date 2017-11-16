@@ -9,7 +9,11 @@ cd "$SCRIPT_HOME"
 
 case "$1" in
   start)
-      docker-compose up node1 node2 node3 node4
+      if [ -z $2 ]; then
+        IP=$2 docker-compose up node1 node2 node3 node4
+      else
+        docker-compose up node1 node2 node3 node4
+      fi
     ;;
   cli)
       if [ -z "$2" ]; then

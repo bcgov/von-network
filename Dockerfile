@@ -9,6 +9,9 @@ ARG indy_node_ver=1.2.210
 ARG python3_indy_crypto_ver=0.1.6
 ARG indy_crypto_ver=0.1.6
 
+ARG ip_address
+ENV IP ${ip_address}
+
 ENV LC_ALL="C.UTF-8"
 ENV LANG="C.UTF-8"
 ENV SHELL="/bin/bash"
