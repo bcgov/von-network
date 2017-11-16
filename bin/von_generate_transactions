@@ -1,0 +1,61 @@
+#!/bin/bash
+
+usage () {
+    echo "Used to generate genesis transaction file.";
+    echo "2 optional args: -i <ip address>, -n <node number>";
+    echo "Example: $0 -i x.x.x.x -n y";
+}
+
+options='in:h'
+while getopts $options option
+do
+    case $option in
+        i  ) ipAddress=$OPTARG;;
+        n  ) nodeNum=$OPTARG;;
+        h  ) usage; exit;;
+        \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
+        :  ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
+        *  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+
+if [ -z "$nodeNum" ]; then
+    nodeArg=""
+else
+    nodeArg="--nodeNum $nodeNum"
+fi
+
+# If we don't explicitely set IP, then discover nodes internally
+if [ -z "$IP" ]; then
+    # Nodes discover each other internally
+    IP1="$(getent hosts node1 | awk '{ print $1 }')"
+    IP2="$(getent hosts node2 | awk '{ print $1 }')"
+    IP3="$(getent hosts node3 | awk '{ print $1 }')"
+    IP4="$(getent hosts node4 | awk '{ print $1 }')"
+
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips $IP1,$IP2,$IP3,$IP4
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips $IP1,$IP2,$IP3,$IP4
+
+# Otherwise, generate transaction file using supplied IP (for remote server)
+else
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips $IP,$IP,$IP,$IP
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips $IP,$IP,$IP,$IP
+fi

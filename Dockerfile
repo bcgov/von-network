@@ -45,3 +45,5 @@ USER indy
 WORKDIR /home/indy
 
 ADD --chown=indy:indy . /home/indy
+
+ADD bin/* /usr/local/bin
