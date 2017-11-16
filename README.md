@@ -36,6 +36,7 @@ cd von-network
 ### Requirements
 
 - ubuntu 16.04
+- at least 1GB RAM
 - accepting incoming TCP connections on ports 9701-9708
 - root access
 
