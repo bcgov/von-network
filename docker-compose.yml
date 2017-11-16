@@ -22,6 +22,8 @@ services:
     ports:
       - 9701:9701
       - 9702:9702
+    environment:
+      - IP=${IP}
     
   node2:
     build: .
@@ -32,6 +34,8 @@ services:
     ports:
       - 9703:9703
       - 9704:9704
+    environment:
+      - IP=${IP}
 
   node3:
     build: .
@@ -42,6 +46,8 @@ services:
     ports:
       - 9705:9705
       - 9706:9706
+    environment:
+      - IP=${IP}
     
   node4:
     build: .
@@ -52,6 +58,8 @@ services:
     ports:
       - 9707:9707
       - 9708:9708
+    environment:
+      - IP=${IP}
 
 networks:
   von:
