@@ -19,24 +19,22 @@ do
     esac
 done
 
-if [ -z "$nodeNum" ]; then
-    nodeArg=""
-else
+nodeArg=""
+if [ ! -z "$nodeNum" ]; then
     nodeArg="--nodeNum $nodeNum"
 fi
 
 # If we don't explicitely set IP, then discover nodes internally
 if [ -z "$IP" ]; then
     # Nodes discover each other internally
-    if [ -z "$IP1" ] || [ -z "$IP2" ] || [ -z "$IP3" ] || [ -z "$IP4" ]; then
-        echo "Cannot discover node ips. Are the nodes running?"
-        exit 1
-    fi
-    
     IP1="$(getent hosts node1 | awk '{ print $1 }')"
     IP2="$(getent hosts node2 | awk '{ print $1 }')"
     IP3="$(getent hosts node3 | awk '{ print $1 }')"
     IP4="$(getent hosts node4 | awk '{ print $1 }')"
+    if [ -z "$IP1" ] || [ -z "$IP2" ] || [ -z "$IP3" ] || [ -z "$IP4" ]; then
+        echo "Cannot discover node ips. Are the nodes running?"
+        exit 1
+    fi
 
     echo generate_indy_pool_transactions \
         --nodes 4 \
