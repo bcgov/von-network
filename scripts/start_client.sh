@@ -2,10 +2,10 @@
 
 set -e
 
-if [ -z $IP ]; then
+if [ -z "$IP" ]; then
     von_generate_transactions
 else
-    von_generate_transactions -i $IP
+    von_generate_transactions -i "$IP"
 fi
 
 indy

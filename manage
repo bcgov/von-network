@@ -9,8 +9,8 @@ cd "$SCRIPT_HOME"
 
 case "$1" in
   start)
-      if [ -z $2 ]; then
-        docker-compose up node1 node2 node3 node4
+      if [ -z "$2" ]; then
+        docker-compose up --force-recreate node1 node2 node3 node4
       else
         IP=$2 docker-compose up node1 node2 node3 node4
       fi
@@ -19,7 +19,7 @@ case "$1" in
       if [ -z "$2" ]; then
         docker-compose run client
       else
-        docker-compose run -e IP=$2 client
+        docker-compose run -e IP="$2" client
       fi
     ;;
   stop)
@@ -33,7 +33,6 @@ case "$1" in
     ;;
   *)
     echo $"Usage: $0 {start|cli|stop|build|rebuild}"
-    RETVAL=1
 esac
 
-cd - > /dev/null
+( cd - ) > /dev/null

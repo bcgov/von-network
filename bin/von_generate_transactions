@@ -25,7 +25,7 @@ if [ ! -z "$nodeNum" ]; then
 fi
 
 # If we don't explicitely set IP, then discover nodes internally
-if [ -z "$IP" ]; then
+if [ -z "$ipAddress" ]; then
     # Nodes discover each other internally
     IP1="$(getent hosts node1 | awk '{ print $1 }')"
     IP2="$(getent hosts node2 | awk '{ print $1 }')"
@@ -36,17 +36,23 @@ if [ -z "$IP" ]; then
         exit 1
     fi
 
+    echo "discovered nodes"
+    echo "node1=$IP1"
+    echo "node2=$IP2"
+    echo "node3=$IP4"
+    echo "node4=$IP4"
+
     echo generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips $IP1,$IP2,$IP3,$IP4
+        --ips "$IP1","$IP2","$IP3","$IP4"
 
     generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips $IP1,$IP2,$IP3,$IP4
+        --ips "$IP1","$IP2","$IP3","$IP4"
 
 # Otherwise, generate transaction file using supplied IP (for remote server)
 else
@@ -54,11 +60,11 @@ else
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips $IP,$IP,$IP,$IP
+        --ips "$IP","$IP","$IP","$IP"
 
     generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips $IP,$IP,$IP,$IP
+        --ips "$IP","$IP","$IP","$IP"
 fi

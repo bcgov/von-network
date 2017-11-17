@@ -89,6 +89,7 @@ curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip &&
 
 ## Connecting to the Network 
 
+### With the CLI
 Once the nodes are all running and have connected to each other, you can run the Indy client to test the connection in a separate terminal window:
 
 ```bash
@@ -156,3 +157,5 @@ Connected to test.
 ```
 
 If you see this, congratulations! Your nodes are running correctly and you have a connection to the network.
+
+### With the Indy SDK
