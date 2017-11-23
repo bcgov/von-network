@@ -12,7 +12,7 @@ case "$1" in
       if [ -z "$2" ]; then
         docker-compose up --force-recreate webserver node1 node2 node3 node4
       else
-        IP=$2 docker-compose up webserver node1 node2 node3 node4
+        IP=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
       fi
     ;;
   cli)
