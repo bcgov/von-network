@@ -41,9 +41,14 @@ RUN apt-get update -y && apt-get install -y \
     libindy-crypto=${indy_crypto_ver} \
     vim
 
+
+RUN pip3 install pipenv
+
 USER indy
 WORKDIR /home/indy
 
 ADD --chown=indy:indy . /home/indy
+
+RUN cd server && pipenv install
 
 ADD bin/* /usr/local/bin

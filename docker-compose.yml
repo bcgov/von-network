@@ -11,6 +11,18 @@ services:
       - von
 
   # 
+  # Webserver
+  # 
+  webserver:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_webserver.sh'''
+    networks:
+      - von
+    ports:
+      - 8000:8000
+
+  # 
   # Nodes
   # 
   node1:
