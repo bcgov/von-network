@@ -17,6 +17,8 @@ services:
     build: .
     image: von-base
     command: 'bash -c ''./scripts/start_webserver.sh'''
+    environment:
+      - IP=${IP}
     networks:
       - von
     ports:
@@ -28,7 +30,7 @@ services:
   node1:
     build: .
     image: von-base
-    command: 'bash -c ''./scripts/start_node.sh 1 ${IP}'''
+    command: 'bash -c ''./scripts/start_node.sh 1'''
     networks:
       - von
     ports:
@@ -40,7 +42,7 @@ services:
   node2:
     build: .
     image: von-base
-    command: 'bash -c ''./scripts/start_node.sh 2 ${IP}'''
+    command: 'bash -c ''./scripts/start_node.sh 2'''
     networks:
       - von
     ports:
@@ -52,7 +54,7 @@ services:
   node3:
     build: .
     image: von-base
-    command: 'bash -c ''./scripts/start_node.sh 3 ${IP}'''
+    command: 'bash -c ''./scripts/start_node.sh 3'''
     networks:
       - von
     ports:
@@ -64,7 +66,7 @@ services:
   node4:
     build: .
     image: von-base
-    command: 'bash -c ''./scripts/start_node.sh 4 ${IP}'''
+    command: 'bash -c ''./scripts/start_node.sh 4'''
     networks:
       - von
     ports:
