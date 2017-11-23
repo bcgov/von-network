@@ -115,13 +115,13 @@ indy>
 Now connect to our new Indy network to make sure network is running correctly:
 
 ```
-connect test
+connect sandbox
 ```
 
 What you should see is:
 
 ```
-indy> connect test
+indy> connect sandbox
 New wallet Default created
 Active wallet set to "Default"
 Active wallet set to "Default"
