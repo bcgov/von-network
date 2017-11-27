@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 
 sanic = "*"
+von-agent = "*"
 
 
 [dev-packages]

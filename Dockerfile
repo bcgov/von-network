@@ -22,7 +22,14 @@ RUN apt-get update -y && apt-get install -y \
     python-setuptools \
     python3-nacl \
     apt-transport-https \
-    ca-certificates
+    ca-certificates \
+    build-essential \
+    pkg-config \
+    cmake \
+    libssl-dev \
+    libsqlite3-dev \
+    libsodium-dev \
+    curl
 
 RUN pip3 install -U \
     pip \
@@ -43,6 +50,23 @@ RUN apt-get update -y && apt-get install -y \
 
 
 RUN pip3 install pipenv
+
+USER indy
+WORKDIR /home/indy
+
+# Install rust toolchain
+RUN curl -o rustup https://sh.rustup.rs
+RUN chmod +x rustup
+RUN ./rustup -y
+
+# Build libindy
+RUN git clone https://github.com/hyperledger/indy-sdk.git
+WORKDIR /home/indy/indy-sdk/libindy
+RUN /home/indy/.cargo/bin/cargo build
+
+# Move libindy to lib path
+USER root
+RUN mv target/debug/libindy.so /usr/lib
 
 USER indy
 WORKDIR /home/indy
