@@ -23,6 +23,9 @@ done
 nodeArg=""
 if [ ! -z "$nodeNum" ]; then
     nodeArg="--nodeNum $nodeNum"
+    # Only run this for nodes:
+    echo init_indy_node "Node$nodeNum" 80 $(( 9700 + ( nodeNum * 2 ) ))
+    init_indy_node "Node$nodeNum" 80 $(( 9700 + ( nodeNum * 2 ) ))
 fi
 
 if [ ! -z $ipAddresses ]; then
@@ -80,3 +83,7 @@ else
         $nodeArg \
         --ips "$IP1","$IP2","$IP3","$IP4"
 fi
+
+echo "Generated genesis transaction file:"
+echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
