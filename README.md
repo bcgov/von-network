@@ -178,5 +178,11 @@ Running BCovrin also runs a thin webserver to expose some convenience functions:
 
 The genesis transaction record required to connect to the node pool is made available at:
 
-`<ip_address>:8000/genesis`
+`<ip_address>/genesis`
+
+#### Write new did for seed
+
+The node pool can have a trust anchor write a did for you.
+
+`<ip_address>/register?seed=<indy_wallet_seed>`
 
