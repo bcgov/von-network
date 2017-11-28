@@ -87,3 +87,12 @@ fi
 echo "Generated genesis transaction file:"
 echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
 cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+echo "Changing client_port to port 80..."
+echo mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
+mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
+echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+echo "New genesis transaction file:"
+cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis 
