@@ -24,8 +24,8 @@ nodeArg=""
 if [ ! -z "$nodeNum" ]; then
     nodeArg="--nodeNum $nodeNum"
     # Only run this for nodes:
-    echo init_indy_node "Node$nodeNum" 80 $(( 9700 + ( nodeNum * 2 ) ))
-    init_indy_node "Node$nodeNum" 80 $(( 9700 + ( nodeNum * 2 ) ))
+    echo init_indy_node "Node$nodeNum" $(( 9700 + ( nodeNum * 2 ) - 1 )) 80
+    init_indy_node "Node$nodeNum" $(( 9700 + ( nodeNum * 2 ) - 1 )) 80
 fi
 
 if [ ! -z $ipAddresses ]; then
