@@ -6,11 +6,12 @@ usage () {
     echo "Example: $0 -i x.x.x.x -n y";
 }
 
-options=':i:n:h'
+options=':i:s:n:h'
 while getopts $options option
 do
     case $option in
         i  ) ipAddress=$OPTARG;;
+        s  ) ipAddresses=$OPTARG;;
         n  ) nodeNum=$OPTARG;;
         h  ) usage; exit;;
         \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
@@ -24,9 +25,34 @@ if [ ! -z "$nodeNum" ]; then
     nodeArg="--nodeNum $nodeNum"
 fi
 
-# If we don't explicitely set IP, then discover nodes internally
-if [ -z "$ipAddress" ]; then
-    # Nodes discover each other internally
+if [ ! -z $ipAddresses ]; then
+    # Use supplied IP address
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$ipAddresses"
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$ipAddresses"
+elif [ ! -z $ipAddress ]; then
+    # Use supplied IP address
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$IP","$IP","$IP","$IP"
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$IP","$IP","$IP","$IP"
+else
+    # If we don't explicitely set IP, then discover nodes internally
     IP1="$(getent hosts node1 | awk '{ print $1 }')"
     IP2="$(getent hosts node2 | awk '{ print $1 }')"
     IP3="$(getent hosts node3 | awk '{ print $1 }')"
@@ -53,18 +79,4 @@ if [ -z "$ipAddress" ]; then
         --clients 0 \
         $nodeArg \
         --ips "$IP1","$IP2","$IP3","$IP4"
-
-# Otherwise, generate transaction file using supplied IP (for remote server)
-else
-    echo generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$IP","$IP","$IP","$IP"
-
-    generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$IP","$IP","$IP","$IP"
 fi

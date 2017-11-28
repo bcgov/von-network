@@ -5,7 +5,10 @@ set -e
 NODE_NUM="${1}"
 START_PORT="9700"
 
-if [ ! -z "$IP" ]; then
+if [ ! -z "$IPS" ]; then
+    echo von_generate_transactions -s "$IPS" -n "$NODE_NUM"
+    von_generate_transactions -s "$IPS" -n "$NODE_NUM"
+elif [ ! -z "$IP" ]; then
     echo von_generate_transactions -i "$IP" -n "$NODE_NUM"
     von_generate_transactions -i "$IP" -n "$NODE_NUM"
 else

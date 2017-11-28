@@ -38,6 +38,7 @@ services:
       - 9702:9702
     environment:
       - IP=${IP}
+      - IPS=${IPS}
     
   node2:
     build: .
@@ -50,6 +51,7 @@ services:
       - 9704:9704
     environment:
       - IP=${IP}
+      - IPS=${IPS}
 
   node3:
     build: .
@@ -62,6 +64,7 @@ services:
       - 9706:9706
     environment:
       - IP=${IP}
+      - IPS=${IPS}
     
   node4:
     build: .
@@ -74,6 +77,7 @@ services:
       - 9708:9708
     environment:
       - IP=${IP}
+      - IPS=${IPS}
 
 networks:
   von:
