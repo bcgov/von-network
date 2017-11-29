@@ -24,8 +24,8 @@ nodeArg=""
 if [ ! -z "$nodeNum" ]; then
     nodeArg="--nodeNum $nodeNum"
     # Only run this for nodes:
-    echo init_indy_node "Node$nodeNum" 80 $(( 9700 + ( nodeNum * 2 ) ))
-    init_indy_node "Node$nodeNum" 80 $(( 9700 + ( nodeNum * 2 ) ))
+    echo init_indy_node "Node$nodeNum" 443 80
+    init_indy_node "Node$nodeNum" 443 80
 fi
 
 if [ ! -z $ipAddresses ]; then
@@ -91,8 +91,9 @@ cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 echo "Changing client_port to port 80..."
 echo mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
 mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
-echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"node_port\":\).\{4\}\(,\)~\180\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
-cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"node_port\":\).\{4\}\(,\)~\180\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\1443\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\1443\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 
 echo "New genesis transaction file:"
-cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis 
+cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
