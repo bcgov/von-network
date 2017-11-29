@@ -94,6 +94,11 @@ mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.i
 echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\1443\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\1443\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 
+echo "State of /var/lib/indy/sandbox/pool_transactions_genesis"
+cat /var/lib/indy/sandbox/pool_transactions_genesis
+echo "Overwriting..."
+cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis > /var/lib/indy/sandbox/pool_transactions_genesis
+
 echo "New genesis transaction file:"
 cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 
