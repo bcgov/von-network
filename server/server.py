@@ -89,6 +89,23 @@ async def ledger_domain(request):
     return text(proc.stdout)
 
 
+@app.route("/ledger/domain/pretty")
+async def ledger_domain_pretty(request):
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "domain", "--base_dir", "/home/indy/.mnt/node1"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    resp_text = ""
+
+    lines = proc.stdout.splitlines()
+    for line in lines:
+        parsed = json.loads(line)
+        resp_text += json.dumps(parsed, indent=4, sort_keys=True) + "\n\n"
+
+    return text(resp_text)
+
+
 @app.route("/ledger/pool")
 async def ledger_pool(request):
     proc = subprocess.run(
@@ -99,6 +116,23 @@ async def ledger_pool(request):
     return text(proc.stdout)
 
 
+@app.route("/ledger/pool/pretty")
+async def ledger_pool_pretty(request):
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "pool", "--base_dir", "/home/indy/.mnt/node1"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    resp_text = ""
+
+    lines = proc.stdout.splitlines()
+    for line in lines:
+        parsed = json.loads(line)
+        resp_text += json.dumps(parsed, indent=4, sort_keys=True) + "\n\n"
+
+    return text(resp_text)
+
+
 @app.route("/ledger/config")
 async def ledger_config(request):
     proc = subprocess.run(
@@ -107,6 +141,23 @@ async def ledger_config(request):
       universal_newlines=True)
 
     return text(proc.stdout)
+
+
+@app.route("/ledger/config/pretty")
+async def ledger_config_pretty(request):
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "config", "--base_dir", "/home/indy/.mnt/node1"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    resp_text = ""
+
+    lines = proc.stdout.splitlines()
+    for line in lines:
+        parsed = json.loads(line)
+        resp_text += json.dumps(parsed, indent=4, sort_keys=True) + "\n\n"
+
+    return text(resp_text)
 
 
 # Expose genesis transaction for easy connection.
