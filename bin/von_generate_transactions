@@ -41,6 +41,25 @@ if [ ! -z $ipAddresses ]; then
         --clients 0 \
         $nodeArg \
         --ips "$ipAddresses"
+    
+
+    echo "Generated genesis transaction file:"
+    echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+    echo "Changing client_port to port 80..."
+    echo mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
+    mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
+    echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+    echo "State of /var/lib/indy/sandbox/pool_transactions_genesis"
+    cat /var/lib/indy/sandbox/pool_transactions_genesis
+    echo "Overwriting..."
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis > /var/lib/indy/sandbox/pool_transactions_genesis
+
+    echo "New genesis transaction file:"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 elif [ ! -z $ipAddress ]; then
     # Use supplied IP address
     echo generate_indy_pool_transactions \
@@ -83,22 +102,3 @@ else
         $nodeArg \
         --ips "$IP1","$IP2","$IP3","$IP4"
 fi
-
-echo "Generated genesis transaction file:"
-echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
-cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
-
-echo "Changing client_port to port 80..."
-echo mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
-mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
-echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
-cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
-
-echo "State of /var/lib/indy/sandbox/pool_transactions_genesis"
-cat /var/lib/indy/sandbox/pool_transactions_genesis
-echo "Overwriting..."
-cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis > /var/lib/indy/sandbox/pool_transactions_genesis
-
-echo "New genesis transaction file:"
-cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
-

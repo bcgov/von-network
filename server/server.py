@@ -13,6 +13,7 @@ from sanic import Sanic
 from sanic.response import text
 
 app = Sanic(__name__)
+app.static('/', './static/index.html')
 
 
 async def boot():
@@ -35,12 +36,76 @@ async def boot():
     await trust_anchor.open()
 
 
-@app.route("/")
-async def index(request):
+@app.route("/status")
+async def status(request):
+    response_text = ""
+    response_text += "NODE 1:\n\n"
+
     proc = subprocess.run(
-      ["validator-info", "-v"],
+      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node1/sandbox/"],
       stdout=subprocess.PIPE,
       universal_newlines=True)
+
+    response_text += proc.stdout
+    response_text += "\n\n"
+    response_text += "NODE 2:\n\n"
+
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node2/sandbox/"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    response_text += proc.stdout
+    response_text += "\n\n"
+    response_text += "NODE 3:\n\n"
+
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node3/sandbox/"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    response_text += proc.stdout
+    response_text += "\n\n"
+    response_text += "NODE 4:\n\n"
+
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node4/sandbox/"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    response_text += proc.stdout
+    response_text += "\n\n"
+
+    return text(response_text)
+
+
+@app.route("/ledger/domain")
+async def ledger_domain(request):
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "domain", "--base_dir", "/home/indy/.mnt/node1"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    return text(proc.stdout)
+
+
+@app.route("/ledger/pool")
+async def ledger_pool(request):
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "pool", "--base_dir", "/home/indy/.mnt/node1"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
+    return text(proc.stdout)
+
+
+@app.route("/ledger/config")
+async def ledger_config(request):
+    proc = subprocess.run(
+      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "config", "--base_dir", "/home/indy/.mnt/node1"],
+      stdout=subprocess.PIPE,
+      universal_newlines=True)
+
     return text(proc.stdout)
 
 

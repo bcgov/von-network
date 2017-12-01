@@ -71,8 +71,8 @@ RUN mv target/debug/libindy.so /usr/lib
 USER indy
 WORKDIR /home/indy
 
+ADD bin/* /usr/local/bin/
+
 ADD --chown=indy:indy . /home/indy
 
 RUN cd server && pipenv install
-
-ADD bin/* /usr/local/bin

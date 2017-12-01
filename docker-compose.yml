@@ -24,6 +24,8 @@ services:
       - von
     ports:
       - 8000:8000
+    volumes:
+      - ./.mnt:/home/indy/.mnt
 
   # 
   # Nodes
@@ -40,6 +42,8 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+    volumes:
+      - ./.mnt/node1:/var/lib/indy
     
   node2:
     build: .
@@ -53,6 +57,8 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+    volumes:
+      - ./.mnt/node2:/var/lib/indy
 
   node3:
     build: .
@@ -66,6 +72,8 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+    volumes:
+      - ./.mnt/node3:/var/lib/indy
     
   node4:
     build: .
@@ -79,6 +87,8 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+    volumes:
+      - ./.mnt/node4:/var/lib/indy
 
 networks:
   von:
