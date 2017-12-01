@@ -14,9 +14,9 @@ case "$1" in
       else
         if [[ $2 == *","* ]]; then
           # If arg contains comma, then it should be multiple IPS
-          IPS=$2 rm -rf .mnt && docker-compose up --force-recreate webserver node1 node2 node3 node4
+          rm -rf .mnt && IPS=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
         else
-          IP=$2 rm -rf .mnt && docker-compose up --force-recreate webserver node1 node2 node3 node4
+          rm -rf .mnt && IP=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
         fi
       fi
     ;;
