@@ -24,8 +24,16 @@ services:
       - von
     ports:
       - 8000:8000
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
     volumes:
-      - ./.mnt:/home/indy/.mnt
+      - node1-data:/home/indy/.mnt/node1
+      - node2-data:/home/indy/.mnt/node2
+      - node3-data:/home/indy/.mnt/node3
+      - node4-data:/home/indy/.mnt/node4
 
   # 
   # Nodes
@@ -43,7 +51,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
     volumes:
-      - ./.mnt/node1:/var/lib/indy
+      - node1-data:/var/lib/indy
     
   node2:
     build: .
@@ -58,7 +66,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
     volumes:
-      - ./.mnt/node2:/var/lib/indy
+      - node2-data:/var/lib/indy
 
   node3:
     build: .
@@ -73,7 +81,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
     volumes:
-      - ./.mnt/node3:/var/lib/indy
+      - node3-data:/var/lib/indy
     
   node4:
     build: .
@@ -88,7 +96,13 @@ services:
       - IP=${IP}
       - IPS=${IPS}
     volumes:
-      - ./.mnt/node4:/var/lib/indy
+      - node4-data:/var/lib/indy
 
 networks:
   von:
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
+  node4-data:

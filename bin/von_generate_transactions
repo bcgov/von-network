@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf /var/lib/indy/*
+
 usage () {
     echo "Used to generate genesis transaction file.";
     echo "2 optional args: -i <ip address>, -n <node number>";
@@ -73,6 +75,11 @@ elif [ ! -z $ipAddress ]; then
         --clients 0 \
         $nodeArg \
         --ips "$IP","$IP","$IP","$IP"
+
+    echo "Generated genesis transaction file:"
+    echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
 else
     # If we don't explicitely set IP, then discover nodes internally
     IP1="$(getent hosts node1 | awk '{ print $1 }')"
@@ -101,4 +108,9 @@ else
         --clients 0 \
         $nodeArg \
         --ips "$IP1","$IP2","$IP3","$IP4"
+
+    echo "Generated genesis transaction file:"
+    echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
 fi

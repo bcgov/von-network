@@ -10,13 +10,13 @@ cd "$SCRIPT_HOME"
 case "$1" in
   start)
       if [ -z "$2" ]; then
-        rm -rf .mnt && docker-compose up --force-recreate webserver node1 node2 node3 node4
+        docker-compose up --force-recreate webserver node1 node2 node3 node4
       else
         if [[ $2 == *","* ]]; then
           # If arg contains comma, then it should be multiple IPS
-          rm -rf .mnt && IPS=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
+          IPS=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
         else
-          rm -rf .mnt && IP=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
+          IP=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
         fi
       fi
     ;;
