@@ -68,6 +68,9 @@ RUN /home/indy/.cargo/bin/cargo build
 USER root
 RUN mv target/debug/libindy.so /usr/lib
 
+RUN mkdir /home/indy/.mnt
+RUN chown indy:indy /home/indy/.mnt
+
 USER indy
 WORKDIR /home/indy
 
