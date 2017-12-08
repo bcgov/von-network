@@ -17,10 +17,44 @@ app.static('/', './static/index.html')
 app.static('/include', './static/include')
 app.static('/favicon.ico', './static/favicon.ico')
 
+python_path = "/usr/bin/python3"
+
 
 def json_reponse(data):
   headers = {'Access-Control-Allow-Origin': '*'}
   return sanic_json(data, headers=headers)
+
+
+def validator_info(node_name, as_json=True):
+  args = [python_path, "/usr/local/bin/validator-info", "-v"]
+  if as_json:
+    args.append("--json")
+  args.extend(["--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"])
+  proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+  if as_json:
+    return json.loads(proc.stdout)
+  return proc
+
+
+def read_ledger(ledger, seq_no=0, seq_to=100, node_name='node1', pretty=False):
+  if ledger != "domain" and ledger != "pool" and ledger != "config":
+    raise ValueError("Unsupported ledger type: {}".format(ledger))
+  args = [python_path, "/usr/local/bin/read_ledger", "--type", ledger]
+  if seq_no > 0:
+    args.extend(["--seq_no", str(seq_no)])
+  args.extend(["--to", str(seq_to)])
+  args.extend(["--base_dir", "/home/indy/.mnt/" + node_name])
+  proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+
+  if pretty:
+    lines = proc.stdout.splitlines()
+    resp = []
+    for line in lines:
+        parsed = json.loads(line)
+        resp.append(json.dumps(parsed, indent=4, sort_keys=True))
+    return "\n\n".join(resp)
+
+  return proc.stdout
 
 
 async def boot():
@@ -49,11 +83,7 @@ async def status(request):
 
     response = []
     for idx,node_name in enumerate(nodes):
-      proc = subprocess.run(
-        ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--json", "--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"],
-        stdout=subprocess.PIPE,
-        universal_newlines=True)
-      parsed = json.loads(proc.stdout)
+      parsed = validator_info(node_name)
       if parsed:
         response.append(parsed)
 
@@ -66,96 +96,24 @@ async def status(request):
 
     response_text = ""
     for idx,node_name in enumerate(nodes):
-      proc = subprocess.run(
-        ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"],
-        stdout=subprocess.PIPE,
-        universal_newlines=True)
+      proc = validator_info(node_name)
       if idx > 0:
-        response_text += "\n\n"
+        response_text += "\n"
       response_text += node_name + "\n\n" + proc.stdout
 
     return text(response_text)
 
 
-@app.route("/ledger/domain")
-async def ledger_domain(request):
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "domain", "--base_dir", "/home/indy/.mnt/node1"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    return text(proc.stdout)
+@app.route("/ledger/<ledger_name>")
+async def ledger(request, ledger_name):
+    response = read_ledger(ledger_name)
+    return text(response)
 
 
-@app.route("/ledger/domain/pretty")
-async def ledger_domain_pretty(request):
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "domain", "--base_dir", "/home/indy/.mnt/node1"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    resp_text = ""
-
-    lines = proc.stdout.splitlines()
-    for line in lines:
-        parsed = json.loads(line)
-        resp_text += json.dumps(parsed, indent=4, sort_keys=True) + "\n\n"
-
-    return text(resp_text)
-
-
-@app.route("/ledger/pool")
-async def ledger_pool(request):
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "pool", "--base_dir", "/home/indy/.mnt/node1"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    return text(proc.stdout)
-
-
-@app.route("/ledger/pool/pretty")
-async def ledger_pool_pretty(request):
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "pool", "--base_dir", "/home/indy/.mnt/node1"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    resp_text = ""
-
-    lines = proc.stdout.splitlines()
-    for line in lines:
-        parsed = json.loads(line)
-        resp_text += json.dumps(parsed, indent=4, sort_keys=True) + "\n\n"
-
-    return text(resp_text)
-
-
-@app.route("/ledger/config")
-async def ledger_config(request):
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "config", "--base_dir", "/home/indy/.mnt/node1"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    return text(proc.stdout)
-
-
-@app.route("/ledger/config/pretty")
-async def ledger_config_pretty(request):
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/read_ledger", "--type", "config", "--base_dir", "/home/indy/.mnt/node1"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    resp_text = ""
-
-    lines = proc.stdout.splitlines()
-    for line in lines:
-        parsed = json.loads(line)
-        resp_text += json.dumps(parsed, indent=4, sort_keys=True) + "\n\n"
-
-    return text(resp_text)
+@app.route("/ledger/<ledger_name>/pretty")
+async def ledger_pretty(request, ledger_name):
+    response = read_ledger(ledger_name, pretty=True)
+    return text(response)
 
 
 # Expose genesis transaction for easy connection.
