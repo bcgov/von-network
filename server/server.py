@@ -10,12 +10,17 @@ from von_agent.agents import BaseAgent
 
 
 from sanic import Sanic
-from sanic.response import text
+from sanic.response import text, json as sanic_json
 
 app = Sanic(__name__)
 app.static('/', './static/index.html')
 app.static('/include', './static/include')
 app.static('/favicon.ico', './static/favicon.ico')
+
+
+def json_reponse(data):
+  headers = {'Access-Control-Allow-Origin': '*'}
+  return sanic_json(data, headers=headers)
 
 
 async def boot():
@@ -52,7 +57,7 @@ async def status(request):
       if parsed:
         response.append(parsed)
 
-    return text(json.dumps(response))
+    return json_reponse(response)
 
 
 @app.route("/status/text")

@@ -17,6 +17,7 @@ header h1 {
 	display: inline-block;
 	margin: 0;
 	padding: 0;
+	vertical-align: -0.15em;
 }
 header p.lead {
 	display: inline-block;
@@ -77,14 +78,14 @@ small, .small {
 	font-size: 85%;
 }
 
-code {
+.tag {
 	-background-color: #fef9f9;
 	-border: 1px solid #b67;
 	background-color: #fefdf8;
 	border: 1px solid #f9b714;
 	border-radius: 0.3em;
 	display: inline-block;
-	padding: 4px;
+	padding: 0.25em;
 }
 
 h2 {
@@ -159,6 +160,65 @@ h2 .fa {
 	margin-left: 1rem;
 	padding: 1.5px 4px;
 	vertical-align: 0.1rem;
+}
+
+.error {
+	color: #b55;
+}
+
+.panel-node {
+	background: #fff;
+	-box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.panel-node .panel-status {
+}
+.node-status {
+	display: flex;
+	padding: 0.8rem;
+	position: relative;
+}
+.node-status.template {
+	display: none;
+}
+.node-status:not(.template) + .node-status {
+	border-top: 1px solid #ddd;
+}
+.node-status-left {
+	flex: 0 1 30%;
+	min-width: 120px;
+}
+.node-name {
+	position: absolute;
+	text-align: center;
+	top: 50px;
+	width: 100px;
+	z-index: 2;
+}
+.node-indicator {
+	border: 8px solid #ddd;
+	border-radius: 50%;
+	box-sizing: border-box;
+	width: 100px;
+	height: 100px;
+}
+.node-status-right {
+	flex: 1 1 auto;
+	overflow: hidden;
+	word-wrap: break-word;
+}
+
+.props {
+	font-size: 80%;
+	margin: 0;
+}
+.props dt {
+	display: none;
+}
+.props dd {
+	margin: 0;
+}
+.props label {
+	color: #888;
 }
 
 @media screen and (max-width: 900px) {
