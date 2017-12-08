@@ -14,6 +14,8 @@ from sanic.response import text
 
 app = Sanic(__name__)
 app.static('/', './static/index.html')
+app.static('/include', './static/include')
+app.static('/favicon.ico', './static/favicon.ico')
 
 
 async def boot():
@@ -38,43 +40,34 @@ async def boot():
 
 @app.route("/status")
 async def status(request):
+    nodes = ["node1", "node2", "node3", "node4"]
+
+    response = []
+    for idx,node_name in enumerate(nodes):
+      proc = subprocess.run(
+        ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--json", "--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True)
+      parsed = json.loads(proc.stdout)
+      if parsed:
+        response.append(parsed)
+
+    return text(json.dumps(response))
+
+
+@app.route("/status/text")
+async def status(request):
+    nodes = ["node1", "node2", "node3", "node4"]
+
     response_text = ""
-    response_text += "NODE 1:\n\n"
-
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node1/sandbox/"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    response_text += proc.stdout
-    response_text += "\n\n"
-    response_text += "NODE 2:\n\n"
-
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node2/sandbox/"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    response_text += proc.stdout
-    response_text += "\n\n"
-    response_text += "NODE 3:\n\n"
-
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node3/sandbox/"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    response_text += proc.stdout
-    response_text += "\n\n"
-    response_text += "NODE 4:\n\n"
-
-    proc = subprocess.run(
-      ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/node4/sandbox/"],
-      stdout=subprocess.PIPE,
-      universal_newlines=True)
-
-    response_text += proc.stdout
-    response_text += "\n\n"
+    for idx,node_name in enumerate(nodes):
+      proc = subprocess.run(
+        ["/usr/bin/python3", "/usr/local/bin/validator-info", "-v", "--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True)
+      if idx > 0:
+        response_text += "\n\n"
+      response_text += node_name + "\n\n" + proc.stdout
 
     return text(response_text)
 
