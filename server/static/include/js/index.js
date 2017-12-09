@@ -1,4 +1,4 @@
-function fetch_node_status(callb) {
+function fetch_validator_status(callb) {
     var oReq = new XMLHttpRequest();
     oReq.addEventListener('load', function(evt) {
         callb(oReq.response, evt);
@@ -11,9 +11,7 @@ function fetch_node_status(callb) {
     oReq.send();
 }
 
-fetch_node_status(function(status) {
-    console.log(status);
-
+fetch_validator_status(function(status) {
     var panel = document.querySelector('.panel-node-status');
     var load = panel && panel.querySelector('.loading');
     var err = panel && panel.querySelector('.error');

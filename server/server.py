@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import asyncio
+from datetime import datetime
 import json
 import subprocess
 
@@ -10,7 +11,7 @@ from von_agent.agents import BaseAgent
 
 
 from sanic import Sanic
-from sanic.response import text, json as sanic_json
+from sanic.response import text as sanic_text, json as sanic_json, html as sanic_html
 
 app = Sanic(__name__)
 app.static('/', './static/index.html')
@@ -19,6 +20,31 @@ app.static('/favicon.ico', './static/favicon.ico')
 
 python_path = "/usr/bin/python3"
 
+indy_txn_types = {
+    "0": "NODE",
+    "1": "NYM",
+    "3": "GET_TXN",
+    "100": "ATTRIB",
+    "101": "SCHEMA",
+    "102": "CLAIM_DEF",
+    "103": "DISCO",
+    "104": "GET_ATTR",
+    "105": "GET_NYM",
+    "107": "GET_SCHEMA",
+    "108": "GET_CLAIM_DEF",
+    "109": "POOL_UPGRADE",
+    "110": "NODE_UPGRADE",
+    "111": "POOL_CONFIG",
+    "112": "CHANGE_KEY",
+}
+
+indy_role_types = {
+  "0": "TRUSTEE",
+  "2": "STEWARD",
+  "100": "TGB",
+  "101": "TRUST_ANCHOR",
+}
+
 
 def json_reponse(data):
   headers = {'Access-Control-Allow-Origin': '*'}
@@ -26,9 +52,11 @@ def json_reponse(data):
 
 
 def validator_info(node_name, as_json=True):
-  args = [python_path, "/usr/local/bin/validator-info", "-v"]
+  args = [python_path, "/usr/local/bin/validator-info"]
   if as_json:
     args.append("--json")
+  else:
+    args.append("-v")
   args.extend(["--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"])
   proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
   if as_json:
@@ -36,7 +64,7 @@ def validator_info(node_name, as_json=True):
   return proc
 
 
-def read_ledger(ledger, seq_no=0, seq_to=100, node_name='node1', pretty=False):
+def read_ledger(ledger, seq_no=0, seq_to=100, node_name='node1', format="data"):
   if ledger != "domain" and ledger != "pool" and ledger != "config":
     raise ValueError("Unsupported ledger type: {}".format(ledger))
   args = [python_path, "/usr/local/bin/read_ledger", "--type", ledger]
@@ -46,14 +74,20 @@ def read_ledger(ledger, seq_no=0, seq_to=100, node_name='node1', pretty=False):
   args.extend(["--base_dir", "/home/indy/.mnt/" + node_name])
   proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
 
-  if pretty:
+  if format == "pretty" or format == "data":
     lines = proc.stdout.splitlines()
     resp = []
     for line in lines:
         parsed = json.loads(line)
-        resp.append(json.dumps(parsed, indent=4, sort_keys=True))
-    return "\n\n".join(resp)
+        if format == "pretty":
+          resp.append(json.dumps(parsed, indent=4, sort_keys=True))
+        else:
+          resp.append(parsed)
+    if format == "pretty":
+      return "\n\n".join(resp)
+    return resp
 
+  # format = json
   return proc.stdout
 
 
@@ -96,24 +130,84 @@ async def status(request):
 
     response_text = ""
     for idx,node_name in enumerate(nodes):
-      proc = validator_info(node_name)
+      proc = validator_info(node_name, as_json=False)
       if idx > 0:
         response_text += "\n"
       response_text += node_name + "\n\n" + proc.stdout
 
-    return text(response_text)
+    return sanic_text(response_text)
 
 
 @app.route("/ledger/<ledger_name>")
 async def ledger(request, ledger_name):
-    response = read_ledger(ledger_name)
-    return text(response)
+    response = read_ledger(ledger_name, format="json")
+    return sanic_text(response)
 
 
 @app.route("/ledger/<ledger_name>/pretty")
 async def ledger_pretty(request, ledger_name):
-    response = read_ledger(ledger_name, pretty=True)
-    return text(response)
+    response = read_ledger(ledger_name, format="pretty")
+    return sanic_text(response)
+
+
+@app.route("/ledger/<ledger_name>/text")
+async def ledger_text(request, ledger_name):
+    response = read_ledger(ledger_name)
+    text = []
+    for seq_no, txn in response:
+      if len(text):
+        text.append("")
+
+      type_name = indy_txn_types.get(txn['type'], txn['type'])
+      text.append("[" + str(seq_no) + "]  TYPE: " + type_name)
+
+      if type_name == "NYM":
+        text.append("DEST: " + txn['dest'])
+
+        role = txn.get('role')
+        if role != None:
+          role_name = indy_role_types.get(role, role)
+          text.append("ROLE: " + role_name)
+
+        verkey = txn.get('verkey')
+        if verkey != None:
+          text.append("VERKEY: " + verkey)
+
+      ident = txn.get('identifier')
+      if ident != None:
+        text.append("IDENT: " + ident)
+
+      txnTime = txn.get('txnTime')
+      if txnTime != None:
+        ftime = datetime.fromtimestamp(txnTime).strftime('%Y-%m-%d %H:%M:%S')
+        text.append("TIME: " + ftime)
+
+      reqId = txn.get('reqId')
+      if reqId != None:
+        text.append("REQ ID: " + str(reqId))
+
+      refNo = txn.get('ref')
+      if refNo != None:
+        text.append("REF: " + str(refNo))
+
+      txnId = txn.get('txnId')
+      if txnId != None:
+        text.append("TXN ID: " + txnId)
+
+      if type_name == "SCHEMA" or type_name == "CLAIM_DEF" or type_name == "NODE":
+        data = txn.get('data')
+        text.append("DATA:")
+        text.append(json.dumps(data, indent=4))
+
+      sig = txn.get('signature')
+      if sig != None:
+        text.append("SIGNATURE: " + sig)
+
+      sig_type = txn.get('signature_type')
+      if sig_type != None:
+        text.append("SIGNATURE TYPE: " + sig_type)
+
+    return sanic_text("\n".join(text))
 
 
 # Expose genesis transaction for easy connection.
@@ -123,7 +217,7 @@ async def genesis(request):
         '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis',
             'r') as content_file:
         gensis = content_file.read()
-    return text(gensis)
+    return sanic_text(gensis)
 
 
 # Easily write dids for new identity owners
@@ -152,7 +246,7 @@ async def register(request):
             print('\n\nSend Nym: ' + str(ag) + '\n\n')
             await trust_anchor.send_nym(ag.did, ag.verkey)
 
-    return text(new_did.did + ' successfully written to ledger')
+    return sanic_text(new_did.did + ' successfully written to ledger')
 
 
 if __name__ == '__main__':
