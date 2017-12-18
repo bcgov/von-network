@@ -1,0 +1,108 @@
+version: '3'
+services:
+  # 
+  # Client
+  # 
+  client:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_client.sh'''
+    networks:
+      - von
+
+  # 
+  # Webserver
+  # 
+  webserver:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_webserver.sh'''
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+    networks:
+      - von
+    ports:
+      - 8000:8000
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+    volumes:
+      - node1-data:/home/indy/.mnt/node1
+      - node2-data:/home/indy/.mnt/node2
+      - node3-data:/home/indy/.mnt/node3
+      - node4-data:/home/indy/.mnt/node4
+
+  # 
+  # Nodes
+  # 
+  node1:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_node.sh 1'''
+    networks:
+      - von
+    ports:
+      - 9701:9701
+      - 9702:9702
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+    volumes:
+      - node1-data:/var/lib/indy
+    
+  node2:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_node.sh 2'''
+    networks:
+      - von
+    ports:
+      - 9703:9703
+      - 9704:9704
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+    volumes:
+      - node2-data:/var/lib/indy
+
+  node3:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_node.sh 3'''
+    networks:
+      - von
+    ports:
+      - 9705:9705
+      - 9706:9706
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+    volumes:
+      - node3-data:/var/lib/indy
+    
+  node4:
+    build: .
+    image: von-base
+    command: 'bash -c ''./scripts/start_node.sh 4'''
+    networks:
+      - von
+    ports:
+      - 9707:9707
+      - 9708:9708
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+    volumes:
+      - node4-data:/var/lib/indy
+
+networks:
+  von:
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
+  node4-data:

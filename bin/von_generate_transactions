@@ -1,0 +1,116 @@
+#!/bin/bash
+
+rm -rf /var/lib/indy/*
+
+usage () {
+    echo "Used to generate genesis transaction file.";
+    echo "2 optional args: -i <ip address>, -n <node number>";
+    echo "Example: $0 -i x.x.x.x -n y";
+}
+
+options=':i:s:n:h'
+while getopts $options option
+do
+    case $option in
+        i  ) ipAddress=$OPTARG;;
+        s  ) ipAddresses=$OPTARG;;
+        n  ) nodeNum=$OPTARG;;
+        h  ) usage; exit;;
+        \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
+        :  ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
+        *  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+
+nodeArg=""
+if [ ! -z "$nodeNum" ]; then
+    nodeArg="--nodeNum $nodeNum"
+    # Only run this for nodes:
+    echo init_indy_node "Node$nodeNum" 9418 80
+    init_indy_node "Node$nodeNum" 9418 80
+fi
+
+if [ ! -z $ipAddresses ]; then
+    # Use supplied IP address
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$ipAddresses"
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$ipAddresses"
+    
+
+    echo "Generated genesis transaction file:"
+    echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+    echo "Changing client_port to port 80..."
+    echo mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
+    mv /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old
+    echo cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis.old | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+    echo "State of /var/lib/indy/sandbox/pool_transactions_genesis"
+    cat /var/lib/indy/sandbox/pool_transactions_genesis
+    echo "Overwriting..."
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis > /var/lib/indy/sandbox/pool_transactions_genesis
+
+    echo "New genesis transaction file:"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+elif [ ! -z $ipAddress ]; then
+    # Use supplied IP address
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$IP","$IP","$IP","$IP"
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$IP","$IP","$IP","$IP"
+
+    echo "Generated genesis transaction file:"
+    echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+else
+    # If we don't explicitely set IP, then discover nodes internally
+    IP1="$(getent hosts node1 | awk '{ print $1 }')"
+    IP2="$(getent hosts node2 | awk '{ print $1 }')"
+    IP3="$(getent hosts node3 | awk '{ print $1 }')"
+    IP4="$(getent hosts node4 | awk '{ print $1 }')"
+    if [ -z "$IP1" ] || [ -z "$IP2" ] || [ -z "$IP3" ] || [ -z "$IP4" ]; then
+        echo "Cannot discover node ips. Are the nodes running?"
+        exit 1
+    fi
+
+    echo "discovered nodes"
+    echo "node1=$IP1"
+    echo "node2=$IP2"
+    echo "node3=$IP4"
+    echo "node4=$IP4"
+
+    echo generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$IP1","$IP2","$IP3","$IP4"
+
+    generate_indy_pool_transactions \
+        --nodes 4 \
+        --clients 0 \
+        $nodeArg \
+        --ips "$IP1","$IP2","$IP3","$IP4"
+
+    echo "Generated genesis transaction file:"
+    echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+    cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+fi
