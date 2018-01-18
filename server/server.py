@@ -64,7 +64,7 @@ def validator_info(node_name, as_json=True):
   return proc
 
 
-def read_ledger(ledger, seq_no=0, seq_to=100, node_name='node1', format="data"):
+def read_ledger(ledger, seq_no=0, seq_to=1000, node_name='node1', format="data"):
   if ledger != "domain" and ledger != "pool" and ledger != "config":
     raise ValueError("Unsupported ledger type: {}".format(ledger))
   args = [python_path, "/usr/local/bin/read_ledger", "--type", ledger]
