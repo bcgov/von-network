@@ -62,6 +62,7 @@ RUN ./rustup -y
 # Build libindy
 RUN git clone https://github.com/hyperledger/indy-sdk.git
 WORKDIR /home/indy/indy-sdk/libindy
+RUN git checkout 50c58ee5df8d9ecb8f111be74fd1b49403f82378
 RUN /home/indy/.cargo/bin/cargo build
 
 # Move libindy to lib path
