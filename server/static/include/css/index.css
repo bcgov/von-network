@@ -1,10 +1,11 @@
-body {
+body, input, select {
 	color: #222;
 	font-family: 'Open Sans', sans-serif;
 	font-size: 16px;
 	line-height: 1.45;
 	margin: 0;
 }
+
 
 header {
 	background-color: #036;
@@ -44,18 +45,23 @@ main {
 	width: 25rem;
 }
 
-a {
+a, input[type=submit] {
 	color: #1a5a96;
 	text-decoration: none
 }
-a:hover, a:focus {
+
+a:hover,
+a:focus,
+input[type=submit]:hover,
+input[type=submit]: focus {
 	color: #0f3355;
 	text-decoration: underline;
 }
-a.tool {
+a.tool, input[type=submit].tool {
 	font-size: 110%;
 }
-a.tool-button {
+
+.tool-button, .tool-input {
 	background-color: #f0f3ff;
 	border: 1px solid #58a;
 	border-radius: 3px;
@@ -64,14 +70,21 @@ a.tool-button {
 	margin: 0.2rem 0;
 	padding: 0.3rem 0.6rem;
 }
-a.tool-button:hover, a.tool-button:focus {
+
+.tool-button:hover, .tool-button:focus {
 	background-color: #036;
 	color: #e9f5ff;
 	text-decoration: none;
 }
-a.tool .left, a.tool-button .left {
+
+a.tool .left, .tool-button .left {
 	font-size: 90%;
 	margin-right: 0.4rem;
+}
+
+form input[type=text] {
+	min-width: 250px;
+	background-color: white;
 }
 
 small, .small {
@@ -231,3 +244,8 @@ h2 .fa {
 	}
 }
 
+.register-result {
+	display: block;
+	padding-top: 25px;
+ 	display: none;
+}

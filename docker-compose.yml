@@ -30,6 +30,7 @@ services:
       - node3
       - node4
     volumes:
+      - ./server:/home/indy/server
       - node1-data:/home/indy/.mnt/node1
       - node2-data:/home/indy/.mnt/node2
       - node3-data:/home/indy/.mnt/node3
