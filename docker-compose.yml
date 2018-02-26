@@ -20,10 +20,11 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     networks:
       - von
     ports:
-      - 8000:8000
+      - 9000:8000
     depends_on:
       - node1
       - node2
@@ -51,6 +52,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node1-data:/var/lib/indy
     
@@ -66,6 +68,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node2-data:/var/lib/indy
 
@@ -81,6 +84,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node3-data:/var/lib/indy
     
@@ -96,6 +100,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node4-data:/var/lib/indy
 

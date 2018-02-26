@@ -8,7 +8,7 @@ verify_ssl = true
 [packages]
 
 sanic = "*"
-von-agent = "*"
+von-agent = {git = "https://github.com/nrempel/von_agent.git"}
 
 
 [dev-packages]

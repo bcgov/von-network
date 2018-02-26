@@ -68,49 +68,71 @@ elif [ ! -z $ipAddress ]; then
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips "$IP","$IP","$IP","$IP"
+        --ips "$ipAddress","$ipAddress","$ipAddress","$ipAddress"
 
     generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips "$IP","$IP","$IP","$IP"
+        --ips "$ipAddress","$ipAddress","$ipAddress","$ipAddress"
 
     echo "Generated genesis transaction file:"
     echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
     cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
 
+
 else
-    # If we don't explicitely set IP, then discover nodes internally
-    IP1="$(getent hosts node1 | awk '{ print $1 }')"
-    IP2="$(getent hosts node2 | awk '{ print $1 }')"
-    IP3="$(getent hosts node3 | awk '{ print $1 }')"
-    IP4="$(getent hosts node4 | awk '{ print $1 }')"
-    if [ -z "$IP1" ] || [ -z "$IP2" ] || [ -z "$IP3" ] || [ -z "$IP4" ]; then
-        echo "Cannot discover node ips. Are the nodes running?"
-        exit 1
-    fi
-
-    echo "discovered nodes"
-    echo "node1=$IP1"
-    echo "node2=$IP2"
-    echo "node3=$IP4"
-    echo "node4=$IP4"
-
+    # If we don't explicitely set IP, then use host machine's loopback interface
+    localhost=$(ip route show | awk '/default/ {print $3}')
+    
     echo generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips "$IP1","$IP2","$IP3","$IP4"
+        --ips "$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
 
     generate_indy_pool_transactions \
         --nodes 4 \
         --clients 0 \
         $nodeArg \
-        --ips "$IP1","$IP2","$IP3","$IP4"
+        --ips "$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
 
     echo "Generated genesis transaction file:"
     echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
     cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
-
 fi
+
+# else
+#     # If we don't explicitely set IP, then discover nodes internally
+#     IP1="$(getent hosts node1 | awk '{ print $1 }')"
+#     IP2="$(getent hosts node2 | awk '{ print $1 }')"
+#     IP3="$(getent hosts node3 | awk '{ print $1 }')"
+#     IP4="$(getent hosts node4 | awk '{ print $1 }')"
+#     if [ -z "$IP1" ] || [ -z "$IP2" ] || [ -z "$IP3" ] || [ -z "$IP4" ]; then
+#         echo "Cannot discover node ips. Are the nodes running?"
+#         exit 1
+#     fi
+
+#     echo "discovered nodes"
+#     echo "node1=$IP1"
+#     echo "node2=$IP2"
+#     echo "node3=$IP4"
+#     echo "node4=$IP4"
+
+#     echo generate_indy_pool_transactions \
+#         --nodes 4 \
+#         --clients 0 \
+#         $nodeArg \
+#         --ips "$IP1","$IP2","$IP3","$IP4"
+
+#     generate_indy_pool_transactions \
+#         --nodes 4 \
+#         --clients 0 \
+#         $nodeArg \
+#         --ips "$IP1","$IP2","$IP3","$IP4"
+
+#     echo "Generated genesis transaction file:"
+#     echo "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+#     cat /home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis
+
+# fi
