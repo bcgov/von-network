@@ -144,17 +144,6 @@ async def ledger(request, ledger_name):
     return sanic_text(response)
 
 
-@app.route("/ledger/<ledger_name>/<sequence_number>")
-async def ledger_seq(request, ledger_name, sequence_number):
-    response = read_ledger(
-        ledger_name,
-        format="json",
-        seq_no=int(sequence_number),
-        seq_to=int(sequence_number)
-    )
-    return sanic_text(response)
-
-
 @app.route("/ledger/<ledger_name>/pretty")
 async def ledger_pretty(request, ledger_name):
     response = read_ledger(ledger_name, format="pretty")
@@ -219,6 +208,18 @@ async def ledger_text(request, ledger_name):
         text.append("SIGNATURE TYPE: " + sig_type)
 
     return sanic_text("\n".join(text))
+
+
+@app.route("/ledger/<ledger_name>/<sequence_number>")
+async def ledger_seq(request, ledger_name, sequence_number):
+    response = read_ledger(
+        ledger_name,
+        format="json",
+        seq_no=int(sequence_number),
+        seq_to=int(sequence_number)
+    )
+    return sanic_text(response)
+
 
 
 # Expose genesis transaction for easy connection.
