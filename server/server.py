@@ -64,7 +64,7 @@ def validator_info(node_name, as_json=True):
   return proc
 
 
-def read_ledger(ledger, seq_no=0, seq_to=100, node_name='node1', format="data"):
+def read_ledger(ledger, seq_no=0, seq_to=1000, node_name='node1', format="data"):
   if ledger != "domain" and ledger != "pool" and ledger != "config":
     raise ValueError("Unsupported ledger type: {}".format(ledger))
   args = [python_path, "/usr/local/bin/read_ledger", "--type", ledger]
@@ -210,6 +210,18 @@ async def ledger_text(request, ledger_name):
     return sanic_text("\n".join(text))
 
 
+@app.route("/ledger/<ledger_name>/<sequence_number>")
+async def ledger_seq(request, ledger_name, sequence_number):
+    response = read_ledger(
+        ledger_name,
+        format="json",
+        seq_no=int(sequence_number),
+        seq_to=int(sequence_number)
+    )
+    return sanic_text(response)
+
+
+
 # Expose genesis transaction for easy connection.
 @app.route("/genesis")
 async def genesis(request):
@@ -221,32 +233,46 @@ async def genesis(request):
 
 
 # Easily write dids for new identity owners
-@app.route("/register")
+@app.route('/register', methods=['POST'])
 async def register(request):
-
     try:
-        seed = request.args['seed'][0]
+        seed = request.json['seed']
     except KeyError as e:
-        return text('Missing query parameter: seed')
+        return sanic_text(
+            'Missing query parameter: seed',
+            status=400
+          )
 
-    new_did = BaseAgent(
+    if not 0 <= len(seed) <= 32:
+        return sanic_text(
+            'Seed must be between 0 and 32 characters long.',
+            status=400
+          )
+
+    # Pad with zeroes
+    seed += '0' * (32 - len(seed))
+
+    new_agent = BaseAgent(
         pool,
         seed,
         seed + '-wallet',
         None)
 
-    await new_did.open()
+    await new_agent.open()
 
     # Register agent on the network
     print('\n\nRegister agents\n\n')
-    for ag in (trust_anchor, new_did):
+    for ag in (trust_anchor, new_agent):
         print('\n\nGet Nym: ' + str(ag) + '\n\n')
         if not json.loads(await trust_anchor.get_nym(ag.did)):
-            # pass
             print('\n\nSend Nym: ' + str(ag) + '\n\n')
             await trust_anchor.send_nym(ag.did, ag.verkey)
 
-    return sanic_text(new_did.did + ' successfully written to ledger')
+    return sanic_json({
+      'seed': seed,
+      'did': new_agent.did,
+      'verkey': new_agent.verkey
+    })
 
 
 if __name__ == '__main__':
@@ -254,6 +280,3 @@ if __name__ == '__main__':
     loop.run_until_complete(boot())
     loop.close()
     app.run(host="0.0.0.0", port=8000, debug=True)
-
-
-# BC-Registrar-Agent-0000000000000

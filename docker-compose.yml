@@ -7,6 +7,8 @@ services:
     build: .
     image: von-base
     command: 'bash -c ''./scripts/start_client.sh'''
+    environment:
+      - DOCKERHOST=${DOCKERHOST}
     networks:
       - von
 
@@ -20,16 +22,18 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     networks:
       - von
     ports:
-      - 8000:8000
+      - 9000:8000
     depends_on:
       - node1
       - node2
       - node3
       - node4
     volumes:
+      - ./server:/home/indy/server
       - node1-data:/home/indy/.mnt/node1
       - node2-data:/home/indy/.mnt/node2
       - node3-data:/home/indy/.mnt/node3
@@ -50,6 +54,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node1-data:/var/lib/indy
     
@@ -65,6 +70,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node2-data:/var/lib/indy
 
@@ -80,6 +86,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node3-data:/var/lib/indy
     
@@ -95,6 +102,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node4-data:/var/lib/indy
 
