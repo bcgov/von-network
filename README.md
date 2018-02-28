@@ -158,7 +158,7 @@ Connected to test.
 
 If you see this, congratulations! Your nodes are running correctly and you have a connection to the network.
 
-### With the Indy SDK
+<!-- ### With the Indy SDK
 
 The Docker container that is built by this environment provides a `von_generate_transactions` command that to automatically discover node ip addresses and generate an accurate genesis transaction file.
 
@@ -167,7 +167,7 @@ To use this tool, you must ensure that you a running a Docker container that inh
 Once you have done this, your environment should be able to automatically connect to the node pool by running `von_generate_transactions` before running any software that uses the Indy SDK.
 
 See [von-connector](https://github.com/nrempel/von-connector) for an example.
-
+ -->
 
 ### Extra Features for Development
 
@@ -182,7 +182,4 @@ The genesis transaction record required to connect to the node pool is made avai
 
 #### Write new did for seed
 
-The node pool can have a trust anchor write a did for you.
-
-`<ip_address>/register?seed=<indy_wallet_seed>`
-
+The node pool can have a trust anchor write a did for you — available in the UI.

@@ -7,6 +7,8 @@ services:
     build: .
     image: von-base
     command: 'bash -c ''./scripts/start_client.sh'''
+    environment:
+      - DOCKERHOST=${DOCKERHOST}
     networks:
       - von
 
