@@ -72,7 +72,7 @@ def get_ledger_dir(node_name, client_name, network, base_dir):
 
         if not base_dir:
             base_dir = config.CLI_BASE_DIR if client_name else config.baseDir
-        data_dir = config.clientDataDir if client_name else 'data'
+        data_dir = config.clientDataDir if client_name else config.nodeDataDir
         ledger_data_dir = os.path.join(base_dir, _network, data_dir)
 
         if not os.path.exists(ledger_data_dir):

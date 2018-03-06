@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import subprocess
 
+from von_agent.wallet import Wallet
 from von_agent.nodepool import NodePool
 from von_agent.demo_agents import TrustAnchorAgent
 from von_agent.agents import BaseAgent
@@ -102,9 +103,11 @@ async def boot():
 
     trust_anchor = TrustAnchorAgent(
         pool,
-        '000000000000000000000000Trustee1',
-        'trustee_wallet',
-        None,
+        Wallet(
+            pool.name,
+            '000000000000000000000000Trustee1',
+            'trustee_wallet'
+        ),
         '127.0.0.1',
         9700,
         'api/v0')
@@ -242,9 +245,12 @@ async def register(request):
 
     new_agent = BaseAgent(
         pool,
-        seed,
-        seed + '-wallet',
-        None)
+        Wallet(
+            pool.name,
+            seed,
+            seed + '-wallet'
+        ),
+    )
 
     await new_agent.open()
 
