@@ -74,7 +74,6 @@ fetch_validator_status(function (status) {
 })
 
 $(function () {
-  console.log('here')
   // override forms to submit json
   $('form').submit(function (event) {
     const form = this

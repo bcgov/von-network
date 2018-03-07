@@ -4,10 +4,12 @@ import asyncio
 from datetime import datetime
 import json
 import subprocess
+import re
 
+from von_agent.wallet import Wallet
 from von_agent.nodepool import NodePool
-from von_agent.demo_agents import TrustAnchorAgent
-from von_agent.agents import BaseAgent
+from von_agent.demo_agents import AgentRegistrar
+from von_agent.agents import _BaseAgent
 
 
 from sanic import Sanic
@@ -60,7 +62,10 @@ def validator_info(node_name, as_json=True):
   args.extend(["--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"])
   proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
   if as_json:
-    return json.loads(proc.stdout)
+    # The result is polluted with logs in the latest version.
+    # We pull out json
+    corrected_stdout = re.search(r'(?s)\n({.*})', proc.stdout).group(1)
+    return json.loads(corrected_stdout)
   return proc
 
 
@@ -100,14 +105,13 @@ async def boot():
         '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
     await pool.open()
 
-    trust_anchor = TrustAnchorAgent(
+    trust_anchor = AgentRegistrar(
         pool,
-        '000000000000000000000000Trustee1',
-        'trustee_wallet',
-        None,
-        '127.0.0.1',
-        9700,
-        'api/v0')
+        Wallet(
+            pool.name,
+            '000000000000000000000000Trustee1',
+            'trustee_wallet'
+        ))
     await trust_anchor.open()
 
 
@@ -252,11 +256,14 @@ async def register(request):
     # Pad with zeroes
     seed += '0' * (32 - len(seed))
 
-    new_agent = BaseAgent(
+    new_agent = _BaseAgent(
         pool,
-        seed,
-        seed + '-wallet',
-        None)
+        Wallet(
+            pool.name,
+            seed,
+            seed + '-wallet'
+        ),
+    )
 
     await new_agent.open()
 

@@ -3,15 +3,17 @@ FROM ubuntu:16.04
 ARG uid=1000
 ARG indy_stream=master
 
-ARG indy_plenum_ver=1.2.171
+ARG indy_plenum_ver=1.2.237
 ARG indy_anoncreds_ver=1.0.32
-ARG indy_node_ver=1.2.210
-ARG python3_indy_crypto_ver=0.1.6
-ARG indy_crypto_ver=0.1.6
+ARG indy_node_ver=1.2.297
+ARG python3_indy_crypto_ver=0.2.0
+ARG indy_crypto_ver=0.2.0
 
 ENV LC_ALL="C.UTF-8"
 ENV LANG="C.UTF-8"
 ENV SHELL="/bin/bash"
+
+ENV RUST_LOG=error
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
@@ -62,7 +64,8 @@ RUN ./rustup -y
 # Build libindy
 RUN git clone https://github.com/hyperledger/indy-sdk.git
 WORKDIR /home/indy/indy-sdk/libindy
-RUN git checkout 50c58ee5df8d9ecb8f111be74fd1b49403f82378
+RUN git fetch
+RUN git checkout 778a38d92234080bb77c6dd469a8ff298d9b7154
 RUN /home/indy/.cargo/bin/cargo build
 
 # Move libindy to lib path
@@ -74,6 +77,9 @@ WORKDIR /home/indy
 
 ADD bin/* /usr/local/bin/
 
+RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"")} else print($0)}' /etc/indy/indy_config.py> /tmp/indy_config.py
+RUN mv /tmp/indy_config.py /etc/indy/indy_config.py
+
 ADD --chown=indy:indy . /home/indy
 
-RUN cd server && pipenv install
+RUN cd server && pipenv install -r requirements.txt
