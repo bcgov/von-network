@@ -214,6 +214,18 @@ async def ledger_text(request, ledger_name):
     return sanic_text("\n".join(text))
 
 
+@app.route("/ledger/<ledger_name>/<sequence_number>")
+async def ledger_seq(request, ledger_name, sequence_number):
+    response = read_ledger(
+        ledger_name,
+        format="json",
+        seq_no=int(sequence_number),
+        seq_to=int(sequence_number)
+    )
+    return sanic_text(response)
+
+
+
 # Expose genesis transaction for easy connection.
 @app.route("/genesis")
 async def genesis(request):
