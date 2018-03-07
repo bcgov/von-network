@@ -86,62 +86,6 @@ def get_ledger_dir(node_name, client_name, network, base_dir):
     return ledger_data_dir
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # if node_name and client_name:
-    #     print("Either 'node_name' or 'client_name' can be specified")
-    #     exit()
-
-    # config = getConfig()
-    # _network = network if network else config.NETWORK_NAME
-    # if not base_dir:
-    #     base_dir = config.CLI_BASE_DIR if client_name else config.baseDir
-    # data_dir = config.clientDataDir if client_name else config.nodeDataDir
-    # ledger_data_dir = os.path.join(base_dir, _network, data_dir)
-    # if not os.path.exists(ledger_data_dir):
-    #     logger.error("Can not find the directory with the ledger: {}".format(
-    #         ledger_data_dir))
-    #     exit()
-
-    # target_dir = node_name
-    # if client_name:
-    #     target_dir = client_name
-
-    # if target_dir:
-    #     ledger_data_dir = os.path.join(ledger_data_dir, target_dir)
-    #     if not os.path.isdir(ledger_data_dir):
-    #         print("Specified Node or Client folder not found: {}".format(
-    #             ledger_data_dir))
-    #         exit()
-    #     return ledger_data_dir
-
-    # dirs = os.listdir(ledger_data_dir)
-    # if len(dirs) == 0:
-    #     print("Node's 'data' folder not found: {}".format(ledger_data_dir))
-    #     exit()
-    # return os.path.join(ledger_data_dir, dirs[0])
-
-
-
-
-
-
-
-
-
 def get_ledger(type_, ledger_data_dir):
     config = getConfig()
 
