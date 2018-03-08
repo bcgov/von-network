@@ -50,9 +50,6 @@ RUN apt-get update -y && apt-get install -y \
     libindy-crypto=${indy_crypto_ver} \
     vim
 
-
-RUN pip3 install pipenv
-
 USER indy
 WORKDIR /home/indy
 
@@ -72,14 +69,13 @@ RUN /home/indy/.cargo/bin/cargo build
 USER root
 RUN mv target/debug/libindy.so /usr/lib
 
-USER indy
+# Add src and install python deps
 WORKDIR /home/indy
-
+ADD --chown=indy:indy . /home/indy
 ADD bin/* /usr/local/bin/
+RUN cd server && pip install -r requirements.txt
 
 RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"")} else print($0)}' /etc/indy/indy_config.py> /tmp/indy_config.py
 RUN mv /tmp/indy_config.py /etc/indy/indy_config.py
 
-ADD --chown=indy:indy . /home/indy
-
-RUN cd server && pipenv install -r requirements.txt
+USER indy
