@@ -275,6 +275,8 @@ async def register(request):
             print('\n\nSend Nym: ' + str(ag) + '\n\n')
             await trust_anchor.send_nym(ag.did, ag.verkey)
 
+    await new_agent.close()
+
     return sanic_json({
       'seed': seed,
       'did': new_agent.did,
