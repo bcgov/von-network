@@ -69,13 +69,17 @@ RUN /home/indy/.cargo/bin/cargo build
 USER root
 RUN mv target/debug/libindy.so /usr/lib
 
-# Add src and install python deps
+RUN pip3 install --upgrade setuptools
+RUN pip3 install pipenv
+
+USER indy
 WORKDIR /home/indy
-ADD --chown=indy:indy . /home/indy
+
 ADD bin/* /usr/local/bin/
-RUN cd server && pip install -r requirements.txt
 
 RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"")} else print($0)}' /etc/indy/indy_config.py> /tmp/indy_config.py
 RUN mv /tmp/indy_config.py /etc/indy/indy_config.py
 
-USER indy
+ADD --chown=indy:indy . /home/indy
+
+RUN cd server && pipenv install python3-indy==1.3.1-dev-408 von-agent==0.5.2 sanic==0.7.0
