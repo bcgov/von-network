@@ -48,6 +48,7 @@ RUN apt-get update -y && apt-get install -y \
     indy-node=${indy_node_ver} \
     python3-indy-crypto=${python3_indy_crypto_ver} \
     libindy-crypto=${indy_crypto_ver} \
+    libzmq3-dev \
     vim
 
 USER indy
@@ -59,10 +60,11 @@ RUN chmod +x rustup
 RUN ./rustup -y
 
 # Build libindy
-RUN git clone https://github.com/hyperledger/indy-sdk.git
+# RUN git clone https://github.com/hyperledger/indy-sdk.git
+RUN git clone https://github.com/ianco/indy-sdk.git
 WORKDIR /home/indy/indy-sdk/libindy
 RUN git fetch
-RUN git checkout 778a38d92234080bb77c6dd469a8ff298d9b7154
+# RUN git checkout 778a38d92234080bb77c6dd469a8ff298d9b7154
 RUN /home/indy/.cargo/bin/cargo build
 
 # Move libindy to lib path
