@@ -13,5 +13,4 @@ else
     von_generate_transactions
 fi
 
-
 cd server && pipenv run python server.py

@@ -34,6 +34,7 @@ services:
       - node4
     volumes:
       - ./server:/home/indy/server
+      - web-wallet-data:/home/indy/.indy_client/wallet
       - node1-data:/home/indy/.mnt/node1
       - node2-data:/home/indy/.mnt/node2
       - node3-data:/home/indy/.mnt/node3
@@ -110,6 +111,7 @@ networks:
   von:
 
 volumes:
+  web-wallet-data:
   node1-data:
   node2-data:
   node3-data:

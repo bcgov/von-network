@@ -84,4 +84,8 @@ RUN mv /tmp/indy_config.py /etc/indy/indy_config.py
 
 ADD --chown=indy:indy . /home/indy
 
+RUN mkdir -p /home/indy/.indy_client/wallet
+
+ADD --chown=indy:indy . /home/indy/.indy_client/wallet
+
 RUN cd server && pipenv install python3-indy==1.3.1-dev-408 von-agent==0.5.2 sanic==0.7.0
