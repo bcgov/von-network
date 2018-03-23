@@ -58,7 +58,7 @@ services:
       - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node1-data:/var/lib/indy
-    
+
   node2:
     build: .
     image: von-base
@@ -90,7 +90,7 @@ services:
       - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node3-data:/var/lib/indy
-    
+
   node4:
     build: .
     image: von-base
