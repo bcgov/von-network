@@ -5,6 +5,8 @@ set -e
 NODE_NUM="${1}"
 START_PORT="9700"
 
+if [ ! -d "/var/lib/indy/sandbox/keys" ]; then
+    echo "Ledger does not exist - Creating..."
 if [ ! -z "$IPS" ]; then
     echo von_generate_transactions -s "$IPS" -n "$NODE_NUM"
     von_generate_transactions -s "$IPS" -n "$NODE_NUM"
@@ -28,6 +30,7 @@ fi
 #   start_indy_node "Node""$NODE_NUM" $((START_PORT + ( NODE_NUM * 2 ) - 1 )) $(( START_PORT + ( NODE_NUM * 2 ) ))
 # fi
 
+fi
 
 echo start_indy_node "Node""$NODE_NUM" $((START_PORT + ( NODE_NUM * 2 ) - 1 )) $(( START_PORT + ( NODE_NUM * 2 ) ))
 start_indy_node "Node""$NODE_NUM" $((START_PORT + ( NODE_NUM * 2 ) - 1 )) $(( START_PORT + ( NODE_NUM * 2 ) ))

@@ -2,6 +2,8 @@
 
 set -e
 
+  if [ ! -d "/home/indy/.indy-cli/networks/sandbox" ]; then
+    echo "Ledger does not exist - Creating..."
 if [ ! -z "$IPS" ]; then
     echo von_generate_transactions -s "$IPS"
     von_generate_transactions -s "$IPS"
@@ -13,4 +15,9 @@ else
     von_generate_transactions
 fi
 
+<<<<<<< HEAD
+=======
+  fi
+
+>>>>>>> bcurtis/master
 cd server && pipenv run python server.py
