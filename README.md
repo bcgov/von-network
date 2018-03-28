@@ -90,7 +90,7 @@ curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip &&
     cd von-network-master
 ```
 
-3. Map service port to 80
+3. Map service port to 80 in docker-compose.yml
 
 Change
 
