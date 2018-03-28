@@ -37,7 +37,7 @@ cd von-network
 
 Because outbound traffic from openshift is limited, we use proxies to redirect traffic from open ports by overloading ports 80 and 9418 (git).
 
-Run 4 extra VMs as proxies (proxy_1, proxy_2, proxy_3, proxy). Traffic should be forwarded in the following formation:
+Run 4 extra VMs as proxies (proxy_1, proxy_2, proxy_3, proxy4). Traffic should be forwarded in the following formation:
 
 - proxy_1:9418 -> von-network:9701
 - proxy_1:80 -> von-network:9702
