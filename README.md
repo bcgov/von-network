@@ -90,6 +90,22 @@ curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip &&
     cd von-network-master
 ```
 
+3. Map service port to 80
+
+Change
+
+```yaml
+    ports:
+      - 9000:8000
+```
+
+to
+
+```yaml
+    ports:
+      - 80:8000
+```
+
 4. Build the Docker container:
 
 ```bash
