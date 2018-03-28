@@ -116,7 +116,7 @@ to
 
 ```bash
 # This command requires the publicly accesible ip address of the machine
-./manage start <ip address>
+./manage start proxy_1,proxy_2,proxy_3,proxy_4 &
 ```
 
 ## Connecting to the Network 
