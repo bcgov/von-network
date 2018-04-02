@@ -33,6 +33,22 @@ cd von-network
 
 ## Running the Network on a VPS
 
+### Special requirements for BC
+
+Because outbound traffic from openshift is limited, we use proxies to redirect traffic from open ports by overloading ports 80 and 9418 (git).
+
+Run 4 extra VMs as proxies (proxy_1, proxy_2, proxy_3, proxy4). Traffic should be forwarded in the following formation:
+
+- proxy_1:9418 -> von-network:9701
+- proxy_1:80 -> von-network:9702
+- proxy_2:9418 -> von-network:9703
+- proxy_2:80 -> von-network:9704
+- proxy_3:9418 -> von-network:9705
+- proxy_3:80 -> von-network:9706
+- proxy_4:9418 -> von-network:9707
+- proxy_1:80 -> von-network:9708
+
+
 ### Requirements
 
 - ubuntu 16.04
@@ -74,6 +90,22 @@ curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip &&
     cd von-network-master
 ```
 
+3. Map service port to 80 in docker-compose.yml
+
+Change
+
+```yaml
+    ports:
+      - 9000:8000
+```
+
+to
+
+```yaml
+    ports:
+      - 80:8000
+```
+
 4. Build the Docker container:
 
 ```bash
@@ -84,7 +116,7 @@ curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip &&
 
 ```bash
 # This command requires the publicly accesible ip address of the machine
-./manage start <ip address>
+./manage start proxy_1,proxy_2,proxy_3,proxy_4 &
 ```
 
 ## Connecting to the Network 
