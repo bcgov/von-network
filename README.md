@@ -87,7 +87,8 @@ chmod +x /usr/local/bin/docker-compose
 ```bash
 curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip && \
     unzip bcovrin.zip && \
-    cd von-network-master
+    cd von-network-master && \
+    chmod a+w ./server/
 ```
 
 3. Map service port to 80 in docker-compose.yml
