@@ -13,13 +13,13 @@ cd "$SCRIPT_HOME"
 case "$1" in
   start)
       if [ -z "$2" ]; then
-        docker-compose up --force-recreate webserver node1 node2 node3 node4
+        docker-compose up webserver node1 node2 node3 node4
       else
         if [[ $2 == *","* ]]; then
           # If arg contains comma, then it should be multiple IPS
-          IPS=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
+          IPS=$2 docker-compose up webserver node1 node2 node3 node4
         else
-          IP=$2 docker-compose up --force-recreate webserver node1 node2 node3 node4
+          IP=$2 docker-compose up webserver node1 node2 node3 node4
         fi
       fi
     ;;
@@ -38,6 +38,12 @@ case "$1" in
     ;;
   rebuild)
       docker-compose build --no-cache
+    ;;
+  rm)
+      docker-compose stop
+      docker rm -f von_node1_1 von_node2_1 von_node3_1 von_node4_1 von_webserver_1 || true
+      # keep the volumes around for now ...
+      # docker volume rm -f von_node1-data von_node2-data von_node3-data von_node4-data von_von-client-cli von_von-client-libindy von_von-webserver
     ;;
   *)
     echo $"Usage: $0 {start|cli|stop|build|rebuild}"

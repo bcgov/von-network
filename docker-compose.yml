@@ -11,6 +11,9 @@ services:
       - DOCKERHOST=${DOCKERHOST}
     networks:
       - von
+    volumes:
+      - von-client-cli:/home/indy/.indy-cli
+      - von-client-libindy:/var/lib/indy
 
   # 
   # Webserver
@@ -34,6 +37,7 @@ services:
       - node4
     volumes:
       - ./server:/home/indy/server
+      - von-webserver:/home/indy/.indy-cli
       - node1-data:/home/indy/.mnt/node1
       - node2-data:/home/indy/.mnt/node2
       - node3-data:/home/indy/.mnt/node3
@@ -57,7 +61,7 @@ services:
       - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node1-data:/var/lib/indy
-    
+
   node2:
     build: .
     image: von-base
@@ -89,7 +93,7 @@ services:
       - DOCKERHOST=${DOCKERHOST}
     volumes:
       - node3-data:/var/lib/indy
-    
+
   node4:
     build: .
     image: von-base
@@ -114,3 +118,6 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
+  von-client-cli:
+  von-client-libindy:
+  von-webserver:
