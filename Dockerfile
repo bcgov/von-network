@@ -87,4 +87,5 @@ RUN mkdir -p /home/indy/.indy_client/wallet
 RUN chgrp -R indy /home/indy/.indy_client/wallet \
   && chmod -R g+rwx /home/indy/.indy_client/wallet
 
-RUN cd server && pipenv install python3-indy==1.3.1-dev-408 von-agent==0.5.2 sanic==0.7.0
+RUN cd server && \
+    pipenv install -r requirements.txt
