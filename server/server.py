@@ -103,15 +103,15 @@ async def boot():
     pool = NodePool(
         'nodepool',
         '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
-    await pool.open()
-
-    trust_anchor = AgentRegistrar(
-        pool,
-        Wallet(
-            pool.name,
+    wallet = Wallet(
+            pool,
             '000000000000000000000000Trustee1',
             'trustee_wallet'
-        ))
+        )
+    await pool.open()
+    await wallet.create()
+
+    trust_anchor = AgentRegistrar(wallet)
     await trust_anchor.open()
 
 
@@ -256,14 +256,14 @@ async def register(request):
     # Pad with zeroes
     seed += '0' * (32 - len(seed))
 
-    new_agent = _BaseAgent(
-        pool,
-        Wallet(
-            pool.name,
+    wallet = Wallet(
+            pool,
             seed,
             seed + '-wallet'
-        ),
-    )
+        )
+    await wallet.create()
+
+    new_agent = _BaseAgent(wallet)
 
     await new_agent.open()
 
