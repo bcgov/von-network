@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
 
 import asyncio
 from datetime import datetime
@@ -20,7 +20,8 @@ app.static('/', './static/index.html')
 app.static('/include', './static/include')
 app.static('/favicon.ico', './static/favicon.ico')
 
-python_path = "/usr/bin/python3"
+python_path = "/home/indy/bin/python3"
+indy_exec_path = "/usr/local/bin/"
 
 indy_txn_types = {
     "0": "NODE",
@@ -54,7 +55,7 @@ def json_reponse(data):
 
 
 def validator_info(node_name, as_json=True):
-  args = [python_path, "/usr/local/bin/validator-info"]
+  args = [python_path, indy_exec_path + "validator-info"]
   if as_json:
     args.append("--json")
   else:
@@ -64,7 +65,8 @@ def validator_info(node_name, as_json=True):
   if as_json:
     # The result is polluted with logs in the latest version.
     # We pull out json
-    corrected_stdout = re.search(r'(?s)\n({.*})', proc.stdout).group(1)
+    m = re.search(r'(?s)\n({.*})', proc.stdout)
+    corrected_stdout = m.group(1) if m else proc.stdout
     return json.loads(corrected_stdout)
   return proc
 
@@ -72,11 +74,12 @@ def validator_info(node_name, as_json=True):
 def read_ledger(ledger, seq_no=0, seq_to=1000, node_name='node1', format="data"):
   if ledger != "domain" and ledger != "pool" and ledger != "config":
     raise ValueError("Unsupported ledger type: {}".format(ledger))
-  args = [python_path, "/usr/local/bin/read_ledger", "--type", ledger]
+  args = [python_path, indy_exec_path + "read_ledger", "--type", ledger]
   if seq_no > 0:
     args.extend(["--seq_no", str(seq_no)])
   args.extend(["--to", str(seq_to)])
-  args.extend(["--base_dir", "/home/indy/.mnt/" + node_name])
+  #args.extend(["--base_dir", "/home/indy/.mnt/" + node_name])
+  args.extend(["--node_name", node_name])
   proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
 
   if format == "pretty" or format == "data":
@@ -239,49 +242,61 @@ async def genesis(request):
 # Easily write dids for new identity owners
 @app.route('/register', methods=['POST'])
 async def register(request):
-    try:
-        seed = request.json['seed']
-    except KeyError as e:
+    global pool
+    
+    if not request.json:
         return sanic_text(
-            'Missing query parameter: seed',
+            'Expected json request body',
             status=400
-          )
+        )
 
-    if not 0 <= len(seed) <= 32:
-        return sanic_text(
-            'Seed must be between 0 and 32 characters long.',
-            status=400
-          )
+    seed = request.json.get('seed')
+    did = request.json.get('did')
+    verkey = request.json.get('verkey')
+    alias = request.json.get('alias')
 
-    # Pad with zeroes
-    seed += '0' * (32 - len(seed))
+    if seed:
+        if not 0 <= len(seed) <= 32:
+            return sanic_text(
+                'Seed must be between 0 and 32 characters long.',
+                status=400
+            )
+        # Pad with zeroes
+        seed += '0' * (32 - len(seed))
+    else:
+        if not did or not verkey:
+            return sanic_text(
+                'Either seed the seed parameter or the did and verkey parameters must be provided.',
+                status=400
+            )
 
-    wallet = Wallet(
+    if seed:
+        wallet = Wallet(
             pool,
             seed,
             seed + '-wallet'
         )
-    await wallet.create()
+        async with _BaseAgent(await wallet.create()) as new_agent:
+            did = new_agent.did
+            verkey = new_agent.verkey
 
-    new_agent = _BaseAgent(wallet)
-
-    await new_agent.open()
-
-    # Register agent on the network
-    print('\n\nRegister agents\n\n')
-    for ag in (trust_anchor, new_agent):
-        print('\n\nGet Nym: ' + str(ag) + '\n\n')
-        if not json.loads(await trust_anchor.get_nym(ag.did)):
-            print('\n\nSend Nym: ' + str(ag) + '\n\n')
-            await trust_anchor.send_nym(ag.did, ag.verkey)
-
-    await new_agent.close()
+    print('\n\nRegister agent\n\n')
+    await register_did(did, verkey, alias)
 
     return sanic_json({
-      'seed': seed,
-      'did': new_agent.did,
-      'verkey': new_agent.verkey
+        'seed': seed,
+        'did': did,
+        'verkey': verkey
     })
+
+
+# Helper to register a DID and verkey on the ledger
+async def register_did(did, verkey, alias=None):
+    global trust_anchor
+    print('\n\nGet Nym: ' + str(did) + '\n\n')
+    if not json.loads(await trust_anchor.get_nym(did)):
+        print('\n\nSend Nym: ' + str(did) + '/' + str(verkey) + '\n\n')
+        await trust_anchor.send_nym(did, verkey, alias)
 
 
 if __name__ == '__main__':

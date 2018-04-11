@@ -4,23 +4,21 @@ services:
   # Client
   # 
   client:
-    build: .
-    image: von-base
+    image: von-network-base
     command: 'bash -c ''./scripts/start_client.sh'''
     environment:
       - DOCKERHOST=${DOCKERHOST}
     networks:
       - von
     volumes:
-      - von-client-cli:/home/indy/.indy-cli
-      - von-client-libindy:/var/lib/indy
+      - client-cli:/home/indy/.indy-cli
+      - client-data:/var/lib/indy
 
   # 
   # Webserver
   # 
   webserver:
-    build: .
-    image: von-base
+    image: von-network-base
     command: 'bash -c ''./scripts/start_webserver.sh'''
     environment:
       - IP=${IP}
@@ -37,7 +35,7 @@ services:
       - node4
     volumes:
       - ./server:/home/indy/server
-      - von-webserver:/home/indy/.indy-cli
+      - webserver-cli:/home/indy/.indy-cli
       - node1-data:/home/indy/.mnt/node1
       - node2-data:/home/indy/.mnt/node2
       - node3-data:/home/indy/.mnt/node3
@@ -47,8 +45,7 @@ services:
   # Nodes
   # 
   node1:
-    build: .
-    image: von-base
+    image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 1'''
     networks:
       - von
@@ -60,11 +57,10 @@ services:
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
     volumes:
-      - node1-data:/var/lib/indy
-
+      - node1-data:/home/indy/ledger
+    
   node2:
-    build: .
-    image: von-base
+    image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 2'''
     networks:
       - von
@@ -76,11 +72,10 @@ services:
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
     volumes:
-      - node2-data:/var/lib/indy
+      - node2-data:/home/indy/ledger
 
   node3:
-    build: .
-    image: von-base
+    image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 3'''
     networks:
       - von
@@ -92,11 +87,10 @@ services:
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
     volumes:
-      - node3-data:/var/lib/indy
-
+      - node3-data:/home/indy/ledger
+    
   node4:
-    build: .
-    image: von-base
+    image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 4'''
     networks:
       - von
@@ -108,16 +102,16 @@ services:
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
     volumes:
-      - node4-data:/var/lib/indy
+      - node4-data:/home/indy/ledger
 
 networks:
   von:
 
 volumes:
+  client-cli:
+  client-data:
+  webserver-cli:
   node1-data:
   node2-data:
   node3-data:
   node4-data:
-  von-client-cli:
-  von-client-libindy:
-  von-webserver:
