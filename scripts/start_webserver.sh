@@ -18,8 +18,8 @@ fi
 
 # link node ledgers where webserver can find them
 for node in 1 2 3 4; do
-    ln -s /home/indy/.mnt/node${node}/sandbox/data/Node${node} \
-          /home/indy/ledger/sandbox/data/node${node}
+    ln -sfn /home/indy/.mnt/node${node}/sandbox/data/Node${node} \
+            /home/indy/ledger/sandbox/data/node${node}
 done
 
 cd server && python server.py
