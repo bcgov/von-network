@@ -88,8 +88,8 @@ case "$1" in
         INDY_BUILD_FLAGS="--build-arg indy_build_flags=--release"
       fi
       echo -e "\nBuilding von-indy image ..."
-      docker build -t 'von-indy' $INDY_BUILD_FLAGS \
-        'https://github.com/cywolf/von-indy.git'
+      docker build -t 'von-indy:latest' $INDY_BUILD_FLAGS \
+        'https://github.com/cywolf/von-indy.git#master:stable'
 
       docker build -t von-network-base .
     ;;
