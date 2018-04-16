@@ -34,7 +34,7 @@ RUN apt-get update -y && apt-get install -y \
     curl
 
 RUN pip3 install -U \
-    pip \
+    pip==9.0.1 \
     setuptools
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
