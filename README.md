@@ -216,3 +216,16 @@ The genesis transaction record required to connect to the node pool is made avai
 #### Write new did for seed
 
 The node pool can have a trust anchor write a did for you — available in the UI.
+
+## Running a Complete Provisional VON Network
+
+A "complete" provisional VON Network consists of the following components;
+- A Provisional Ledger Node Pool; [von-network](https://github.com/bcgov/von-network)
+- An instance of TheOrgBook; [TheOrgBook](https://github.com/bcgov/TheOrgBook)
+- And a set of Issuer Services; [Permitify](https://github.com/bcgov/permitify)
+
+Refer to the docker compose documentation in each of the projects for specific details.
+
+### Quick Start Guide
+
+A [Quick Start Guide](https://github.com/bcgov/TheOrgBook/tree/master/docker#quick-start-guide) can be found in the [bcgov/TheOrgBook](https://github.com/bcgov/TheOrgBook) repository.
