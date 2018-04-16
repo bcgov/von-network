@@ -34,7 +34,7 @@ RUN apt-get update -y && apt-get install -y \
     curl
 
 RUN pip3 install -U \
-    pip \
+    pip==9.0.1 \
     setuptools
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
@@ -60,7 +60,7 @@ RUN chmod +x rustup
 RUN ./rustup -y
 
 # Build libindy
-RUN git clone https://github.com/bcgov/indy-sdk.git
+RUN git clone https://github.com/ianco/indy-sdk.git
 WORKDIR /home/indy/indy-sdk/libindy
 RUN git fetch
 RUN /home/indy/.cargo/bin/cargo build
@@ -69,7 +69,8 @@ RUN /home/indy/.cargo/bin/cargo build
 USER root
 RUN mv target/debug/libindy.so /usr/lib
 
-RUN pip3 install --upgrade setuptools
+# RUN pip3 install --upgrade setuptools
+RUN pip3 install setuptools
 RUN pip3 install pipenv
 
 USER indy

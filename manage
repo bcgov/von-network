@@ -49,12 +49,12 @@ deleteVolumes() {
   _pattern="^${_projectName}_\|^docker_"
   _volumes=$(docker volume ls -q | grep ${_pattern})
 
-  if [ ! -z "${_volumes}" ]; then
-    echo "Removing project volumes ..."
-    echo ${_volumes} |  xargs docker volume rm
-  else
-    echo "No project volumes exist."
-  fi
+  # if [ ! -z "${_volumes}" ]; then
+    # echo "Removing project volumes ..."
+    # echo ${_volumes} |  xargs docker volume rm
+  # else
+    # echo "No project volumes exist."
+  # fi
 }
 # =================================================================================================================
 
