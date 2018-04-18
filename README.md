@@ -1,6 +1,10 @@
 # VON Network
 A portable development level Indy Node network.
 
+## Quick Start Guide
+
+A **Quick Start Guide** for a working set of applications is maintained here; [Running a Complete Provisional VON Network](https://github.com/bcgov/TheOrgBook/blob/master/docker/README.md#running-a-complete-provisional-von-network).  This is a great way to see the **VON Network** component in action.
+
 ## Running the Network Locally
 
 1. First, install Docker. Download the installer for your operating system [here](https://store.docker.com/search?type=edition&offering=community). Once it is installed, keep the Docker daemon running in the background.
@@ -216,16 +220,3 @@ The genesis transaction record required to connect to the node pool is made avai
 #### Write new did for seed
 
 The node pool can have a trust anchor write a did for you — available in the UI.
-
-## Running a Complete Provisional VON Network
-
-A "complete" provisional VON Network consists of the following components;
-- A Provisional Ledger Node Pool; [von-network](https://github.com/bcgov/von-network)
-- An instance of TheOrgBook; [TheOrgBook](https://github.com/bcgov/TheOrgBook)
-- And a set of Issuer Services; [Permitify](https://github.com/bcgov/permitify)
-
-Refer to the docker compose documentation in each of the projects for specific details.
-
-### Quick Start Guide
-
-A [Quick Start Guide](https://github.com/bcgov/TheOrgBook/tree/master/docker#quick-start-guide) can be found in the [bcgov/TheOrgBook](https://github.com/bcgov/TheOrgBook) repository.
