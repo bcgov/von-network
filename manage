@@ -1,6 +1,6 @@
 #!/bin/bash
 export MSYS_NO_PATHCONV=1
-export DOCKERHOST=${APPLICATION_URL-$(docker run --net=host codenvy/che-ip)}
+export DOCKERHOST=${APPLICATION_URL-$(docker run --rm --net=host codenvy/che-ip)}
 set -e
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
@@ -87,9 +87,9 @@ case "$1" in
       if [ -n "$INDY_RELEASE" ]; then
         INDY_BUILD_FLAGS="--build-arg indy_build_flags=--release"
       fi
-      echo -e "\nBuilding von-indy image ..."
-      docker build -t 'von-indy:latest' $INDY_BUILD_FLAGS \
-        'https://github.com/cywolf/von-indy.git#master:stable'
+      echo -e "\nBuilding von-image ..."
+      docker build -t 'von-image:py35-latest' $INDY_BUILD_FLAGS \
+        'https://github.com/PSPC-SPAC-buyandsell/von-image.git#master:stable'
 
       docker build -t von-network-base .
     ;;
