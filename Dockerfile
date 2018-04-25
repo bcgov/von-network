@@ -1,4 +1,4 @@
-FROM von-image:py35-latest
+FROM andrewwhitehead/von-image:py35-indy1.3.1-dev-408
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
 

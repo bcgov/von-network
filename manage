@@ -83,14 +83,6 @@ case "$1" in
       docker-compose stop
     ;;
   build)
-      # Build von-indy image used as a base
-      if [ -n "$INDY_RELEASE" ]; then
-        INDY_BUILD_FLAGS="--build-arg indy_build_flags=--release"
-      fi
-      echo -e "\nBuilding von-image ..."
-      docker build -t 'von-image:py35-latest' $INDY_BUILD_FLAGS \
-        'https://github.com/PSPC-SPAC-buyandsell/von-image.git#master:stable'
-
       docker build -t von-network-base .
     ;;
   rebuild)
