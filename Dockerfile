@@ -69,8 +69,9 @@ RUN /home/indy/.cargo/bin/cargo build
 USER root
 RUN mv target/debug/libindy.so /usr/lib
 
-RUN pip3 install --upgrade setuptools
-RUN pip3 install pipenv
+RUN pip3 install \
+    base58==0.2.5 \
+    pipenv
 
 USER indy
 WORKDIR /home/indy
