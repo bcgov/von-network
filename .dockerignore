@@ -3,4 +3,4 @@ Dockerfile
 LICENSE
 manage
 README.md
-.gitignore
+.git*
