@@ -1,22 +1,10 @@
-FROM andrewwhitehead/von-image:py35-indy1.3.1-dev-408
+FROM andrewwhitehead/von-image:py35-indy1.3.1-dev-441-ew
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
 
-USER root
-
-RUN apt-get update -y && \
-	apt-get install -y --no-install-recommends \
-		build-essential && \
-	pip --no-cache-dir install \
-		base58==0.2.5 \
-		sanic==0.7.0 \
-		ujson==1.33 && \
-	apt-get remove --purge -y \
-		build-essential && \
-	apt-get autoremove -y && \
-	rm -rf /var/lib/apt/lists/*
-
 ADD --chown=indy:indy . $HOME
+
+USER root
 
 RUN mkdir -p $HOME/ledger/sandbox/data && \
     mkdir -p $HOME/.indy-cli/networks && \
