@@ -1,22 +1,23 @@
 version: '3'
 services:
-  # 
+  #
   # Client
-  # 
+  #
   client:
     image: von-network-base
     command: 'bash -c ''./scripts/start_client.sh'''
     environment:
       - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
     networks:
       - von
     volumes:
       - client-cli:/home/indy/.indy-cli
       - client-data:/var/lib/indy
 
-  # 
+  #
   # Webserver
-  # 
+  #
   webserver:
     image: von-network-base
     command: 'bash -c ''./scripts/start_webserver.sh'''
@@ -24,6 +25,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
     networks:
       - von
     ports:
@@ -41,9 +43,9 @@ services:
       - node3-data:/home/indy/.mnt/node3
       - node4-data:/home/indy/.mnt/node4
 
-  # 
+  #
   # Nodes
-  # 
+  #
   node1:
     image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 1'''
@@ -56,9 +58,10 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
     volumes:
       - node1-data:/home/indy/ledger
-    
+
   node2:
     image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 2'''
@@ -71,6 +74,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
     volumes:
       - node2-data:/home/indy/ledger
 
@@ -86,9 +90,10 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
     volumes:
       - node3-data:/home/indy/ledger
-    
+
   node4:
     image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 4'''
@@ -101,6 +106,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
     volumes:
       - node4-data:/home/indy/ledger
 
