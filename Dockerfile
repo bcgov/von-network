@@ -1,4 +1,4 @@
-FROM andrewwhitehead/von-image:py35-indy1.3.1-dev-441-ew
+FROM andrewwhitehead/von-image:py35-1.0rc1
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
 
@@ -10,8 +10,8 @@ RUN mkdir -p \
         $HOME/ledger/sandbox/data \
         $HOME/.indy-cli/networks \
         $HOME/.indy_client/wallet && \
-    chown -R indy:indy $HOME && \
-    chmod -R ug+rw $HOME
+    chown -R indy:indy $HOME/ledger $HOME/.indy-cli $HOME/.indy_client && \
+    chmod -R ug+rw $HOME/ledger $HOME/.indy-cli $HOME/.indy_client
 
 USER indy
 
