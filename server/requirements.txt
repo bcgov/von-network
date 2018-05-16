@@ -1,5 +1,9 @@
 python3-indy==1.3.1-dev-441
 # von-agent==0.5.2
 # # The 'egg=' syntanx is required by the 'pipenv install' command.
+<<<<<<< HEAD
 git+https://github.com/ianco/von_agent.git#egg=von-agent
 sanic==0.7.0
+=======
+git+https://github.com/bcgov/von_agent.git#egg=von-agent
+>>>>>>> upstream/master

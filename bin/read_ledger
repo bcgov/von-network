@@ -122,7 +122,7 @@ def print_txns(ledger, args):
         return
 
     # --seq_no
-    seq_no = args.seq_no
+    seq_no = int(args.seq_no) if args.seq_no is not None else None
     if seq_no:
         print_by_seq_no(ledger, seq_no, serializer)
         return
@@ -147,8 +147,8 @@ def print_count(ledger):
 
 
 def print_all(ledger, serializer):
-    frm = args.frm
-    to = args.to
+    frm = int(args.frm) if args.frm is not None else None
+    to = int(args.to) if args.to is not None else None
     for txn in ledger.getAllTxn(frm=frm, to=to):
         txn = serializer.serialize(txn, toBytes=False)
         print(txn)
