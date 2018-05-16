@@ -17,20 +17,23 @@ from aiohttp import web
 APP = web.Application()
 ROUTES = web.RouteTableDef()
 
+
 @ROUTES.get('/')
 async def index(request):
-  return web.FileResponse('static/index.html')
+    return web.FileResponse('static/index.html')
+
 
 @ROUTES.get('/favicon.ico')
 async def favicon(request):
-  return web.FileResponse('static/favicon.ico')
+    return web.FileResponse('static/favicon.ico')
 
 ROUTES.static('/include', './static/include')
 
 PATHS = {
-  'python': shutil.which('python3'),
-  'validator-info': shutil.which('validator-info'),
-  'read_ledger': shutil.which('read_ledger'),
+    'python': shutil.which('python3'),
+    'validator-info': shutil.which('validator-info'),
+    # 'read_ledger': shutil.which('read_ledger'),
+    'read_ledger': '/home/indy/bin/read_ledger',
 }
 
 indy_txn_types = {
@@ -52,62 +55,64 @@ indy_txn_types = {
 }
 
 indy_role_types = {
-  "0": "TRUSTEE",
-  "2": "STEWARD",
-  "100": "TGB",
-  "101": "TRUST_ANCHOR",
+    "0": "TRUSTEE",
+    "2": "STEWARD",
+    "100": "TGB",
+    "101": "TRUST_ANCHOR",
 }
 
 
 def json_response(data):
-  # FIXME - use aiohttp-cors
-  headers = {'Access-Control-Allow-Origin': '*'}
-  return web.json_response(data, headers=headers)
+    # FIXME - use aiohttp-cors
+    headers = {'Access-Control-Allow-Origin': '*'}
+    return web.json_response(data, headers=headers)
 
 
 def validator_info(node_name, as_json=True):
-  args = [PATHS['validator-info']]
-  if as_json:
-    args.append("--json")
-  else:
-    args.append("-v")
-  args.extend(["--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"])
-  proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
-  if as_json:
-    # The result is polluted with logs in the latest version.
-    # We pull out json
-    m = re.search(r'(?s)\n({.*})', proc.stdout)
-    corrected_stdout = m.group(1) if m else proc.stdout
-    return json.loads(corrected_stdout)
-  return proc
+    args = [PATHS['validator-info']]
+    if as_json:
+        args.append("--json")
+    else:
+        args.append("-v")
+    args.extend(["--basedir", "/home/indy/.mnt/" + node_name + "/sandbox/"])
+    proc = subprocess.run(args, stdout=subprocess.PIPE,
+                          universal_newlines=True)
+    if as_json:
+        # The result is polluted with logs in the latest version.
+        # We pull out json
+        m = re.search(r'(?s)\n({.*})', proc.stdout)
+        corrected_stdout = m.group(1) if m else proc.stdout
+        return json.loads(corrected_stdout)
+    return proc
 
 
 def read_ledger(ledger, seq_no=0, seq_to=1000, node_name='node1', format="data"):
-  if ledger != "domain" and ledger != "pool" and ledger != "config":
-    raise ValueError("Unsupported ledger type: {}".format(ledger))
-  args = [PATHS['read_ledger'], "--type", ledger]
-  if seq_no > 0:
-    args.extend(["--seq_no", str(seq_no)])
-  args.extend(["--to", str(seq_to)])
-  #args.extend(["--base_dir", "/home/indy/.mnt/" + node_name])
-  args.extend(["--node_name", node_name])
-  proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+    if ledger != "domain" and ledger != "pool" and ledger != "config":
+        raise ValueError("Unsupported ledger type: {}".format(ledger))
+    args = [PATHS['read_ledger'], "--type", ledger]
+    if seq_no > 0:
+        args.extend(["--seq_no", str(seq_no)])
+    args.extend(["--to", str(seq_to)])
+    #args.extend(["--base_dir", "/home/indy/.mnt/" + node_name])
+    args.extend(["--node_name", node_name])
+    proc = subprocess.run(args, stdout=subprocess.PIPE,
+                          universal_newlines=True)
 
-  if format == "pretty" or format == "data":
-    lines = proc.stdout.splitlines()
-    resp = []
-    for line in lines:
-        parsed = json.loads(line)
+    if format == "pretty" or format == "data":
+        lines = proc.stdout.splitlines()
+        resp = []
+        for line in lines:
+            parsed = json.loads(line)
+            if format == "pretty":
+                resp.append(json.dumps(parsed, indent=4, sort_keys=True))
+            else:
+                resp.append(parsed)
         if format == "pretty":
-          resp.append(json.dumps(parsed, indent=4, sort_keys=True))
-        else:
-          resp.append(parsed)
-    if format == "pretty":
-      return "\n\n".join(resp)
-    return resp
+            return "\n\n".join(resp)
+        return resp
 
-  # format = json
-  return proc.stdout
+    # format = json
+    return proc.stdout
 
 
 async def boot(_app):
@@ -120,10 +125,10 @@ async def boot(_app):
         'nodepool',
         '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
     wallet = Wallet(
-            pool,
-            '000000000000000000000000Trustee1',
-            'trustee_wallet'
-        )
+        pool,
+        '000000000000000000000000Trustee1',
+        'trustee_wallet'
+    )
     await pool.open()
     await wallet.create()
 
@@ -136,10 +141,10 @@ async def status(request):
     nodes = ["node1", "node2", "node3", "node4"]
 
     response = []
-    for idx,node_name in enumerate(nodes):
-      parsed = validator_info(node_name)
-      if parsed:
-        response.append(parsed)
+    for idx, node_name in enumerate(nodes):
+        parsed = validator_info(node_name)
+        if parsed:
+            response.append(parsed)
 
     return json_response(response)
 
@@ -149,11 +154,11 @@ async def status(request):
     nodes = ["node1", "node2", "node3", "node4"]
 
     response_text = ""
-    for idx,node_name in enumerate(nodes):
-      proc = validator_info(node_name, as_json=False)
-      if idx > 0:
-        response_text += "\n"
-      response_text += node_name + "\n\n" + proc.stdout
+    for idx, node_name in enumerate(nodes):
+        proc = validator_info(node_name, as_json=False)
+        if idx > 0:
+            response_text += "\n"
+        response_text += node_name + "\n\n" + proc.stdout
 
     return web.Response(text=response_text)
 
@@ -175,57 +180,58 @@ async def ledger_text(request):
     response = read_ledger(request.match_info['ledger_name'])
     text = []
     for seq_no, txn in response:
-      if len(text):
-        text.append("")
+        if len(text):
+            text.append("")
 
-      type_name = indy_txn_types.get(txn['type'], txn['type'])
-      text.append("[" + str(seq_no) + "]  TYPE: " + type_name)
+        type_name = indy_txn_types.get(txn['type'], txn['type'])
+        text.append("[" + str(seq_no) + "]  TYPE: " + type_name)
 
-      if type_name == "NYM":
-        text.append("DEST: " + txn['dest'])
+        if type_name == "NYM":
+            text.append("DEST: " + txn['dest'])
 
-        role = txn.get('role')
-        if role != None:
-          role_name = indy_role_types.get(role, role)
-          text.append("ROLE: " + role_name)
+            role = txn.get('role')
+            if role != None:
+                role_name = indy_role_types.get(role, role)
+                text.append("ROLE: " + role_name)
 
-        verkey = txn.get('verkey')
-        if verkey != None:
-          text.append("VERKEY: " + verkey)
+            verkey = txn.get('verkey')
+            if verkey != None:
+                text.append("VERKEY: " + verkey)
 
-      ident = txn.get('identifier')
-      if ident != None:
-        text.append("IDENT: " + ident)
+        ident = txn.get('identifier')
+        if ident != None:
+            text.append("IDENT: " + ident)
 
-      txnTime = txn.get('txnTime')
-      if txnTime != None:
-        ftime = datetime.fromtimestamp(txnTime).strftime('%Y-%m-%d %H:%M:%S')
-        text.append("TIME: " + ftime)
+        txnTime = txn.get('txnTime')
+        if txnTime != None:
+            ftime = datetime.fromtimestamp(
+                txnTime).strftime('%Y-%m-%d %H:%M:%S')
+            text.append("TIME: " + ftime)
 
-      reqId = txn.get('reqId')
-      if reqId != None:
-        text.append("REQ ID: " + str(reqId))
+        reqId = txn.get('reqId')
+        if reqId != None:
+            text.append("REQ ID: " + str(reqId))
 
-      refNo = txn.get('ref')
-      if refNo != None:
-        text.append("REF: " + str(refNo))
+        refNo = txn.get('ref')
+        if refNo != None:
+            text.append("REF: " + str(refNo))
 
-      txnId = txn.get('txnId')
-      if txnId != None:
-        text.append("TXN ID: " + txnId)
+        txnId = txn.get('txnId')
+        if txnId != None:
+            text.append("TXN ID: " + txnId)
 
-      if type_name == "SCHEMA" or type_name == "CLAIM_DEF" or type_name == "NODE":
-        data = txn.get('data')
-        text.append("DATA:")
-        text.append(json.dumps(data, indent=4))
+        if type_name == "SCHEMA" or type_name == "CLAIM_DEF" or type_name == "NODE":
+            data = txn.get('data')
+            text.append("DATA:")
+            text.append(json.dumps(data, indent=4))
 
-      sig = txn.get('signature')
-      if sig != None:
-        text.append("SIGNATURE: " + sig)
+        sig = txn.get('signature')
+        if sig != None:
+            text.append("SIGNATURE: " + sig)
 
-      sig_type = txn.get('signature_type')
-      if sig_type != None:
-        text.append("SIGNATURE TYPE: " + sig_type)
+        sig_type = txn.get('signature_type')
+        if sig_type != None:
+            text.append("SIGNATURE TYPE: " + sig_type)
 
     return web.Response(text="\n".join(text))
 
@@ -240,7 +246,6 @@ async def ledger_seq(request):
         seq_to=seq_no
     )
     return web.Response(text=response)
-
 
 
 # Expose genesis transaction for easy connection.
