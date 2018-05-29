@@ -315,6 +315,8 @@ async def register(request):
 async def register_did(did, verkey, alias=None):
     global trust_anchor
     print('\n\nGet Nym: ' + str(did) + '\n\n')
+    if alias == None
+        alias = 'TRUST_ANCHOR'
     if not json.loads(await trust_anchor.get_nym(did)):
         print('\n\nSend Nym: ' + str(did) + '/' + str(verkey) + '/' + str(alias) + '\n\n')
         await trust_anchor.send_nym(did, verkey, alias)
