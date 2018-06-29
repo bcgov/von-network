@@ -97,11 +97,11 @@ def read_ledger(ledger, seq_no=0, seq_to=1000, node_name='node1', format="data")
     lines = proc.stdout.splitlines()
     resp = []
     for line in lines:
-        parsed = json.loads(line)
+        _seq_no, txn = line.split(' ', 2)
+        parsed = json.loads(txn)
         if format == "pretty":
-          resp.append(json.dumps(parsed, indent=4, sort_keys=True))
-        else:
-          resp.append(parsed)
+          parsed = json.dumps(parsed, indent=4, sort_keys=True)
+        resp.append(parsed)
     if format == "pretty":
       return "\n\n".join(resp)
     return resp
