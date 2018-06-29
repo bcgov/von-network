@@ -269,6 +269,7 @@ async def register(request):
   did = body.get('did')
   verkey = body.get('verkey')
   alias = body.get('alias')
+  role = body.get('role', 'TRUST_ANCHOR')
 
   if seed:
     if not 0 <= len(seed) <= 32:
@@ -296,7 +297,7 @@ async def register(request):
       verkey = new_agent.verkey
 
   print('\n\nRegister agent\n\n')
-  await register_did(did, verkey, alias)
+  await register_did(did, verkey, alias, role)
 
   return json_response({
     'seed': seed,
@@ -306,12 +307,12 @@ async def register(request):
 
 
 # Helper to register a DID and verkey on the ledger
-async def register_did(did, verkey, alias=None):
+async def register_did(did, verkey, alias=None, role=None):
   global trust_anchor
   print('\n\nGet Nym: ' + str(did) + '\n\n')
   if not json.loads(await trust_anchor.get_nym(did)):
     print('\n\nSend Nym: ' + str(did) + '/' + str(verkey) + '\n\n')
-    await trust_anchor.send_nym(did, verkey, alias)
+    await trust_anchor.send_nym(did, verkey, alias, role)
 
 
 if __name__ == '__main__':
