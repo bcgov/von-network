@@ -9,10 +9,10 @@ import re
 
 from aiohttp import web
 
-from von_agent import AgentRegistrar
-from von_agent.agent.base import _BaseAgent
-from von_agent.nodepool import NodePool
-from von_agent.wallet import Wallet
+from von_anchor import AnchorSmith
+from von_anchor.anchor.base import _BaseAnchor
+from von_anchor.nodepool import NodePool
+from von_anchor.wallet import Wallet
 
 APP = web.Application()
 ROUTES = web.RouteTableDef()
@@ -120,14 +120,13 @@ async def boot(_app):
     'nodepool',
     '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
   wallet = Wallet(
-    pool,
     '000000000000000000000000Trustee1',
     'trustee_wallet'
   )
   await pool.open()
   await wallet.create()
 
-  trust_anchor = AgentRegistrar(wallet)
+  trust_anchor = AnchorSmith(wallet, pool)
   await trust_anchor.open()
 
 
@@ -288,11 +287,10 @@ async def register(request):
 
   if seed:
     wallet = Wallet(
-      pool,
       seed,
       seed + '-wallet'
     )
-    async with _BaseAgent(await wallet.create()) as new_agent:
+    async with _BaseAnchor(await wallet.create(), pool) as new_agent:
       did = new_agent.did
       verkey = new_agent.verkey
 

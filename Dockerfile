@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py35-1.5-0
+FROM bcgovimages/von-image:py35-1.6-0
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
 
