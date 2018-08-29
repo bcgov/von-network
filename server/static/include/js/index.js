@@ -27,18 +27,19 @@ fetch_validator_status(function (status) {
   if (!tpl) return
 
   for (var idx = 0; idx < status.length; idx++) {
-    var node = status[idx]
+    var node = status[idx],
+        info = node.Node_info;
     var div = tpl.cloneNode(true)
     tpl.parentNode.appendChild(div)
-    div.querySelector('.nodeval-name').innerText = node.alias
-    div.querySelector('.nodeval-did').innerText = node.did
+    div.querySelector('.nodeval-name').innerText = info.Name
+    div.querySelector('.nodeval-did').innerText = info.did
     var state = node.state
     if (!state) state = 'unknown'
     if (!node.enabled) state += ' (disabled)'
     div.querySelector('.nodeval-state').innerText = state
     div.querySelector('.nodeval-indyver').innerText = node.software['indy-node']
 
-    var upt = node.metrics.uptime,
+    var upt = info.Metrics.uptime,
       upt_s = upt % 60,
       upt_m = Math.floor(upt % 3600 / 60),
       upt_h = Math.floor(upt % 86400 / 3600),
@@ -51,15 +52,15 @@ fetch_validator_status(function (status) {
     div.querySelector('.nodeval-uptime').innerText = upt_parts.join(', ')
 
     var unreach = div.querySelector('.node-unreach')
-    if (node.pool.unreachable.count) {
-      div.querySelector('.nodeval-unreach').innerText = node.pool.unreachable.list.join(', ')
+    if (node.Pool_info.Unreachable_nodes_count) {
+      div.querySelector('.nodeval-unreach').innerText = node.Pool_info.Unreachable_nodes.join(', ')
     } else {
       unreach.style.display = 'none'
     }
 
     var txns = [],
-      tx_avgs = node.metrics['average-per-second'],
-      tx_counts = node.metrics['transaction-count']
+      tx_avgs = info.Metrics['average-per-second'],
+      tx_counts = info.Metrics['transaction-count']
     txns.push('' + tx_counts.config + ' config')
     txns.push('' + tx_counts.ledger + ' ledger')
     txns.push('' + tx_counts.pool + ' pool')
@@ -67,8 +68,6 @@ fetch_validator_status(function (status) {
     txns.push('' + tx_avgs['write-transactions'] + '/s write')
     div.querySelector('.nodeval-txns').innerText = txns.join(', ')
 
-        // metrics: {average-per-second: {read-transactions: 0, write-transactions: 0}, transaction-count: {ledger: 5, pool: 4, config: 0}, uptime: 781}
-        // pool: {reachable: {count: 4, list: ["Node1", "Node2", "Node3", "Node4"]}, total-count: 4, unreachable: {count: 0, list: []}}
     div.classList.remove('template')
   }
 })
