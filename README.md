@@ -9,7 +9,7 @@ A **Quick Start Guide** for a working set of applications is maintained here; [R
 
 1. First, install Docker. Download the installer for your operating system [here](https://store.docker.com/search?type=edition&offering=community). Once it is installed, keep the Docker daemon running in the background.
 
-2. Linux users will also need to [install docker-compose](https://github.com/docker/compose/releases). Mac and Windows users will have this already. 
+2. Linux users will also need to [install docker-compose](https://github.com/docker/compose/releases). Mac and Windows users will have this already.
 
 3. Once Docker has been installed, open a terminal session and clone this repository:
 
@@ -63,7 +63,7 @@ Run 4 extra VMs as proxies (proxy_1, proxy_2, proxy_3, proxy4). Traffic should b
 1. Install unzip utility:
 
 ```bash
-# Requires root privileges 
+# Requires root privileges
 apt install unzip
 ```
 
@@ -74,7 +74,7 @@ curl -fsSL get.docker.com -o get-docker.sh
 ```
 
 ```bash
-# Requires root privileges 
+# Requires root privileges
 sh get-docker.sh
 ```
 
@@ -124,7 +124,7 @@ to
 ./manage start proxy_1,proxy_2,proxy_3,proxy_4 &
 ```
 
-## Connecting to the Network 
+## Connecting to the Network
 
 ### With the CLI
 Once the nodes are all running and have connected to each other, you can run the Indy client to test the connection in a separate terminal window:
@@ -152,45 +152,14 @@ indy>
 Now connect to our new Indy network to make sure network is running correctly:
 
 ```
-connect sandbox
+pool connect sandbox
 ```
 
 What you should see is:
 
 ```
-indy> connect sandbox
-New wallet Default created
-Active wallet set to "Default"
-Active wallet set to "Default"
-Client indy9f7060 initialized with the following node registry:
-    Node1C listens at 172.21.0.2 on port 9702
-    Node2C listens at 172.21.0.5 on port 9704
-    Node3C listens at 172.21.0.3 on port 9706
-    Node4C listens at 172.21.0.4 on port 9708
-Active client set to indy9f7060
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ listening for other nodes at 0.0.0.0:6001
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ looking for Node1C at 172.21.0.2:9702
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ looking for Node2C at 172.21.0.5:9704
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ looking for Node3C at 172.21.0.3:9706
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ looking for Node4C at 172.21.0.4:9708
-Connecting to test...
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node1C
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node2C
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node3C
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node4C
-CATCH-UP: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ completed catching up ledger 0, caught up 0 in total
-Connected to test.
-```
-
-**Specifically**:
-
-```
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node1C
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node2C
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node3C
-CONNECTION: iSLwBzaiCrnG5LBv4MmM18TGwY8RNquYwMMx2az6BNQ now connected to Node4C
-...
-Connected to test.
+indy> pool connect sandbox
+Pool "sandbox" has been connected
 ```
 
 If you see this, congratulations! Your nodes are running correctly and you have a connection to the network.

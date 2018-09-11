@@ -69,31 +69,39 @@ if [ ! -z "$nodeNum" ]; then
 fi
 
 if [ ! -z $ipAddresses ]; then
-    echo -e \\n\\n"================================================================================================"
-    echo -e "Generating genesis transaction file:"
-    echo -e "nodeArg: ${nodeArg}"
-    echo -e "ipAddresses: ${ipAddresses}"
-    echo -e "genesisFileTemplatePath: ${genesisFileTemplatePath}"
-    echo -e "genesisFilePath: ${genesisFilePath}"
-    echo -e "------------------------------------------------------------------------------------------------"
-    # Use supplied IP address
-    echo -e generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$ipAddresses" \
-        \\n
+    ipsArg="$ipAddresses"
+elif [ ! -z $ipAddress ]; then
+    ipsArg="$ipAddress","$ipAddress","$ipAddress","$ipAddress"
+else
+    ipsArg="$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
+fi
 
-    generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$ipAddresses"
+echo -e \\n\\n"================================================================================================"
+echo -e "Generating genesis transaction file:"
+echo -e "nodeArg: ${nodeArg}"
+echo -e "ipAddresses: ${ipsArg}"
+echo -e "genesisFileTemplatePath: ${genesisFileTemplatePath}"
+echo -e "genesisFilePath: ${genesisFilePath}"
+echo -e "------------------------------------------------------------------------------------------------"
+# Use supplied IP address
+echo -e generate_indy_pool_transactions \
+    --nodes 4 \
+    --clients 0 \
+    $nodeArg \
+    --ips "$ipsArg" \
+    \\n
 
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Generated genesis transaction file; ${genesisFileTemplatePath}"\\n
-    cat ${genesisFileTemplatePath}
+generate_indy_pool_transactions \
+    --nodes 4 \
+    --clients 0 \
+    $nodeArg \
+    --ips "$ipsArg"
 
+echo -e \\n"------------------------------------------------------------------------------------------------"
+echo -e "Generated genesis transaction file; ${genesisFileTemplatePath}"\\n
+cat ${genesisFileTemplatePath}
+
+if [ ! -z "$remapPorts" ]; then
     echo -e \\n"------------------------------------------------------------------------------------------------"
     echo -e "Changing ports:"
     echo -e "- client_port => 80"
@@ -102,78 +110,19 @@ if [ ! -z $ipAddresses ]; then
     mv ${genesisFileTemplatePath} ${genesisFileTemplateBackupPath}
     echo -e "cat ${genesisFileTemplateBackupPath} | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > ${genesisFileTemplatePath}"
     cat ${genesisFileTemplateBackupPath} | sed 's~\(\"client_port\":\).\{4\}\(,\)~\180\2~g' | sed 's~\(\"node_port\":\).\{4\}\(,\)~\19418\2~g' > ${genesisFileTemplatePath}
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Initial state of ${genesisFilePath}"\\n
-    cat ${genesisFilePath}
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Overwriting ..."
-    echo -e "cat ${genesisFileTemplatePath} > ${genesisFilePath}"
-    cat ${genesisFileTemplatePath} > ${genesisFilePath}
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Final genesis transaction file; ${genesisFilePath}"\\n
-    cat ${genesisFilePath}
-    echo -e "================================================================================================"
-elif [ ! -z $ipAddress ]; then
-    echo -e \\n\\n"================================================================================================"
-    echo -e "Generating genesis transaction file:"
-    echo -e "nodeArg: ${nodeArg}"
-    echo -e "ipAddress: ${ipAddress}"
-    echo -e "genesisFileTemplatePath: ${genesisFileTemplatePath}"
-    echo -e "genesisFilePath: ${genesisFilePath}"
-    echo -e "------------------------------------------------------------------------------------------------"
-    # Use supplied IP address
-    echo -e generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$ipAddress","$ipAddress","$ipAddress","$ipAddress" \
-        \\n
-
-    generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$ipAddress","$ipAddress","$ipAddress","$ipAddress"
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Generated genesis transaction file; ${genesisFileTemplatePath}"\\n
-    cat ${genesisFileTemplatePath}
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Final genesis transaction file; ${genesisFilePath}"\\n
-    cat ${genesisFilePath}
-    echo -e "================================================================================================"
-else
-    echo -e \\n\\n"================================================================================================"
-    echo -e "Generating genesis transaction file:"
-    echo -e "nodeArg: ${nodeArg}"
-    echo -e "DOCKERHOST: ${DOCKERHOST}"
-    echo -e "genesisFileTemplatePath: ${genesisFileTemplatePath}"
-    echo -e "genesisFilePath: ${genesisFilePath}"
-    echo -e "------------------------------------------------------------------------------------------------"
-    # If we don't explicitely set IP, then use host machine's loopback interface
-    echo -e generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST" \
-        \\n
-
-    generate_indy_pool_transactions \
-        --nodes 4 \
-        --clients 0 \
-        $nodeArg \
-        --ips "$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Generated genesis transaction file; ${genesisFileTemplatePath}"\\n
-    cat ${genesisFileTemplatePath}
-
-    echo -e \\n"------------------------------------------------------------------------------------------------"
-    echo -e "Final genesis transaction file; ${genesisFilePath}"\\n
-    cat ${genesisFilePath}
-    echo -e "================================================================================================"
 fi
+
+#echo -e \\n"------------------------------------------------------------------------------------------------"
+#echo -e "Initial state of ${genesisFilePath}"\\n
+#cat ${genesisFilePath}
+
+#echo -e \\n"------------------------------------------------------------------------------------------------"
+#echo -e "Overwriting ..."
+#echo -e "cat ${genesisFileTemplatePath} > ${genesisFilePath}"
+#cat ${genesisFileTemplatePath} > ${genesisFilePath}
+
+#echo -e \\n"------------------------------------------------------------------------------------------------"
+#echo -e "Final genesis transaction file; ${genesisFilePath}"\\n
+#cat ${genesisFilePath}
+
+echo -e "================================================================================================"\\n
