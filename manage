@@ -77,7 +77,7 @@ case "$1" in
     ;;
   cli)
       initEnv "$2"
-      docker-compose run client
+      docker-compose run --rm client
     ;;
   stop)
       initEnv
