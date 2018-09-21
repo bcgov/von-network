@@ -56,46 +56,41 @@ deleteVolumes() {
   fi
 }
 # =================================================================================================================
+initEnv() {
+  export RUST_LOG=${RUST_LOG:-warning}
+  IP=""
+  IPS=""
+  if [[ $1 == *","* ]]; then
+    IPS="$1"
+  else
+    IP="$1"
+  fi
+  export IP="$IP" IPS="$IPS"
+}
 
 pushd ${SCRIPT_HOME} >/dev/null
 
 case "$1" in
   start)
-      export RUST_LOG=${RUST_LOG:-warning}
-      if [ -z "$2" ]; then
-        docker-compose up webserver node1 node2 node3 node4
-      else
-        if [[ $2 == *","* ]]; then
-          # If arg contains comma, then it should be multiple IPS
-          IPS=$2 docker-compose up webserver node1 node2 node3 node4
-        else
-          IP=$2 docker-compose up webserver node1 node2 node3 node4
-        fi
-      fi
+      initEnv "$2"
+      docker-compose up webserver node1 node2 node3 node4
     ;;
   cli)
-      if [ -z "$2" ]; then
-        docker-compose run client
-      else
-        docker-compose run -e IP="$2" client
-      fi
+      initEnv "$2"
+      docker-compose run --rm client
     ;;
   stop)
+      initEnv
       docker-compose stop
     ;;
   build)
       docker build -t von-network-base .
     ;;
   rebuild)
-      docker-compose build --no-cache
+      docker-compose build -t von-network-base --no-cache
     ;;
   rm)
-      # =========================================================
-      # Suppress unnecessary messages
-      # ---------------------------------------------------------
-      export IP=0.0.0.0
-      export IPS=0.0.0.0
-      # =========================================================
+      initEnv
       deleteVolumes
     ;;
   *)

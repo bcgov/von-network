@@ -13,5 +13,7 @@ else
     von_generate_transactions
 fi
 
+mkdir -p .indy_client/pool/sandbox
+cp .indy-cli/networks/sandbox/pool_transactions_genesis .indy_client/pool/sandbox/sandbox.txn
 
-indy
+indy-cli
