@@ -208,11 +208,8 @@ h2 .fa {
 	z-index: 2;
 }
 .node-indicator {
-	border: 8px solid #ddd;
-	border-radius: 50%;
-	box-sizing: border-box;
-	width: 100px;
 	height: 100px;
+	width: 100px;
 }
 .node-status-right {
 	flex: 1 1 auto;

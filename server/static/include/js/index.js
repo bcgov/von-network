@@ -58,6 +58,15 @@ fetch_validator_status(function (status) {
       unreach.style.display = 'none'
     }
 
+    var progress = node.Pool_info.Reachable_nodes_count / node.Pool_info.Total_nodes_count;
+    var progressCircle = div.querySelector('.progress-circle');
+    if(progressCircle) {
+      var max = progressCircle.getAttribute('stroke-dasharray');
+      if(max) {
+        progressCircle.style.strokeDashoffset = max * (1 - progress);
+      }
+    }
+
     var txns = [],
       tx_avgs = info.Metrics['average-per-second'],
       tx_counts = info.Metrics['transaction-count']
