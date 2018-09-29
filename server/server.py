@@ -1,31 +1,14 @@
-#! /usr/bin/env python3
-
-import asyncio
 from datetime import datetime
 import json
+import os
 import shutil
 import subprocess
 import re
 
 from aiohttp import web
 
-from von_anchor import AnchorSmith
-from von_anchor.anchor.base import _BaseAnchor
-from von_anchor.nodepool import NodePool
-from von_anchor.wallet import Wallet
+from .anchor import AnchorHandle, NotReadyException
 
-APP = web.Application()
-ROUTES = web.RouteTableDef()
-
-@ROUTES.get('/')
-async def index(request):
-  return web.FileResponse('static/index.html')
-
-@ROUTES.get('/favicon.ico')
-async def favicon(request):
-  return web.FileResponse('static/favicon.ico')
-
-ROUTES.static('/include', './static/include')
 
 PATHS = {
   'python': shutil.which('python3'),
@@ -33,7 +16,7 @@ PATHS = {
   'read_ledger': shutil.which('read_ledger'),
 }
 
-indy_txn_types = {
+INDY_TXN_TYPES = {
   "0": "NODE",
   "1": "NYM",
   "3": "GET_TXN",
@@ -51,12 +34,36 @@ indy_txn_types = {
   "112": "CHANGE_KEY",
 }
 
-indy_role_types = {
+INDY_ROLE_TYPES = {
   "0": "TRUSTEE",
   "2": "STEWARD",
   "100": "TGB",
   "101": "TRUST_ANCHOR",
 }
+
+INDY_LEDGER_TYPES = {
+  "0": "DOMAIN",
+  "1": "POOL",
+  "2": "CONFIG",
+}
+
+
+os.chdir(os.path.dirname(__file__))
+
+APP = web.Application()
+ROUTES = web.RouteTableDef()
+
+@ROUTES.get('/')
+async def index(request):
+  return web.FileResponse('static/index.html')
+
+@ROUTES.get('/favicon.ico')
+async def favicon(request):
+  return web.FileResponse('static/favicon.ico')
+
+ROUTES.static('/include', './static/include')
+
+TRUST_ANCHOR = AnchorHandle()
 
 
 def json_response(data):
@@ -110,41 +117,17 @@ def read_ledger(ledger, seq_no=0, seq_to=1000, node_name='node1', format="data")
   return proc.stdout
 
 
-async def boot(_app):
-  global pool
-  global trust_anchor
-
-  print('Creating trust anchor...')
-
-  pool = NodePool(
-    'nodepool',
-    '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
-  wallet = Wallet(
-    '000000000000000000000000Trustee1',
-    'trustee_wallet'
-  )
-  await pool.open()
-  await wallet.create()
-
-  trust_anchor = AnchorSmith(wallet, pool)
-  await trust_anchor.open()
-
-
 @ROUTES.get("/status")
 async def status(request):
-  nodes = ["node1", "node2", "node3", "node4"]
-
-  response = []
-  for idx,node_name in enumerate(nodes):
-    parsed = validator_info(node_name)
-    if parsed:
-      response.append(parsed)
-
+  try:
+    response = await TRUST_ANCHOR.validator_info()
+  except NotReadyException:
+    return web.Response(status=503)
   return json_response(response)
 
 
 @ROUTES.get("/status/text")
-async def status(request):
+async def status_text(request):
   nodes = ["node1", "node2", "node3", "node4"]
 
   response_text = ""
@@ -157,8 +140,15 @@ async def status(request):
   return web.Response(text=response_text)
 
 
+@ROUTES.get("/status/pretty")
+async def status_pretty(request):
+  response = await validator_info_request()
+  data = json.dumps(parsed, indent=4, sort_keys=True)
+  return web.Response(text=data)
+
+
 @ROUTES.get("/ledger/{ledger_name}")
-async def ledger(request):
+async def ledger_json(request):
   response = read_ledger(request.match_info['ledger_name'], format="json")
   return web.Response(text=response)
 
@@ -177,7 +167,7 @@ async def ledger_text(request):
     if len(text):
       text.append("")
 
-    type_name = indy_txn_types.get(txn['type'], txn['type'])
+    type_name = INDY_TXN_TYPES.get(txn['type'], txn['type'])
     text.append("[" + str(seq_no) + "]  TYPE: " + type_name)
 
     if type_name == "NYM":
@@ -185,7 +175,7 @@ async def ledger_text(request):
 
       role = txn.get('role')
       if role != None:
-        role_name = indy_role_types.get(role, role)
+        role_name = INDY_ROLE_TYPES.get(role, role)
         text.append("ROLE: " + role_name)
 
       verkey = txn.get('verkey')
@@ -232,14 +222,12 @@ async def ledger_text(request):
 @ROUTES.get("/ledger/{ledger_name}/{sequence_number:\d+}")
 async def ledger_seq(request):
   seq_no = int(request.match_info['sequence_number'])
-  response = read_ledger(
-    request.match_info['ledger_name'],
-    format="json",
-    seq_no=seq_no,
-    seq_to=seq_no
-  )
-  return web.Response(text=response)
-
+  ledger = request.match_info['ledger_name']
+  try:
+    data = await TRUST_ANCHOR.get_txn(seq_no, ledger)
+  except NotReadyException:
+    return web.Response(status=503)
+  return json_response(data)
 
 
 # Expose genesis transaction for easy connection.
@@ -255,7 +243,8 @@ async def genesis(request):
 # Easily write dids for new identity owners
 @ROUTES.post('/register')
 async def register(request):
-  global pool
+  if not TRUST_ANCHOR.ready:
+    return web.Response(status=503)
 
   body = await request.json()
   if not body:
@@ -285,17 +274,14 @@ async def register(request):
         status=400
       )
 
-  if seed:
-    wallet = Wallet(
-      seed,
-      seed + '-wallet'
-    )
-    async with _BaseAnchor(await wallet.create(), pool) as new_agent:
-      did = new_agent.did
-      verkey = new_agent.verkey
+  if not did or not verkey:
+    did, verkey = await TRUST_ANCHOR.seed_to_did(seed)
 
   print('\n\nRegister agent\n\n')
-  await register_did(did, verkey, alias, role)
+  try:
+    await TRUST_ANCHOR.register_did(did, verkey, alias, role)
+  except NotReadyException:
+    return web.Response(status=503)
 
   return json_response({
     'seed': seed,
@@ -304,13 +290,10 @@ async def register(request):
   })
 
 
-# Helper to register a DID and verkey on the ledger
-async def register_did(did, verkey, alias=None, role=None):
-  global trust_anchor
-  print('\n\nGet Nym: ' + str(did) + '\n\n')
-  if not json.loads(await trust_anchor.get_nym(did)):
-    print('\n\nSend Nym: ' + str(did) + '/' + str(verkey) + '\n\n')
-    await trust_anchor.send_nym(did, verkey, alias, role)
+async def boot(app):
+  print('Creating trust anchor...')
+  init = app['anchor_init'] = app.loop.create_task(TRUST_ANCHOR.open())
+  init.add_done_callback(lambda _task: print('--- Trust anchor initialized ---'))
 
 
 if __name__ == '__main__':

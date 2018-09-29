@@ -1,30 +1,40 @@
 function fetch_validator_status (callb) {
   var oReq = new XMLHttpRequest()
   oReq.addEventListener('load', function (evt) {
-    callb(oReq.response, evt)
+    callb(oReq.response, evt, oReq.status)
   })
   oReq.addEventListener('error', function (evt) {
-    callb(null, evt)
+    callb(null, evt, oReq.status)
   })
   oReq.responseType = 'json'
   oReq.open('GET', './status')
   oReq.send()
 }
 
-fetch_validator_status(function (status) {
+function display_validator_status(status, evt, statusCode) {
   var panel = document.querySelector('.panel-node-status')
   var load = panel && panel.querySelector('.loading')
-  var err = panel && panel.querySelector('.error')
+  var errPanel = panel && panel.querySelector('.error')
+  var notReadyPanel = panel && panel.querySelector('.not-ready')
+  var notReady = statusCode == 503;
+  var err = !notReady && !Array.isArray(status);
   if (load) load.style.display = 'none'
 
-  if (!Array.isArray(status)) {
-    if (err) err.style.display = null
-    return
-  }
+  if (notReadyPanel) notReadyPanel.style.display = notReady ? null : 'none';
+  if (errPanel) errPanel.style.display = err ? null : 'none';
 
   if (!panel) return
   var tpl = panel.querySelector('.node-status.template')
-  if (!tpl) return
+  if(tpl) {
+    var body = tpl.parentNode;
+    for(var i = body.children.length-1; i >= 0; i--) {
+      if(body.children[i].classList.contains('node-status') && body.children[i] != tpl) {
+        console.log(body.children[i]);
+        body.removeChild(body.children[i]);
+      }
+    }
+  }
+  if (!tpl || notReady || err) return
 
   for (var idx = 0; idx < status.length; idx++) {
     var node = status[idx],
@@ -37,7 +47,7 @@ fetch_validator_status(function (status) {
     if (!state) state = 'unknown'
     if (!node.enabled) state += ' (disabled)'
     div.querySelector('.nodeval-state').innerText = state
-    div.querySelector('.nodeval-indyver').innerText = node.software['indy-node']
+    div.querySelector('.nodeval-indyver').innerText = (node.software || node.Software || {})['indy-node'] || '?'
 
     var upt = info.Metrics.uptime,
       upt_s = upt % 60,
@@ -79,9 +89,11 @@ fetch_validator_status(function (status) {
 
     div.classList.remove('template')
   }
-})
+}
 
 $(function () {
+  fetch_validator_status(display_validator_status)
+
   // override forms to submit json
   $('form').submit(function (event) {
     const form = this

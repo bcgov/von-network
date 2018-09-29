@@ -178,6 +178,9 @@ h2 .fa {
 .error {
 	color: #b55;
 }
+.warning {
+	color: #a83;
+}
 
 .panel-node {
 	background: #fff;
