@@ -38,10 +38,6 @@ services:
     volumes:
       - ./server:/home/indy/server
       - webserver-cli:/home/indy/.indy-cli
-      - node1-data:/home/indy/.mnt/node1
-      - node2-data:/home/indy/.mnt/node2
-      - node3-data:/home/indy/.mnt/node3
-      - node4-data:/home/indy/.mnt/node4
 
   #
   # Nodes
