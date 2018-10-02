@@ -1,4 +1,15 @@
-function fetch_validator_status (callb) {
+var statusTimeout = null;
+var statusLoaded = false;
+
+function updateStatus() {
+  if(statusTimeout) clearTimeout(statusTimeout);
+  fetchValidatorStatus(function(result) {
+    displayValidatorStatus(result);
+    statusTimeout = setTimeout(updateStatus, 60000);
+  });
+}
+
+function fetchValidatorStatus (callb) {
   var oReq = new XMLHttpRequest()
   oReq.addEventListener('load', function (evt) {
     callb(oReq.response, evt, oReq.status)
@@ -11,7 +22,7 @@ function fetch_validator_status (callb) {
   oReq.send()
 }
 
-function display_validator_status(status, evt, statusCode) {
+function displayValidatorStatus(status, evt, statusCode) {
   var panel = document.querySelector('.panel-node-status')
   var load = panel && panel.querySelector('.loading')
   var errPanel = panel && panel.querySelector('.error')
@@ -29,7 +40,6 @@ function display_validator_status(status, evt, statusCode) {
     var body = tpl.parentNode;
     for(var i = body.children.length-1; i >= 0; i--) {
       if(body.children[i].classList.contains('node-status') && body.children[i] != tpl) {
-        console.log(body.children[i]);
         body.removeChild(body.children[i]);
       }
     }
@@ -77,14 +87,29 @@ function display_validator_status(status, evt, statusCode) {
       }
     }
 
+    var shorten = function(val) {
+      if(typeof val === 'number') {
+        if(val > 1000000) {
+          return (val / 1000000).toPrecision(3) + 'M';
+        }
+        if(val > 1000) {
+          return (val / 1000).toPrecision(3) + 'K';
+        }
+        if(Math.trunc(val) == val) {
+          return val;
+        }
+        return val.toPrecision(3);
+      }
+      return val;
+    }
     var txns = [],
       tx_avgs = info.Metrics['average-per-second'],
       tx_counts = info.Metrics['transaction-count']
-    txns.push('' + tx_counts.config + ' config')
-    txns.push('' + tx_counts.ledger + ' ledger')
-    txns.push('' + tx_counts.pool + ' pool')
-    txns.push('' + tx_avgs['read-transactions'] + '/s read')
-    txns.push('' + tx_avgs['write-transactions'] + '/s write')
+    txns.push('' + shorten(tx_counts.config) + ' config')
+    txns.push('' + shorten(tx_counts.ledger) + ' ledger')
+    txns.push('' + shorten(tx_counts.pool) + ' pool')
+    txns.push('' + shorten(tx_avgs['read-transactions']) + '/s read')
+    txns.push('' + shorten(tx_avgs['write-transactions']) + '/s write')
     div.querySelector('.nodeval-txns').innerText = txns.join(', ')
 
     div.classList.remove('template')
@@ -92,7 +117,7 @@ function display_validator_status(status, evt, statusCode) {
 }
 
 $(function () {
-  fetch_validator_status(display_validator_status)
+  updateStatus();
 
   // override forms to submit json
   $('form').submit(function (event) {
