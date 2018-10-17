@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py35-1.6-5
+FROM bcgovimages/von-image:py35-1.6-8
 
 USER indy
 
