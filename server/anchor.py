@@ -152,7 +152,7 @@ class AnchorHandle:
           await self._cache.set_latest(ledger_type, seq_no)
         return txn_info
 
-    LOGGER.info("Fetch %s", seq_no)
+    LOGGER.debug("Fetch %s %s", ledger_type, seq_no)
     req_json = await ledger.build_get_txn_request(self.did, ledger_type.name, seq_no)
     txn_json = await self._instance._submit(req_json)
     txn = json.loads(txn_json)
