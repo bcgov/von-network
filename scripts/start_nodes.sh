@@ -26,7 +26,7 @@ cat <<EOF > supervisord.conf
 logfile = /tmp/supervisord.log
 logfile_maxbytes = 50MB
 logfile_backups=10
-logLevel = error
+loglevel = info
 pidfile = /tmp/supervisord.pid
 nodaemon = true
 minfds = 1024
@@ -63,13 +63,12 @@ directory=/home/indy
 stdout_logfile=/tmp/node4.log
 stderr_logfile=/tmp/node4.log
 
-[program:logs]
-command=tail -F node1.log node2.log node3.log node4.log
-directory=/tmp
-stdout_logfile=/dev/fd/1
+[program:printlogs]
+command=tail -F /tmp/supervisord.log /tmp/node1.log /tmp/node2.log /tmp/node3.log /tmp/node4.log
+stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 
 EOF
 
-echo "Starting validator nodes"
+echo "Starting indy nodes"
 supervisord
