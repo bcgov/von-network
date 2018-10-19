@@ -33,6 +33,10 @@ TRUST_ANCHOR = AnchorHandle()
 async def index(request):
   return web.FileResponse('static/index.html')
 
+@ROUTES.get('/browse/{ledger_ident:.*}')
+async def browse(request):
+  return web.FileResponse('static/ledger.html')
+
 @ROUTES.get('/favicon.ico')
 async def favicon(request):
   return web.FileResponse('static/favicon.ico')
@@ -98,9 +102,9 @@ async def ledger_json(request):
   results = []
   for row in rows:
     last_modified = max(last_modified, row[1]) if last_modified else row[1]
-    results.append(json.loads(row[2]))
+    results.append(json.loads(row[3]))
   latest = await TRUST_ANCHOR.get_latest_seqno(request.match_info["ledger_name"])
-  if not results:
+  if not results and page > 1:
     data = {
       "detail": "Invalid page."
     }
@@ -199,17 +203,17 @@ async def ledger_text(request):
   return response
 
 
-@ROUTES.get("/ledger/{ledger_name}/{sequence_number:\d+}")
+@ROUTES.get("/ledger/{ledger_name}/{txn_ident}")
 async def ledger_seq(request):
-  seq_no = int(request.match_info['sequence_number'])
+  ident = request.match_info['txn_ident']
   ledger = request.match_info['ledger_name']
   try:
-    data = await TRUST_ANCHOR.get_txn(ledger, seq_no)
+    data = await TRUST_ANCHOR.get_txn(ledger, ident)
     if not data:
       return web.Response(status=404)
   except NotReadyException:
     return not_ready()
-  return json_response(json.loads(data[2]))
+  return json_response(json.loads(data[3]))
 
 
 # Expose genesis transaction for easy connection.
