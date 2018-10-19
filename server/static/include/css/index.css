@@ -71,11 +71,16 @@ a.tool, input[type=submit].tool {
 	font-size: 110%;
 }
 
+.form-group {
+  margin-bottom: 0.5rem;
+}
+
 .tool-button, .tool-input {
 	background-color: #f0f3ff;
 	border: 1px solid #58a;
 	border-radius: 3px;
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
+	box-sizing: border-box;
 	display: inline-block;
 	line-height: 1.4;
 	margin: 0.2rem 0;
@@ -88,6 +93,18 @@ a.tool, input[type=submit].tool {
 }
 select.tool-input {
   padding-right: 0.4rem;
+}
+.wallet-seed {
+  max-width: 25em;
+  width: 100%;
+}
+.tool-label {
+  color: #666;
+  display: block;
+  font-size: 90%;
+}
+.tool-label.inline {
+  display: inline;
 }
 
 .tool-button:hover, .tool-button:focus {
@@ -321,7 +338,7 @@ h2 .fa {
   border-bottom: 1px solid #9bd;
 }
 .ledger-row td {
-  padding: 0.6em 0.4em;
+  padding: 0.8em 0.5em;
   vertical-align: top;
 }
 .ledger-row:nth-child(even) {
@@ -394,8 +411,10 @@ h2 .fa {
 	}
 }
 
-.register-result {
-	display: block;
-	padding-top: 25px;
- 	display: none;
+.register-result, .register-error {
+	padding-top: 20px;
+ 	word-wrap: break-word;
+}
+.register-result code {
+  font-size: 85%;
 }

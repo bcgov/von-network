@@ -118,31 +118,63 @@ function displayValidatorStatus(status, evt, statusCode) {
 
 $(function () {
   updateStatus();
+});
 
-  // override forms to submit json
-  $('form').submit(function (event) {
-    const form = this
-    event.preventDefault()
-
-    // serialize data as json
-    const data = {}
-    $(form).serializeArray().forEach(input => {
-      if (input.value) data[input.name] = input.value
-    })
-
-    $(form).find('button[type=submit]').toggleClass('loading')
-
-    $.ajax({
-      method: 'POST',
-      url: $(form).attr('action'),
-      data: JSON.stringify(data),
-      contentType: 'application/json'
-    }).done(function (response) {
-      $(form).find('button[type=submit]').toggleClass('loading')
-      $('#seed').text(response.seed)
-      $('#did').text(response.did)
-      $('#verkey').text(response.verkey)
-      $('.register-result').show().css('display', 'block')
-    })
-  })
-})
+var app = new Vue({
+  el: '#vue-register',
+  data: {
+    reg_info: {reg_type: 'seed', did: null, verkey: null, role: 'TRUST_ANCHOR', seed: null, alias: null},
+    reg_error: null,
+    reg_result: null,
+    loading: false
+  },
+  computed: {
+    role_options: function() {
+      return [
+        {value: 'TRUST_ANCHOR', label: 'Trust Anchor'}
+      ];
+    }
+  },
+  mounted: function() {
+  },
+  methods: {
+    register: function() {
+      this.loading = true;
+      this.reg_error = null;
+      this.reg_result = null;
+      var self = this;
+      var info = {role: this.reg_info.role, alias: this.reg_info.alias};
+      if(this.reg_info.reg_type == 'seed') {
+        info.did = this.reg_info.did;
+        info.seed = this.reg_info.seed;
+      } else {
+        info.did = this.reg_info.did;
+        info.verkey = this.reg_info.verkey;
+      }
+      fetch('/register', {
+        method: 'POST',
+        body: JSON.stringify(info),
+        headers: {
+          'Content-Type': 'application/json'
+        }}).then(
+          function(res) {
+            if(res.status == 200) {
+              res.json().then(function(result) {
+                self.reg_result = result;
+                self.loading = false;
+              });
+            } else {
+              console.log(res);
+              self.reg_error = true;
+              self.loading = false;
+            }
+          }
+        ).catch(
+          function(err) {
+            self.reg_error = true;
+            self.loading = false;
+          }
+        );
+    }
+  }
+});

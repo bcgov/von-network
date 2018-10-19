@@ -106,42 +106,26 @@ var app = new Vue({
       }
       return ret;
     },
-    encodeQueryString: function(query) {
-      var ret = '';
-      if(query) {
-        var keys = [];
-        for(var k in query) {
-          keys.push(k);
-        }
-        keys.sort();
-        if(keys.length) ret = '?';
-        for(var i = 0; i < keys.length; i++) {
-          if(i) ret += '&';
-          ret += encodeURIComponent(keys[i]) + '=' + encodeURIComponent(query[keys[i]]);
-        }
-      }
-      return ret;
-    },
     showEntry: function(ident) {
-      this.showPage(ident);
+      this.navToPage(ident);
     },
     showLedger: function(value) {
       this.ledger = value;
-      this.showPage(null, {page: 1});
+      this.navToPage(null, {page: 1});
     },
     entryUrl: function(ident) {
       var url = '/browse/' + this.ledger;
       if(ident) url += '/' + ident;
       return url;
     },
-    showPage: function(ident, params) {
+    navToPage: function(ident, params) {
       var url = this.entryUrl(ident);
       var query = this.getPageParams();
       if(params) {
         for(var k in params)
           query[k] = params[k];
       }
-      url += this.encodeQueryString(query);
+      url += encodeQueryString(query);
       if(window.history && history.pushState) {
         history.pushState(null, null, url);
         this.loadPageParams();
@@ -157,7 +141,7 @@ var app = new Vue({
       if(ident)
         url += '/' + encodeURIComponent(this.ident);
       else
-        url += this.encodeQueryString({page: this.page, page_size: this.page_size});
+        url += encodeQueryString({page: this.page, page_size: this.page_size});
       var self = this;
       var reqno = ++ this.reqno;
       fetch(url).then(
@@ -268,13 +252,14 @@ var app = new Vue({
       this.loaded = false;
       this.loading = false;
     },
+    gotoPage: function(page) {
+      this.navToPage(null, {page: page});
+    },
     prevPage: function() {
-      this.page = Math.max(1, this.page - 1);
-      this.loadPage();
+      this.gotoPage(Math.max(1, this.page - 1));
     },
     nextPage: function() {
-      this.page ++;
-      this.loadPage();
+      this.gotoPage(this.page + 1);
     }
   }
 });

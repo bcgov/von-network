@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import json
 import logging
@@ -246,7 +247,14 @@ async def register(request):
   role = body.get('role', 'TRUST_ANCHOR')
 
   if seed:
-    if not 0 <= len(seed) <= 32:
+    if seed.endswith('='):
+      testseed = base64.b64decode(seed).decode('ascii')
+      if len(testseed) != 32:
+        return web.Response(
+          text='Seed must be 32 characters long.',
+          status=400
+        )
+    elif not 0 <= len(seed) <= 32:
       return web.Response(
         text='Seed must be between 0 and 32 characters long.',
         status=400
@@ -261,7 +269,9 @@ async def register(request):
       )
 
   if not did or not verkey:
-    did, verkey = await TRUST_ANCHOR.seed_to_did(seed)
+    auto_did, verkey = await TRUST_ANCHOR.seed_to_did(seed)
+    if not did:
+      did = auto_did
 
   try:
     await TRUST_ANCHOR.register_did(did, verkey, alias, role)
