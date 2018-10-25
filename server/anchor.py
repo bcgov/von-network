@@ -23,7 +23,7 @@ INDY_TXN_TYPES = {
   "3": "GET_TXN",
   "100": "ATTRIB",
   "101": "SCHEMA",
-  "102": "CLAIM_DEF",
+  "102": "CRED_DEF",
   "103": "DISCO",
   "104": "GET_ATTR",
   "105": "GET_NYM",
@@ -41,6 +41,13 @@ INDY_ROLE_TYPES = {
   "100": "TGB",
   "101": "TRUST_ANCHOR",
 }
+
+def is_int(val):
+  if isinstance(val, int):
+    return True
+  if isinstance(val, str) and val.isdigit():
+    return True
+  return False
 
 class LedgerType(IntEnum):
   POOL = 0
@@ -138,32 +145,41 @@ class AnchorHandle:
     data = await self._instance.get_nym(did)
     return json.loads(data)
 
-  async def get_txn(self, ledger_type, seq_no, cache=True, latest=False):
+  async def get_txn(self, ledger_type, ident, cache=True, latest=False):
     """
-    Fetch a transaction by sequence number
+    Fetch a transaction by sequence number or transaction ID
     """
     ledger_type = LedgerType.for_value(ledger_type)
     if not self.ready:
       raise NotReadyException()
+    if not ident:
+      return None
     if cache:
-      txn_info = await self._cache.get_txn(ledger_type, seq_no)
+      txn_info = await self._cache.get_txn(ledger_type, ident)
       if txn_info:
-        if latest:
-          await self._cache.set_latest(ledger_type, seq_no)
+        if latest and is_int(ident):
+          await self._cache.set_latest(ledger_type, ident)
         return txn_info
+    if not is_int(ident):
+      # txn ID must be loaded from cache
+      return None
 
-    LOGGER.debug("Fetch %s %s", ledger_type, seq_no)
-    req_json = await ledger.build_get_txn_request(self.did, ledger_type.name, seq_no)
+    LOGGER.debug("Fetch %s %s", ledger_type, ident)
+    req_json = await ledger.build_get_txn_request(self.did, ledger_type.name, ident)
     txn_json = await self._instance._submit(req_json)
     txn = json.loads(txn_json)
     data_json = self.pool.protocol.txn2data(txn)
 
     if data_json and data_json != "{}":
-      body_json = json.dumps(txn["result"]["data"], separators=(',',':'), sort_keys=True)
+      data = txn["result"]["data"]
+      body_json = json.dumps(data, separators=(',',':'), sort_keys=True)
       added = datetime.now() #self.pool.protocol.txntime(txn)
+      txn_id = None
+      if "txnMetadata" in data:
+        txn_id = data["txnMetadata"].get("txnId")
       if cache:
-        await self._cache.add_txn(ledger_type, seq_no, body_json, added, latest)
-      return (seq_no, added, body_json)
+        await self._cache.add_txn(ledger_type, ident, txn_id, added, body_json, latest)
+      return (ident, added, body_json)
 
   async def get_txn_range(self, ledger_type, start=None, end=None):
     pos = start or 1
@@ -307,10 +323,12 @@ class LedgerCache:
       CREATE TABLE transactions (
         ledger integer NOT NULL,
         seqno integer NOT NULL,
+        txnid text,
         added timestamp,
         value text,
         PRIMARY KEY (ledger, seqno)
-      )
+      );
+      CREATE INDEX txn_id ON transactions (txnid);
       ''', script=True)
 
   async def reset(self):
@@ -325,10 +343,16 @@ class LedgerCache:
       'SELECT seqno FROM latest WHERE ledger=?', (ledger_type.value,))
     return row and row[0] or None
 
-  async def get_txn(self, ledger_type: LedgerType, seq_no):
+  async def get_txn(self, ledger_type: LedgerType, ident):
+    if not ident:
+      return None
+    if is_int(ident):
+      return await self.queryone(
+        'SELECT seqno, txnid, added, value FROM transactions WHERE ledger=? AND seqno=?',
+        (ledger_type.value, ident))
     return await self.queryone(
-      'SELECT seqno, added, value FROM transactions WHERE ledger=? AND seqno=?',
-      (ledger_type.value, seq_no))
+      'SELECT seqno, txnid, added, value FROM transactions WHERE ledger=? AND txnid=?',
+      (ledger_type.value, ident))
 
   async def get_txn_range(self, ledger_type: LedgerType, start=None, end=None):
     latest = await self.get_latest_seqno(ledger_type)
@@ -339,7 +363,7 @@ class LedgerCache:
     ret = []
     if start and end:
       async with await self.query(
-          'SELECT seqno, added, value FROM transactions WHERE ledger=? AND seqno BETWEEN ? AND ? ORDER BY seqno',
+          'SELECT seqno, txnid, added, value FROM transactions WHERE ledger=? AND seqno BETWEEN ? AND ? ORDER BY seqno',
           (ledger_type.value, start, end)) as cursor:
         pos = start
         while True:
@@ -355,10 +379,10 @@ class LedgerCache:
             break
     return ret
 
-  async def add_txn(self, ledger_type: LedgerType, seq_no, value: str, added, latest=False):
+  async def add_txn(self, ledger_type: LedgerType, seq_no, txn_id, added, value: str, latest=False):
     await self.perform(
-      'INSERT INTO transactions (ledger, seqno, added, value) VALUES (?, ?, ?, ?)',
-      (ledger_type.value, seq_no, added, value))
+      'INSERT INTO transactions (ledger, seqno, txnid, added, value) VALUES (?, ?, ?, ?, ?)',
+      (ledger_type.value, seq_no, txn_id, added, value))
     if latest:
       await self.set_latest(ledger_type, seq_no)
 

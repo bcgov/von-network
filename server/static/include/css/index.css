@@ -20,6 +20,12 @@ header h1 {
 	padding: 0;
 	vertical-align: -0.15em;
 }
+header a {
+	color: #e9f5ff;
+}
+header h1 a:hover {
+	color: #9bf;
+}
 header p.lead {
 	display: inline-block;
 	margin-left: 3rem;
@@ -65,15 +71,40 @@ a.tool, input[type=submit].tool {
 	font-size: 110%;
 }
 
+.form-group {
+  margin-bottom: 0.5rem;
+}
+
 .tool-button, .tool-input {
 	background-color: #f0f3ff;
 	border: 1px solid #58a;
 	border-radius: 3px;
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
+	box-sizing: border-box;
 	display: inline-block;
 	line-height: 1.4;
 	margin: 0.2rem 0;
+}
+.tool-button {
 	padding: 0.3rem 0.6rem;
+}
+.tool-input {
+	padding: 0.1rem 0 0.2rem 0.4rem;
+}
+select.tool-input {
+  padding-right: 0.4rem;
+}
+.wallet-seed {
+  max-width: 25em;
+  width: 100%;
+}
+.tool-label {
+  color: #666;
+  display: block;
+  font-size: 90%;
+}
+.tool-label.inline {
+  display: inline;
 }
 
 .tool-button:hover, .tool-button:focus {
@@ -251,6 +282,125 @@ h2 .fa {
 	color: #888;
 }
 
+.ledger-nav {
+  display: flex;
+  text-align: center;
+}
+.ledger-nav .loading {
+  flex: auto;
+}
+.pagination {
+  border-radius: 4px;
+  display: inline-flex;
+  flex: auto;
+  justify-content: flex-end;
+  list-style-type: none;
+  margin: 0.5em 0 0;
+  overflow: hidden;
+  padding: 0;
+}
+.pagination .page-item:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.pagination .page-item:last-child {
+  border-radius: 0 4px 4px 0;
+}
+.pagination .page-item {
+  border: 1px solid #9bf;
+  display: block;
+  z-index: 1;
+}
+.pagination .page-link {
+  display: block;
+  min-width: 1.5em;
+  padding: 0.25em 0.8em;
+}
+.pagination .page-item+.page-item {
+  margin-left: -1px;
+}
+.pagination .page-item.active {
+  font-weight: bold;
+}
+.pagination .page-item.disabled {
+  border-color: #aaa;
+  color: #888;
+  z-index: 0;
+}
+
+.ledger-data {
+  background-color: #fff;
+  border: 1px solid #9bd;
+  border-spacing: 0;
+  margin-top: 1em;
+  width: 100%;
+}
+.ledger-row:not(:last-child) td {
+  border-bottom: 1px solid #9bd;
+}
+.ledger-row td {
+  padding: 0.8em 0.5em;
+  vertical-align: top;
+}
+.ledger-row:nth-child(even) {
+  background: #e9f0fe;
+}
+.ledger-index {
+  width: 10%;
+}
+.ledger-index .number {
+  border: 1px transparent;
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: block;
+  font-size: 90%;
+  padding: 0 0.5em;
+  text-align: right;
+  width: 100%;
+}
+.raw-data {
+  font-family: monospace;
+  font-size: 70%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ledger-entry label {
+  opacity: 0.7;
+  font-weight: 600;
+  font-size: 90%;
+}
+.ledger-entry .line {
+  padding-left: 2em;
+  text-indent: -1em;
+}
+.ledger-entry .misc {
+  font-size: 90%;
+}
+.ledger-entry ul {
+  margin-top: 0;
+  padding-top: 0;
+  text-indent: 0;
+}
+.ledger-entry-title {
+  background: #9bd;
+  border-radius: 4px;
+  color: #f0f3ff;
+  font-size: 75%;
+  font-weight: bold;
+  margin-bottom: 0.25em;
+  padding: 1px 4px 2px;
+}
+.ledger-entry-title.active {
+  cursor: pointer;
+}
+.ledger-entry-title:not(:first-child) {
+  margin-top: 0.5em;
+}
+.ident {
+  font-family: monospace;
+  font-size: 80%;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
 @media screen and (max-width: 900px) {
 	.row-outer {
 		display: block;
@@ -261,8 +411,10 @@ h2 .fa {
 	}
 }
 
-.register-result {
-	display: block;
-	padding-top: 25px;
- 	display: none;
+.register-result, .register-error {
+	padding-top: 20px;
+ 	word-wrap: break-word;
+}
+.register-result code {
+  font-size: 85%;
 }

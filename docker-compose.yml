@@ -30,11 +30,6 @@ services:
       - von
     ports:
       - 9000:8000
-    depends_on:
-      - node1
-      - node2
-      - node3
-      - node4
     volumes:
       - ./server:/home/indy/server
       - webserver-cli:/home/indy/.indy-cli
@@ -42,6 +37,28 @@ services:
   #
   # Nodes
   #
+  nodes:
+    image: von-network-base
+    command: 'bash -c ''./scripts/start_nodes.sh'''
+    networks:
+      - von
+    ports:
+      - 9701:9701
+      - 9702:9702
+      - 9703:9703
+      - 9704:9704
+      - 9705:9705
+      - 9706:9706
+      - 9707:9707
+      - 9708:9708
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
+      - RUST_LOG=${RUST_LOG}
+    volumes:
+      - nodes-data:/home/indy/ledger
+
   node1:
     image: von-network-base
     command: 'bash -c ''./scripts/start_node.sh 1'''
@@ -117,3 +134,4 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
+  nodes-data:

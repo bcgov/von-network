@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import json
 import logging
@@ -32,6 +33,10 @@ TRUST_ANCHOR = AnchorHandle()
 @ROUTES.get('/')
 async def index(request):
   return web.FileResponse('static/index.html')
+
+@ROUTES.get('/browse/{ledger_ident:.*}')
+async def browse(request):
+  return web.FileResponse('static/ledger.html')
 
 @ROUTES.get('/favicon.ico')
 async def favicon(request):
@@ -98,9 +103,9 @@ async def ledger_json(request):
   results = []
   for row in rows:
     last_modified = max(last_modified, row[1]) if last_modified else row[1]
-    results.append(json.loads(row[2]))
+    results.append(json.loads(row[3]))
   latest = await TRUST_ANCHOR.get_latest_seqno(request.match_info["ledger_name"])
-  if not results:
+  if not results and page > 1:
     data = {
       "detail": "Invalid page."
     }
@@ -199,17 +204,17 @@ async def ledger_text(request):
   return response
 
 
-@ROUTES.get("/ledger/{ledger_name}/{sequence_number:\d+}")
+@ROUTES.get("/ledger/{ledger_name}/{txn_ident}")
 async def ledger_seq(request):
-  seq_no = int(request.match_info['sequence_number'])
+  ident = request.match_info['txn_ident']
   ledger = request.match_info['ledger_name']
   try:
-    data = await TRUST_ANCHOR.get_txn(ledger, seq_no)
+    data = await TRUST_ANCHOR.get_txn(ledger, ident)
     if not data:
       return web.Response(status=404)
   except NotReadyException:
     return not_ready()
-  return json_response(json.loads(data[2]))
+  return json_response(json.loads(data[3]))
 
 
 # Expose genesis transaction for easy connection.
@@ -242,7 +247,14 @@ async def register(request):
   role = body.get('role', 'TRUST_ANCHOR')
 
   if seed:
-    if not 0 <= len(seed) <= 32:
+    if seed.endswith('='):
+      testseed = base64.b64decode(seed).decode('ascii')
+      if len(testseed) != 32:
+        return web.Response(
+          text='Seed must be 32 characters long.',
+          status=400
+        )
+    elif not 0 <= len(seed) <= 32:
       return web.Response(
         text='Seed must be between 0 and 32 characters long.',
         status=400
@@ -257,7 +269,9 @@ async def register(request):
       )
 
   if not did or not verkey:
-    did, verkey = await TRUST_ANCHOR.seed_to_did(seed)
+    auto_did, verkey = await TRUST_ANCHOR.seed_to_did(seed)
+    if not did:
+      did = auto_did
 
   try:
     await TRUST_ANCHOR.register_did(did, verkey, alias, role)

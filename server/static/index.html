@@ -12,11 +12,13 @@
       src="https://code.jquery.com/jquery-3.2.1.min.js"
       integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
       crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+  <script src="include/js/common.js"></script>
 </head>
 <body>
   <header>
     <h1>BCovrin</h1>
-    <p class="lead">BC's Provisional Indy Network</p>
+    <p class="lead">Contributed by the Province of British Columbia</p>
   </header>
 
   <main>
@@ -63,7 +65,7 @@
                     <dd class="node-did"><label>DID:</label> <code class="nodeval-did">8ECVSk179mjsjKRLWiQtssMLgp6EPhWXtaYyStWPSGAb</code></dd>
                     <dd class="node-state" style="display: none"><label>State:</label> <span class="nodeval-state">unknown</span></dd>
                     <dd class="node-uptime"><label>Uptime:</label> <span class="nodeval-uptime">6 days, 11 hours, 9 minutes, 35 seconds</span></dd>
-                    <dd class="node-txns"><label>Transactions:</label> <span class="nodeval-txns">0 config, 46 ledger, 4 pool, 0.00/s read, 0.00/s write</span></dd>
+                    <dd class="node-txns"><label>Txns:</label> <span class="nodeval-txns">0 config, 46 ledger, 4 pool, 0.00/s read, 0.00/s write</span></dd>
                     <dd class="node-unreach"><label>Unreachable hosts:</label> <span class="nodeval-unreach">Node2, Node3</span></dd>
                     <dd class="node-indyver"><label>indy-node version:</label> <span class="nodeval-indyver">1.2.210</span></dd>
                   </dl>
@@ -91,13 +93,11 @@
               View the state of the ledgers:
             </p>
             <p>
-              <a href="/ledger/domain" class="tool"><span class="fa fa-chevron-right left"></span>Domain</a> <span class="tool-tag">JSON</span>
+              <a href="/browse/domain" class="tool"><span class="fa fa-chevron-right left"></span>Domain</a>
               <br>
-              <a href="/ledger/pool" class="tool"><span class="fa fa-chevron-right left"></span>Pool</a> <span class="tool-tag">JSON</span>
+              <a href="/browse/pool" class="tool"><span class="fa fa-chevron-right left"></span>Pool</a>
               <br>
-              <a href="/ledger/config" class="tool"><span class="fa fa-chevron-right left"></span>Config</a> <span class="tool-tag">JSON</span>
-              <br>
-              <a href="https://kumu.io/maher-bouidani/bc-govern" class="tool"><span class="fa fa-chevron-right left"></span>Domain graph example</a>
+              <a href="/browse/config" class="tool"><span class="fa fa-chevron-right left"></span>Config</a>
             </p>
           </div>
         </div>
@@ -115,10 +115,10 @@
             <p>
               Download the genesis transaction file to connect to the network.
             </p>
-            <p>
+            <div class="form-group">
               <a href="/genesis" class="tool-button"><span class="fa fa-download left"></span>Genesis Transaction</a>
               <span class="tool-tag">JSON</span>
-            </p>
+            </div>
           </div>
         </div>
 
@@ -130,53 +130,80 @@
               Authenticate a New DID
             </h2>
           </div>
-          <div class="panel-body">
+          <div class="panel-body" id="vue-register" style="display: none" v-show="true">
             <p>
               Easily write a new DID to the ledger for new identity owners.
             </p>
-<!--             <p>
-              <span class="top-label">Format:</span><br><code class="tag small">/register?seed=BC-Registrar-Agent-0000000000000</code>
-            </p> -->
-            <p>
+            <form action="/register" method="get" accept-charset="utf-8" @submit.prevent="register">
+              <div class="form-group">
+                <input type="radio" value="seed" v-model="reg_info.reg_type" id="reg-seed">
+                  <label for="reg-seed" class="tool-label inline">Register from seed</label>
+                &nbsp; <input type="radio" value="did" v-model="reg_info.reg_type" id="reg-did">
+                  <label for="reg-did" class="tool-label inline">Register from DID</label>
+              </div>
 
-              <form action="/register" method="get" accept-charset="utf-8">
-                <select name="seed" class="tool-button">
-                  <option value="the_org_book_dev_000000000000000">TheOrgBook (DEV)</option>
-                  <option value="the_org_book_test_00000000000000">TheOrgBook (TEST)</option>
-                  <option value="bc_registries_dev_00000000000000">BC Corporate Registry (DEV)</option>
-                  <option value="bc_registries_test_0000000000000">BC Corporate Registry (TEST)</option>
-                  <option value="city_of_surrey_dev_0000000000000">City of Surrey (DEV)</option>
-                  <option value="city_of_surrey_test_000000000000">City of Surrey (TEST)</option>
-                  <option value="fraser_valley_dev_00000000000000">Fraser Valley Health Authority (DEV)</option>
-                  <option value="fraser_valley_test_0000000000000">Fraser Valley Health Authority (TEST)</option>
-                  <option value="liquor_control_dev_0000000000000">Liquor Control and Licensing Branch (DEV)</option>
-                  <option value="liquor_control_test_000000000000">Liquor Control and Licensing Branch (TEST)</option>
-                  <option value="ministry_of_finance_dev_00000000">BC Ministry of Finance (DEV)</option>
-                  <option value="ministry_of_finance_test_0000000">BC Ministry of Finance (TEST)</option>
-                  <option value="worksafe_bc_dev_0000000000000000">WorkSafe BC (DEV)</option>
-                  <option value="worksafe_bc_test_000000000000000">WorkSafe BC (TEST)</option>
-                </select>
-                or
+              <div class="form-group" v-if="reg_info.reg_type == 'seed'">
+                <label class="tool-label">Wallet seed (32 characters or base64)</label>
                 <input
-                  maxlength="32"
-                  class="tool-input"
+                  class="tool-input wallet-seed"
                   type="text"
                   name="seed"
-                  placeholder="Wallet Seed (32 characters)"
+                  v-model="reg_info.seed"
+                  required
                 >
-                <br/>
+              </div>
+              <div class="form-group">
+                <label class="tool-label">DID <template v-if="reg_info.reg_type == 'seed'">(optional)</template></label>
+                <input
+                  class="tool-input wallet-seed"
+                  type="text"
+                  name="did"
+                  v-model="reg_info.did"
+                  :required="reg_info.reg_type == 'did'"
+                >
+              </div>
+              <div class="form-group" v-if="reg_info.reg_type == 'did'">
+                <label class="tool-label">Verkey</label>
+                <input
+                  class="tool-input wallet-seed"
+                  type="text"
+                  name="verkey"
+                  v-model="reg_info.verkey"
+                  required
+                >
+              </div>
+              <div class="form-group">
+                <label class="tool-label">Alias (optional)</label>
+                <input
+                  class="tool-input wallet-seed"
+                  type="text"
+                  name="alias"
+                  v-model="reg_info.alias"
+                >
+              </div>
+              <div class="form-group">
+                <label class="tool-label">Role</label>
+                <select name="role" v-model="reg_info.role">
+                  <option value="">(None)</option>
+                  <option v-for="opt in role_options" :value="opt.value">{{opt.label}}</option>
+                </select>
+              </div>
+              <div class="form-group">
                 <button class="tool-button" type="submit" name="register"><span class="fa fa-sign-in left"></span>Register DID</button>
-              </form>
+              </div>
+            </form>
 
-
-              <code class="register-result">
-                <h3>Identity successfully registered:</h3>
-                <b>seed: </b> <span id="seed"></span> <br />
-                <b>did: </b> <span id="did"></span> <br />
-                <b>verkey: </b> <span id="verkey"></span> <br />
+            <div class="register-result" v-if="reg_result">
+              <h3>Identity successfully registered:</h3>
+              <code>
+                <span v-if="reg_result.seed"><b>Seed: </b> {{reg_result.seed}}<br></span>
+                <b>DID: </b> {{reg_result.did}}<br>
+                <b>Verkey:</b> {{reg_result.verkey}}
               </code>
-
-            </p>
+            </div>
+            <div class="error register-error" v-if="reg_error">
+              Error: identity not registered.
+            </div>
           </div>
         </div>
       </aside>
