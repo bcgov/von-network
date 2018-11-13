@@ -19,43 +19,30 @@ usage () {
   build - Build the docker images for the project.
           You need to do this first.
 
-  start - Creates the application containers from the built images
-          and starts the services based on the docker-compose.yml file.
-          Examples:
-          $0 start
-          $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
+  up - Starts all containers and docker-compose logs.
+       Use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
+        Examples:
+        $0 start
+        $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
+  start - Same as up
+
+  logs - Display the logs from the docker compose run (ctrl-c to exit).
 
   cli - Start client container
 
-  stop - Stops the services.  This is a non-destructive process.  The containers
+  down - Brings down the services and removes the volumes (storage).  The containers
          are not deleted so they will be reused the next time you run start.
+  rm - Same as down
+
+  stop - Stops the containers, leaving the volumes (storage).
 
   rebuild - Rebuild the docker images.
-
-  rm - Remove project containers and associated volumes.
 EOF
 exit 1
 }
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
-deleteVolumes() {
-  _projectName=${COMPOSE_PROJECT_NAME:-docker}
-
-  echo "Stopping and removing any running containers ..."
-  docker-compose rm -svf >/dev/null
-
-  _pattern="^${_projectName}_\|^docker_"
-  _volumes=$(docker volume ls -q | grep ${_pattern})
-
-  if [ ! -z "${_volumes}" ]; then
-    echo "Removing project volumes ..."
-    echo ${_volumes} |  xargs docker volume rm
-  else
-    echo "No project volumes exist."
-  fi
-}
-# =================================================================================================================
 initEnv() {
   export RUST_LOG=${RUST_LOG:-warning}
   IP=""
@@ -71,31 +58,37 @@ initEnv() {
 pushd ${SCRIPT_HOME} >/dev/null
 
 case "$1" in
-  start)
+  start|up)
       initEnv "$2"
-      docker-compose up webserver node1 node2 node3 node4
+      docker-compose up -d webserver node1 node2 node3 node4
+      docker-compose logs -f
     ;;
   start-combined)
       initEnv "$2"
-      docker-compose up webserver nodes
+      docker-compose up -d webserver nodes
+      docker-compose logs -f
     ;;
   cli)
       initEnv "$2"
       docker-compose run --rm client
     ;;
+  logs)
+      initEnv "$2"
+      docker-compose logs -f
+    ;;
   stop)
       initEnv
       docker-compose stop
+    ;;
+  down|rm)
+      initEnv
+      docker-compose down -v
     ;;
   build)
       docker build -t von-network-base .
     ;;
   rebuild)
       docker-compose build -t von-network-base --no-cache
-    ;;
-  rm)
-      initEnv
-      deleteVolumes
     ;;
   *)
       usage;;
