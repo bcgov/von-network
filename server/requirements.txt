@@ -3,5 +3,3 @@ von-agent==1.1.2
 # von-agent==0.5.2
 # # The 'egg=' syntanx is required by the 'pipenv install' command.
 git+https://github.com/bcgov/von_agent.git#egg=von-agent
-sanic==0.7.0
-
