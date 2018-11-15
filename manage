@@ -33,7 +33,8 @@ usage () {
   down - Brings down the services and removes the volumes (storage) and containers.
   rm - Same as down
 
-  stop - Stops the containers, leaving the volumes (storage).
+  stop - Stops the services.  This is a non-destructive process.  The volumes and containers
+         are not deleted so they will be reused the next time you run start.
 
   rebuild - Rebuild the docker images.
 EOF
