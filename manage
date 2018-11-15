@@ -30,8 +30,7 @@ usage () {
 
   cli - Start client container
 
-  down - Brings down the services and removes the volumes (storage).  The containers
-         are not deleted so they will be reused the next time you run start.
+  down - Brings down the services and removes the volumes (storage) and containers.
   rm - Same as down
 
   stop - Stops the containers, leaving the volumes (storage).
