@@ -287,6 +287,9 @@ h2 .fa {
 	color: #888;
 }
 
+.ledger-txns {
+  word-break: break-word;
+}
 .ledger-loading {
   float: right;
 }
