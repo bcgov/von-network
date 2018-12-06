@@ -71,6 +71,11 @@ a.tool, input[type=submit].tool {
 	font-size: 110%;
 }
 
+.back-link {
+  display: inline-block;
+  margin-bottom: 0.5em;
+}
+
 .form-group {
   margin-bottom: 0.5rem;
 }
@@ -282,22 +287,43 @@ h2 .fa {
 	color: #888;
 }
 
+.ledger-loading {
+  float: right;
+}
 .ledger-nav {
   display: flex;
-  text-align: center;
+  flex-flow: row wrap;
 }
-.ledger-nav .loading {
-  flex: auto;
+.nav-label {
+  display: inline-block;
+  opacity: 0.7;
+  font-weight: 600;
+  font-size: 90%;
+  min-width: 6em;
+}
+.count {
+  padding-left: 2em;
+}
+.nav-left {
+  flex: 1 0 auto;
+}
+.nav-right {
+  flex: 0 0 40%;
+  white-space: nowrap;
+}
+.clear-filter {
+  cursor: pointer;
+  margin-left: 6em;
 }
 .pagination {
   border-radius: 4px;
   display: inline-flex;
-  flex: auto;
   justify-content: flex-end;
   list-style-type: none;
-  margin: 0.5em 0 0;
+  margin: 0.5em 0;
   overflow: hidden;
   padding: 0;
+  text-align: center;
 }
 .pagination .page-item:first-child {
   border-radius: 4px 0 0 4px;

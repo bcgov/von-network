@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 import aiosqlite
+import base58
 
 from indy import ledger
 
@@ -165,7 +166,7 @@ class AnchorHandle:
       return None
 
     LOGGER.debug("Fetch %s %s", ledger_type, ident)
-    req_json = await ledger.build_get_txn_request(self.did, ledger_type.name, ident)
+    req_json = await ledger.build_get_txn_request(self.did, ledger_type.name, int(ident))
     txn_json = await self._instance._submit(req_json)
     txn = json.loads(txn_json)
     data_json = self.pool.protocol.txn2data(txn)
@@ -197,6 +198,13 @@ class AnchorHandle:
     if not end or pos <= end:
       rows.extend(await self._cache.get_txn_range(ledger_type, pos, end))
     return rows
+
+  async def get_txn_search(self, ledger_type, query, txn_type=None, limit=-1, offset=0):
+    ledger_type = LedgerType.for_value(ledger_type)
+    if txn_type is '':
+      txn_type = None
+    rows, count = await self._cache.get_txn_search(ledger_type, query, txn_type, limit, offset)
+    return rows, count
 
   async def register_did(self, did, verkey, alias=None, role=None):
     """
@@ -270,6 +278,44 @@ class AnchorHandle:
     return ret
 
 
+def txn_extract_terms(txn_json):
+  data = json.loads(txn_json)
+  result = {}
+  type = None
+  if data:
+    meta = data.get('txnMetadata', {})
+    result['txnid'] = meta.get('txnId')
+    txn = data.get('txn', {})
+    type = txn.get('type')
+
+    if type == '1':
+      # NYM
+      result['ident'] = txn['data']['dest']
+      result['alias'] = txn['data'].get('alias')
+      short_verkey = None
+      verkey = txn['data']['verkey']
+      try:
+          did = base58.b58decode(txn['data']['dest'])
+          if verkey[0] == "~":
+            short_verkey = verkey
+            suffix = base58.b58decode(verkey[1:])
+            verkey = base58.b58encode(did + suffix).decode('ascii')
+          else:
+            long = base58.b58decode(verkey)
+            if long[0:16] == did:
+              short_verkey = '~' + base58.b58encode(long[16:]).decode('ascii')
+      except ValueError:
+        LOGGER.error("Error decoding verkey")
+      result['short_verkey'] = short_verkey
+      result['verkey'] = verkey
+
+    elif type == '101':
+      # SCHEMA
+      result['ident'] = txn['data']['data']['name']
+
+  return type, result
+
+
 class LedgerCache:
   def __init__(self, db_path: str = None):
     self.db = None
@@ -313,6 +359,10 @@ class LedgerCache:
   async def perform(self, sql, args=(), script=False):
     return await self.query(sql, args, close=True, script=script)
 
+  async def insert(self, sql, args=()):
+    async with await self.query(sql, args) as cursor:
+      return cursor.lastrowid
+
   async def init_db(self):
     LOGGER.info("Initializing transaction database")
     await self.perform('''
@@ -323,12 +373,15 @@ class LedgerCache:
       CREATE TABLE transactions (
         ledger integer NOT NULL,
         seqno integer NOT NULL,
+        txntype integer NOT NULL,
+        termsid integer,
         txnid text,
         added timestamp,
         value text,
         PRIMARY KEY (ledger, seqno)
       );
       CREATE INDEX txn_id ON transactions (txnid);
+      CREATE VIRTUAL TABLE terms USING fts3(txnid, ident, alias, verkey, short_verkey);
       ''', script=True)
 
   async def reset(self):
@@ -363,7 +416,8 @@ class LedgerCache:
     ret = []
     if start and end:
       async with await self.query(
-          'SELECT seqno, txnid, added, value FROM transactions WHERE ledger=? AND seqno BETWEEN ? AND ? ORDER BY seqno',
+          'SELECT seqno, txnid, added, value FROM transactions ' \
+          'WHERE ledger=? AND seqno BETWEEN ? AND ? ORDER BY seqno',
           (ledger_type.value, start, end)) as cursor:
         pos = start
         while True:
@@ -379,10 +433,47 @@ class LedgerCache:
             break
     return ret
 
+  async def get_txn_search(self, ledger_type: LedgerType, query=None, txn_type=None, limit=-1, offset=0, count=True):
+    result = []
+    select_fields = 'txn.seqno, txn.txnid, txn.added, txn.value'
+    sql = 'SELECT {} FROM terms ' \
+      'INNER JOIN transactions txn ON txn.termsid=terms.rowid AND txn.ledger=? ' \
+      'WHERE txn.termsid IS NOT NULL'
+    params = (ledger_type.value,)
+    if query is not None:
+      sql += ' AND terms MATCH ?'
+      params = (*params, query)
+    if txn_type:
+      sql += ' AND txn.txntype = ?'
+      params = (*params, txn_type)
+    select_sql = (sql + ' LIMIT ? OFFSET ?').format(select_fields)
+    async with await self.query(select_sql, (*params, limit, offset)) as cursor:
+      while True:
+        rows = await cursor.fetchmany()
+        for row in rows:
+          result.append(row)
+        if not rows:
+          break
+    if count:
+      count_sql = sql.format('COUNT(*)')
+      count_result = await self.queryone(count_sql, params)
+      count_val = count_result and count_result[0]
+    else:
+      count_val = None
+    return result, count_val
+
   async def add_txn(self, ledger_type: LedgerType, seq_no, txn_id, added, value: str, latest=False):
-    await self.perform(
-      'INSERT INTO transactions (ledger, seqno, txnid, added, value) VALUES (?, ?, ?, ?, ?)',
-      (ledger_type.value, seq_no, txn_id, added, value))
+    txn_type, terms = txn_extract_terms(value)
+    terms_id = None
+    if terms:
+      term_names = list(terms.keys())
+      upd = 'INSERT INTO terms ({}) VALUES ({})'.format(
+        ', '.join(term_names),
+        ', '.join('?' for _ in term_names))
+      terms_id = await self.insert(upd, tuple(terms[k] for k in term_names))
+    await self.insert(
+      'INSERT INTO transactions (ledger, seqno, txntype, txnid, added, value, termsid) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      (ledger_type.value, seq_no, txn_type, txn_id, added, value, terms_id))
     if latest:
       await self.set_latest(ledger_type, seq_no)
 

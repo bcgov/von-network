@@ -20,11 +20,15 @@
   <main>
     <div class="row-outer">
       <div class="col-main">
+        <a href="/" class="back-link"><span class="fa fa-chevron-left"></span> Back to Status</a>
         <div id="vue-ledger">
           <div class="panel panel-default panel-ledger-data">
             <div class="panel-heading">
               <h2>
                 Ledger Transactions
+                <span class="small ledger-loading" v-if="loading">
+                  <span class="fa fa-circle-o-notch fa-spin fa-fw"></span> Loading ...
+                </span>
               </h2>
             </div>
             <div class="panel-body" style="display: none" v-show="true">
@@ -32,43 +36,57 @@
                 <a href="#" @click.prevent="showEntry(null)"><span class="fa fa-chevron-left"></span> Back to list</a>
               </div>
               <div class="ledger-nav">
-                <div class="filter">
-                  <select class="tool-input" @change="showLedger($event.target.value)">
-                    <option>(Select ledger)</option>
-                    <option v-for="opt in ledger_options" :value="opt.value" :selected="opt.value == ledger">{{opt.label}}</option>
-                  </select>
-                  <input class="tool-input" placeholder="Transaction" size="20" :value="ident" @keyup.enter="showEntry($event.target.value)" @focus="$event.target.select()">
-                </div>
-                <div class="loading">
-                  <p v-if="loading">
-                    <span class="fa fa-circle-o-notch fa-spin fa-fw"></span> Loading transactions ...
-                  </p>
-                </div>
-                <ul class="pagination" v-if="nav.loaded">
-                  <li class="page-item" v-if="nav.has_prev">
-                    <a class="page-link" href="#" @click.prevent="prevPage" aria-label="Previous">
-                      <span aria-hidden="true" class="fa fa-chevron-left"></span> Previous
-                    </a>
-                  </li>
-                  <li class="page-item disabled" v-else>
-                    <label class="page-link">
-                      <span aria-hidden="true" class="fa fa-chevron-left"></span> Previous
+                <div class="nav-left">
+                  <div class="ledger">
+                    <select class="tool-input" id="ledger-select" v-model="ledger" @change="updateLedger()">
+                      <option value="">(Select)</option>
+                      <option v-for="opt in ledgerOptions" :value="opt.value">{{opt.label}}</option>
+                    </select>
+                    <label class="count nav-label" v-if="nav.loaded">
+                      {{nav.total || 0}} record(s)
                     </label>
-                  </li>
-                  <li v-for="p in nav.pages" :class="'page-item' + (p.active ? ' active' : '')">
-                    <a class="page-link" href="#" @click.prevent="gotoPage(p.index)">{{p.index}}</a>
-                  </li>
-                  <li class="page-item" v-if="nav.has_next">
-                    <a class="page-link" href="#" @click.prevent="nextPage" aria-label="Next">
-                      Next <span aria-hidden="true" class="fa fa-chevron-right"></span>
-                    </a>
-                  </li>
-                  <li class="page-item disabled" v-else>
-                    <label class="page-link">
-                      Next <span aria-hidden="true" class="fa fa-chevron-right"></span>
-                    </label>
-                  </li>
-                </ul>
+                  </div>
+                  <ul class="pagination" v-if="nav.loaded">
+                    <li class="page-item" v-if="nav.has_prev">
+                      <a class="page-link" href="#" @click.prevent="prevPage" aria-label="Previous">
+                        <span aria-hidden="true" class="fa fa-chevron-left"></span> Previous
+                      </a>
+                    </li>
+                    <li class="page-item disabled" v-else>
+                      <label class="page-link">
+                        <span aria-hidden="true" class="fa fa-chevron-left"></span> Previous
+                      </label>
+                    </li>
+                    <li v-for="p in nav.pages" :class="'page-item' + (p.active ? ' active' : '')">
+                      <a class="page-link" href="#" @click.prevent="gotoPage(p.index)">{{p.index}}</a>
+                    </li>
+                    <li class="page-item" v-if="nav.has_next">
+                      <a class="page-link" href="#" @click.prevent="nextPage" aria-label="Next">
+                        Next <span aria-hidden="true" class="fa fa-chevron-right"></span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled" v-else>
+                      <label class="page-link">
+                        Next <span aria-hidden="true" class="fa fa-chevron-right"></span>
+                      </label>
+                    </li>
+                  </ul>
+                </div>
+                <div class="nav-right">
+                  <div class="filter">
+                    <label class="nav-label">Type: </label>
+                    <select class="tool-input" id="txn-type-select" v-model="txn_type" @change="updateLedger()">
+                      <option value="">(Select)</option>
+                      <option v-for="opt in txnTypeOptions" :value="opt.value">{{opt.label}}</option>
+                    </select>
+                    <br>
+                    <label class="nav-label">Filter: </label>
+                    <input class="tool-input" id="query-input" placeholder="" size="30" :value="query" @keyup.enter="updateQuery($event.target.value)" @focus="$event.target.select()">
+                    <div class="clear-filter" v-if="haveFilter" @click.prevent="clearFilter()">
+                      <span class="fa fa-times-circle"></span> Clear filter
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="error" v-if="error">
                 <p>
@@ -79,13 +97,13 @@
                 <table class="ledger-data" v-if="txns.length">
                   <tbody>
                     <tr class="ledger-row" v-for="entry in txns">
-                      <td class="ledger-index"><a :href="entryUrl(entry.txnMetadata.seqNo)" class="number" @click.prevent="showEntry(entry.txnMetadata.seqNo)">#{{entry.txnMetadata.seqNo}}</a></td>
+                      <td class="ledger-index"><span class="number">#{{entry.txnMetadata.seqNo}}</span></td>
                       <td class="ledger-entry">
                         <div class="ledger-entry-title">
                           Message Wrapper
                         </div>
                         <div v-if="entry.txnMetadata.txnId" class="line misc">
-                          <label>Transaction ID:</label> <a :href="entryUrl(entry.txnMetadata.txnId)" @click.prevent="showEntry(entry.txnMetadata.txnId)" class="ident">{{entry.txnMetadata.txnId}}</a>
+                          <label>Transaction ID:</label> <span class="ident">{{entry.txnMetadata.txnId}}</span>
                         </div>
                         <div v-if="entry.txnMetadata.txnTime" class="line misc">
                           <label>Transaction time:</label> <span class="ident">{{entry.txnMetadata.txnTime | format_time}} ({{entry.txnMetadata.txnTime}})</span>
@@ -156,6 +174,14 @@
                             <label>Verkey:</label> <span class="ident">{{entry.txn.data.verkey}}</span>
                           </div>
                         </template>
+                        <template v-if="entry.txn.type == '100'">
+                          <div class="line misc">
+                            <label>Nym:</label> <span class="ident">{{entry.txn.data.dest}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Attribute data:</label> <span class="ident">{{entry.txn.data.raw}}</span>
+                          </div>
+                        </template>
                         <template v-if="entry.txn.type == '101'">
                           <div class="line misc">
                             <label>Schema name:</label> <span class="ident">{{entry.txn.data.data.name}}</span>
@@ -174,7 +200,7 @@
                         </template>
                         <template v-if="entry.txn.type == '102'">
                           <div class="line misc">
-                            <label>Reference:</label> <a :href="entryUrl(entry.txn.data.ref)" @click.prevent="showEntry(entry.txn.data.ref)" class="ident">{{entry.txn.data.ref}}</a>
+                            <label>Reference:</label> <span class="ident">{{entry.txn.data.ref}}</span>
                           </div>
                           <div class="line misc">
                             <label>Signature type:</label> <span class="ident">{{entry.txn.data.signature_type}}</span>
@@ -191,7 +217,7 @@
                             </ul>
                         </template>
                         <div class="ledger-entry-title active" @click.prevent="toggleData(entry.index)">
-                          Raw Data <span class="fa fa-chevron-down"></span>
+                          Raw Data <span :class="'fa fa-chevron-' + (entry.expanded ? 'up' : 'down')"></span>
                         </div>
                         <div class="raw-data" v-if="entry.expanded">{{entry.json}}</div>
                       </td>

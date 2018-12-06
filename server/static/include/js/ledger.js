@@ -37,6 +37,10 @@ const INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
+const LEDGER_TXNS = [
+  "0", "1", "100", "101", "102",
+];
+
 var app = new Vue({
   el: '#vue-ledger',
   data: {
@@ -50,8 +54,10 @@ var app = new Vue({
       total: 0
     },
     page: 1,
-    page_size: 20,
+    page_size: 10,
+    query: '',
     reqno: 0,
+    txn_type: '',
     txns: [],
   },
   mounted: function() {
@@ -61,12 +67,24 @@ var app = new Vue({
     this.load();
   },
   computed: {
-    ledger_options: function() {
+    haveFilter: function() {
+      return this.query !== '' || this.txn_type !== '';
+    },
+    ledgerOptions: function() {
       return [
         {value: 'domain', label: 'Domain'},
         {value: 'pool', label: 'Pool'},
         {value: 'config', label: 'Config'},
       ];
+    },
+    txnTypeOptions: function() {
+      var opts = [];
+      for(var idx = 0; idx < LEDGER_TXNS.length; idx++) {
+        var k = LEDGER_TXNS[idx];
+        opts.push({value: k, label: INDY_TXN_TYPES[k]});
+      }
+      opts.sort(function(a, b) { return parseInt(a.value) < parseInt(b.value); });
+      return opts;
     }
   },
   methods: {
@@ -83,12 +101,14 @@ var app = new Vue({
     loadPageParams: function() {
       var query = this.getPageParams();
       this.page = query.page || 1;
-      this.page_size = query.page_size || 20;
+      this.page_size = query.page_size || 10;
       var path = document.location.pathname;
       path = path.replace(/^.*\/browse\//, '');
       var parts = path.split('/');
       this.ledger = parts[0] || 'domain';
       this.ident = parts[1] || null;
+      this.query = query.query || '';
+      this.txn_type = query.txn_type || '';
     },
     getPageParams: function() {
       // would be automatic but we're not using vue-router
@@ -112,6 +132,16 @@ var app = new Vue({
     showLedger: function(value) {
       this.ledger = value;
       this.navToPage(null, {page: 1});
+    },
+    updateLedger: function() {
+      this.navToPage(null, {page: 1, query: this.query, txn_type: this.txn_type});
+    },
+    updateQuery: function(q) {
+      this.query = q;
+      this.updateLedger();
+    },
+    clearFilter: function() {
+      this.navToPage(null, {page: 1, query: '', txn_type: ''});
     },
     entryUrl: function(ident) {
       var url = '/browse/' + this.ledger;
@@ -141,7 +171,7 @@ var app = new Vue({
       if(ident)
         url += '/' + encodeURIComponent(this.ident);
       else
-        url += encodeQueryString({page: this.page, page_size: this.page_size});
+        url += encodeQueryString({page: this.page, page_size: this.page_size, query: this.query, type: this.txn_type});
       var self = this;
       var reqno = ++ this.reqno;
       fetch(url).then(
