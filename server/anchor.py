@@ -305,9 +305,16 @@ def txn_extract_terms(txn_json):
             if long[0:16] == did:
               short_verkey = '~' + base58.b58encode(long[16:]).decode('ascii')
       except ValueError:
-        LOGGER.error("Error decoding verkey")
+        LOGGER.error("Error decoding verkey: %s", verkey)
       result['short_verkey'] = short_verkey
       result['verkey'] = verkey
+
+    elif type == '100':
+      # ATTRIB
+      result['ident'] = txn['data']['dest']
+      raw_data = txn['data'].get('raw', '{}')
+      data = json.loads(raw_data) or {}
+      result['alias'] = data.get('endpoint', {}).get('endpoint')
 
     elif type == '101':
       # SCHEMA
