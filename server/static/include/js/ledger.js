@@ -100,8 +100,8 @@ var app = new Vue({
     },
     loadPageParams: function() {
       var query = this.getPageParams();
-      this.page = query.page || 1;
-      this.page_size = query.page_size || 10;
+      this.page = parseInt(query.page || 1, 10);
+      this.page_size = parseInt(query.page_size || 10, 10);
       var path = document.location.pathname;
       path = path.replace(/^.*\/browse\//, '');
       var parts = path.split('/');
