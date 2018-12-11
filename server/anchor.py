@@ -43,6 +43,9 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
+MAX_FETCH = 500
+RESYNC_TIME = 120
+
 def is_int(val):
   if isinstance(val, int):
     return True
@@ -74,6 +77,7 @@ class AnchorHandle:
     self._cache = None
     self._instance = None
     self._ready = False
+    self._ledger_lock = None
     self._sync_lock = None
 
     pool_cfg = None # {'protocol': protocol_version}
@@ -94,8 +98,9 @@ class AnchorHandle:
     await self._wallet.create()
     self._instance = AnchorSmith(self._wallet, self._pool)
     await self._instance.open()
+    self._ledger_lock = asyncio.Lock()
     self._sync_lock = asyncio.Lock()
-    asyncio.get_event_loop().create_task(self.sync_cache())
+    asyncio.get_event_loop().create_task(self.init_cache())
     self._ready = True
 
   async def close(self):
@@ -125,7 +130,7 @@ class AnchorHandle:
     return self._wallet
 
   async def fetch_tail_txn(self, ledger_type: LedgerType, max_seqno=None):
-    async with self._sync_lock:
+    async with self._ledger_lock:
       latest = await self._cache.get_latest_seqno(ledger_type)
       latest = latest and latest + 1 or 1
       if max_seqno and latest > max_seqno:
@@ -180,7 +185,7 @@ class AnchorHandle:
         txn_id = data["txnMetadata"].get("txnId")
       if cache:
         await self._cache.add_txn(ledger_type, ident, txn_id, added, body_json, latest)
-      return (ident, added, body_json)
+      return (ident, txn_id, added, body_json)
 
   async def get_txn_range(self, ledger_type, start=None, end=None):
     pos = start or 1
@@ -203,6 +208,7 @@ class AnchorHandle:
     ledger_type = LedgerType.for_value(ledger_type)
     if txn_type is '':
       txn_type = None
+    await self.sync_ledger_cache(ledger_type)
     rows, count = await self._cache.get_txn_search(ledger_type, query, txn_type, limit, offset)
     return rows, count
 
@@ -232,27 +238,56 @@ class AnchorHandle:
       verkey = new_agent.verkey
       return (did, verkey)
 
-  async def sync_cache(self):
+  async def init_cache(self):
     LOGGER.info("Syncing ledger cache")
-    for type in LedgerType:
-      await self.sync_ledger_cache(type)
+    for ledger_type in LedgerType:
+      await self.sync_ledger_cache(ledger_type, True)
     LOGGER.info("Finished sync")
+    asyncio.get_event_loop().create_task(self.maintain_cache())
 
-  async def sync_ledger_cache(self, ledger_type: LedgerType):
-    async with self._sync_lock:
+  async def maintain_cache(self):
+    while True:
+      for ledger_type in LedgerType:
+        done = await self.update_ledger_cache(ledger_type)
+      await asyncio.sleep(RESYNC_TIME)
+
+  async def update_ledger_cache(self, ledger_type: LedgerType):
+    LOGGER.debug("Resyncing ledger cache: %s", ledger_type.name)
+    try:
+      await self.sync_ledger_cache(ledger_type)
+    except asyncio.TimeoutError:
+      pass
+    LOGGER.debug("Finished resync")
+
+  async def sync_ledger_cache(self, ledger_type: LedgerType, wait=False):
+    done = False
+    fetched = 0
+    # may throw asyncio.TimeoutError
+    locked = await asyncio.wait_for(self._sync_lock.acquire(), None if wait else 0.01)
+    try:
       latest = await self._cache.get_latest_seqno(ledger_type)
       if latest:
         txn = await self.get_txn(ledger_type, latest, False)
         cache_txn = await self._cache.get_txn(ledger_type, latest)
-        if not cache_txn or not txn or json.loads(cache_txn) != json.loads(txn):
+        if not cache_txn or not txn or json.loads(cache_txn[3]) != json.loads(txn[3]):
           await self._cache.reset()
-    while True:
-      row = await self.fetch_tail_txn(ledger_type)
-      if row:
-        latest = row[0]
+      while not done:
+        row = await self.fetch_tail_txn(ledger_type)
+        if row:
+          latest = row[0]
+          fetched += 1
+          if fetched >= MAX_FETCH:
+            break
+        else:
+          done = True
+    finally:
+      self._sync_lock.release()
+    if fetched or wait:
+      if done:
+        LOGGER.info("%s ledger synced with %s transaction(s)", ledger_type.name, latest or 0)
       else:
-        break
-    LOGGER.info("%s ledger synced with %s transaction(s)", ledger_type.name, latest or 0)
+        LOGGER.info("%s ledger fetched %s transaction(s), incomplete", ledger_type.name, fetched)
+    return done
 
   async def validator_info(self):
     """
@@ -288,6 +323,9 @@ def txn_extract_terms(txn_json):
     txn = data.get('txn', {})
     type = txn.get('type')
 
+    meta = txn.get('metadata', {})
+    result['sender'] = meta.get('from')
+
     if type == '1':
       # NYM
       result['ident'] = txn['data']['dest']
@@ -308,6 +346,8 @@ def txn_extract_terms(txn_json):
         LOGGER.error("Error decoding verkey: %s", verkey)
       result['short_verkey'] = short_verkey
       result['verkey'] = verkey
+      role_id = txn['data'].get('role')
+      result['data'] = INDY_ROLE_TYPES.get(role_id)
 
     elif type == '100':
       # ATTRIB
@@ -318,7 +358,12 @@ def txn_extract_terms(txn_json):
 
     elif type == '101':
       # SCHEMA
-      result['ident'] = txn['data']['data']['name']
+      result['ident'] = '{} {}'.format(txn['data']['data']['name'], txn['data']['data']['version'])
+      result['data'] = ' '.join(txn['data']['data']['attr_names'])
+
+    elif type == '102':
+      # CRED_DEF
+      result['data'] = ' '.join(txn['data']['data']['primary']['r'].keys())
 
   return type, result
 
@@ -388,7 +433,7 @@ class LedgerCache:
         PRIMARY KEY (ledger, seqno)
       );
       CREATE INDEX txn_id ON transactions (txnid);
-      CREATE VIRTUAL TABLE terms USING fts3(txnid, ident, alias, verkey, short_verkey);
+      CREATE VIRTUAL TABLE terms USING fts3(txnid, sender, ident, alias, verkey, short_verkey, data);
       ''', script=True)
 
   async def reset(self):
