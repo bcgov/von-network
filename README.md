@@ -1,9 +1,27 @@
 # VON Network
-A portable development level Indy Node network.
 
-## Quick Start Guide
+A portable development level Indy Node network, including a Ledger Browser. The Ledger Browser (for example the BC Gov's [Ledger for the dFlow Demo Applicaiton](http://dflow.bcovrin.vonx.io/)) allows a user to see the status of the nodes of a network and browse/search/filter the Ledger Transactions.
 
-A **Quick Start Guide** for a working set of applications is maintained here; [Running a Complete Provisional VON Network](https://github.com/bcgov/TheOrgBook/blob/master/docker/README.md#running-a-complete-provisional-von-network).  This is a great way to see the **VON Network** component in action.
+`von-network` is being developed as part of the Verifiable Organizations Network (VON). For more information on VON see https://vonx.io.  Even, better - join in with what we are doing and contribute to VON and the Indy community.
+
+
+## The VON-Network Ledger Browser and API
+
+With the Ledger Browser (for example: [http://dflow.bcovrin.vonx.io/](http://dflow.bcovrin.vonx.io/)), you can see:
+
+- The status of the Ledger nodes
+- The detailed status of the Ledger Nodes in JSON format (click the "Detailed Status" link)
+- The three ledger's of an Indy Network - Domain, Pool and Config (click the respective links)
+- The Genesis Transactions for the Indy Network instance.
+  - In an Indy Agent, use the URL `<server>/genesis` to GET the genesis file to use in initializing the Agent.
+
+By using the "Authenticate a new DID" part of the UI or posting the appropriate JSON to the VON-Network API (see an example script [here](https://github.com/bcgov/von-agent-template/blob/d1abcbeaa299ce6149570349848bb51716752457/init.sh#L90)), a new DID can be added to the Ledger. A known and published *Trust Anchor* DID is used to write the new DID to the Ledger.  This operation would not be permitted in this way on the Sovrin Main Network. However, it is a useful mechanism on sandbox Indy Networks used for testing.
+
+In the `Domain` Ledger screen ([example](http://dflow.bcovrin.vonx.io/browse/domain)), you can browse through all of the transactions that have been created on this instance of the Ledger.  As well, you can use a drop down filter to see only specific Ledger transaction types (`nym` - aka DID, `schema`, `CredDef`, etc.), and search for strings in the content of the transactions.
+
+## VON Quick Start Guide
+
+The [VON Quick Start Guide](https://github.com/bcgov/permitify/blob/master/docker/VONNetworkQuickStartGuide.md) provides the instructions for running a local instance of the VON applications, including an Indy Network, an instance of [TheOrgBook](https://github.com/bcgov/TheOrgBook) and [dFlow](https://github.com/bcgov/permitify. This is a great way to see the **VON Network** in action.
 
 ## Running the Network Locally
 
@@ -11,7 +29,7 @@ A **Quick Start Guide** for a working set of applications is maintained here; [R
 
 2. Linux users will also need to [install docker-compose](https://github.com/docker/compose/releases). Mac and Windows users will have this already.
 
-3. Once Docker has been installed, open a terminal session and clone this repository:
+3. Once Docker has been installed, open a terminal session, change directories to where you store repos, and clone the von-network repository:
 
 ```bash
 git clone <repository url> von-network
@@ -23,17 +41,35 @@ git clone <repository url> von-network
 cd von-network
 ```
 
-5. Now you can build the Dockerfile into an image which we will use to run containers (this process will take several minutes):
+5. Build the docker images that will be used to run the Indy network containers (this process will take several minutes):
 
 ```bash
 ./manage build
 ```
+
+The `./manage` script has a number of commands. Run it without arguments to see the set of options.
 
 6. Once the build process completes, you can test the build to make sure everything works properly:
 
 ```bash
 ./manage start
 ```
+
+Monitor the logs for error messages as the nodes start up.
+
+7. Verify the network is running
+
+In a browser, go to [http://localhost:9000](http://localhost:9000). You should see the VON Indy Ledger Browser and the status of the four nodes of the Indy Network. All should show a lovely, complete blue circle. If not - check the logs in the terminal.
+
+8. Stopping the Network
+
+To stop the scrolling logs and get to a command prompt, hit **Ctrl-C**.  To stop and remove the network persistence (the Ledger), run:
+
+```bash
+./manage down
+```
+
+If nexessary, you can use `stop` instead of `down` to stop the containers but retain the persistence.
 
 ## Running the Network on a VPS
 
@@ -161,7 +197,7 @@ See [von-connector](https://github.com/nrempel/von-connector) for an example.
 
 ### Extra Features for Development
 
-Running BCovrin also runs a thin webserver to expose some convenience functions:
+Running BCovrin also runs a thin webserver (at [http://localhost:9000](http://localhost:9000) when using docker) to expose some convenience functions:
 
 
 #### Genesis Transaction Exposed
@@ -172,4 +208,4 @@ The genesis transaction record required to connect to the node pool is made avai
 
 #### Write new did for seed
 
-The node pool can have a trust anchor write a did for you — available in the UI.
+The node pool can have a trust anchor write a did for you. That feature is available in the UI.
