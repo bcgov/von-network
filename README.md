@@ -21,7 +21,7 @@ In the `Domain` Ledger screen ([example](http://dflow.bcovrin.vonx.io/browse/dom
 
 ## VON Quick Start Guide
 
-The [VON Quick Start Guide](https://github.com/bcgov/permitify/blob/master/docker/VONNetworkQuickStartGuide.md) provides the instructions for running a local instance of the VON applications, including an Indy Network, an instance of [TheOrgBook](https://github.com/bcgov/TheOrgBook) and [dFlow](https://github.com/bcgov/permitify. This is a great way to see the **VON Network** in action.
+The [VON Quick Start Guide](https://github.com/bcgov/dFlow/blob/master/docker/VONQuickStartGuide.md) provides the instructions for running a local instance of the VON applications, including an Indy Network, an instance of [TheOrgBook](https://github.com/bcgov/TheOrgBook) and [dFlow](https://github.com/bcgov/dFlow. This is a great way to see the **VON Network** in action.
 
 ## Running the Network Locally
 
