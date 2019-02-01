@@ -31,7 +31,7 @@ services:
     ports:
       - 9000:8000
     volumes:
-      - ./server:/home/indy/server
+      #- ./server:/home/indy/server
       - webserver-cli:/home/indy/.indy-cli
 
   #
