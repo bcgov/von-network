@@ -1,6 +1,6 @@
 # VON Network
 
-A portable development level Indy Node network, including a Ledger Browser. The Ledger Browser (for example the BC Gov's [Ledger for the dFlow Demo Applicaiton](http://dflow.bcovrin.vonx.io/)) allows a user to see the status of the nodes of a network and browse/search/filter the Ledger Transactions.
+A portable development level Indy Node network, including a Ledger Browser. The Ledger Browser (for example the BC Gov's [Ledger for the dFlow Demo Application](http://dflow.bcovrin.vonx.io/)) allows a user to see the status of the nodes of a network and browse/search/filter the Ledger Transactions.
 
 `von-network` is being developed as part of the Verifiable Organizations Network (VON). For more information on VON see https://vonx.io.  Even, better - join in with what we are doing and contribute to VON and the Indy community.
 
@@ -70,6 +70,44 @@ To stop the scrolling logs and get to a command prompt, hit **Ctrl-C**.  To stop
 ```
 
 If nexessary, you can use `stop` instead of `down` to stop the containers but retain the persistence.
+
+## Running the the web server on your local machine
+
+You can run the web server/ledger browser on its own, and point to another Indy/Sovrin network.
+
+1. Install python and pip (recommend to use a virtual environment such as virtualenv)
+
+2. Download this repository:
+
+```bash
+git clone https://github.com/bcgov/von-network.git
+cd von-network
+```
+
+3. If using virtualenv, setup a virtual environment and activate it:
+
+```bash
+virtualenv --python=python3.6 venv
+source venv/bin/activate
+```
+
+4. Install requirements:
+
+```bash
+pip install -r server/requirements.txt
+```
+
+5. Run the server, you can specify a genesis file, or a url from which to download a genesis file:
+
+```bash
+GENESIS_FILE=/tmp/some-genesis.txt PORT=8001 python -m server.server
+```
+
+Or:
+
+```bash
+GENESIS_URL=https://some.domain.com/some-genesis.txt PORT=8001 python -m server.server
+```
 
 ## Running the Network on a VPS
 
