@@ -69,7 +69,19 @@ To stop the scrolling logs and get to a command prompt, hit **Ctrl-C**.  To stop
 ./manage down
 ```
 
-If nexessary, you can use `stop` instead of `down` to stop the containers but retain the persistence.
+If necessary, you can use `stop` instead of `down` to stop the containers but retain the persistence.
+
+
+## Running the the web server in Docker against another ledger
+
+1. Run docker to start the ledger, and pass in GENESIS_URL and LEDGER_SEED parameters:
+
+For example to connect to the STN:
+
+```bash
+GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis LEDGER_SEED=000000000000000000000IanCostanzo ./manage start-web
+```
+
 
 ## Running the the web server on your local machine
 
@@ -97,16 +109,22 @@ source venv/bin/activate
 pip install -r server/requirements.txt
 ```
 
-5. Run the server, you can specify a genesis file, or a url from which to download a genesis file:
+5. Run the server, you can specify a genesis file, or a url from which to download a genesis file - you can also specify a seed for the DID to use to connect to this ledger:
 
 ```bash
-GENESIS_FILE=/tmp/some-genesis.txt PORT=8001 python -m server.server
+GENESIS_FILE=/tmp/some-genesis.txt PORT=9000 python -m server.server
 ```
 
 Or:
 
 ```bash
-GENESIS_URL=https://some.domain.com/some-genesis.txt PORT=8001 python -m server.server
+GENESIS_URL=https://some.domain.com/some-genesis.txt LEDGER_SEED=000000000000000000000000SomeSeed PORT=9000 python -m server.server
+```
+
+For example to connect to the STN:
+
+```bash
+GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis LEDGER_SEED=000000000000000000000IanCostanzo PORT=9000 python -m server.server
 ```
 
 ## Running the Network on a VPS

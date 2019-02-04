@@ -26,6 +26,10 @@ usage () {
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
   start - Same as up
 
+  start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
+        Example:
+        GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012 $0 start-web
+
   logs - Display the logs from the docker compose run (ctrl-c to exit).
 
   cli - Start client container
@@ -66,6 +70,11 @@ case "$1" in
   start-combined)
       initEnv "$2"
       docker-compose up -d webserver nodes
+      docker-compose logs -f
+    ;;
+  start-web)
+      initEnv "$2"
+      docker-compose up -d webserver 
       docker-compose logs -f
     ;;
   cli)

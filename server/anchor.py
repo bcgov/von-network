@@ -46,8 +46,12 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
-MAX_FETCH = 500
+MAX_FETCH = 5000
 RESYNC_TIME = 120
+
+genesis_downloaded = False
+GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
+LEDGER_SEED = os.getenv('LEDGER_SEED', '000000000000000000000000Trustee1')
 
 def is_int(val):
   if isinstance(val, int):
@@ -88,9 +92,6 @@ def _fetch_genesis_txn(genesis_url: str, target_path: str) -> bool:
   with open(target_path, "w") as output_file:
       output_file.write(data)
   return True
-
-genesis_downloaded = False
-GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
 
 def get_genesis_file():
   global genesis_downloaded
@@ -146,7 +147,7 @@ class AnchorHandle:
       pool_cfg,
     )
     self._wallet = Wallet(
-      '000000000000000000000000Trustee1',
+      LEDGER_SEED,
       'trustee_wallet',
     )
 
@@ -390,21 +391,25 @@ def txn_extract_terms(txn_json):
       result['ident'] = txn['data']['dest']
       result['alias'] = txn['data'].get('alias')
       short_verkey = None
-      verkey = txn['data']['verkey']
-      try:
-          did = base58.b58decode(txn['data']['dest'])
-          if verkey[0] == "~":
-            short_verkey = verkey
-            suffix = base58.b58decode(verkey[1:])
-            verkey = base58.b58encode(did + suffix).decode('ascii')
-          else:
-            long = base58.b58decode(verkey)
-            if long[0:16] == did:
-              short_verkey = '~' + base58.b58encode(long[16:]).decode('ascii')
-      except ValueError:
-        LOGGER.error("Error decoding verkey: %s", verkey)
-      result['short_verkey'] = short_verkey
-      result['verkey'] = verkey
+      if 'verkey' in txn['data']:
+        verkey = txn['data']['verkey']
+        try:
+            did = base58.b58decode(txn['data']['dest'])
+            if verkey[0] == "~":
+              short_verkey = verkey
+              suffix = base58.b58decode(verkey[1:])
+              verkey = base58.b58encode(did + suffix).decode('ascii')
+            else:
+              long = base58.b58decode(verkey)
+              if long[0:16] == did:
+                short_verkey = '~' + base58.b58encode(long[16:]).decode('ascii')
+        except ValueError:
+          LOGGER.error("Error decoding verkey: %s", verkey)
+        result['short_verkey'] = short_verkey
+        result['verkey'] = verkey
+      else:
+        result['short_verkey'] = None
+        result['verkey'] = None
       role_id = txn['data'].get('role')
       result['data'] = INDY_ROLE_TYPES.get(role_id)
 
