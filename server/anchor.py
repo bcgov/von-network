@@ -46,12 +46,15 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
-MAX_FETCH = 5000
+MAX_FETCH = 500
 RESYNC_TIME = 120
 
 genesis_downloaded = False
 GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
+
 LEDGER_SEED = os.getenv('LEDGER_SEED', '000000000000000000000000Trustee1')
+if LEDGER_SEED is None or 0 == len(LEDGER_SEED):
+  LEDGER_SEED = '000000000000000000000000Trustee1'
 
 def is_int(val):
   if isinstance(val, int):
@@ -101,7 +104,7 @@ def get_genesis_file():
     return GENESIS_FILE
 
   GENESIS_URL = os.getenv('GENESIS_URL')
-  if GENESIS_URL is not None:
+  if GENESIS_URL is not None and 0 < len(GENESIS_URL):
     print("Downloading genesis from", GENESIS_URL)
     f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
     GENESIS_FILE = f.name
