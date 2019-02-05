@@ -1,4 +1,4 @@
-pyyaml
+pyyaml~=3.13.0
 aiodns~=1.1.0
 aiohttp~=3.3.0
 base58~=1.0.0
