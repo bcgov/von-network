@@ -46,7 +46,7 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
-MAX_FETCH = 500
+MAX_FETCH = 50000
 RESYNC_TIME = 120
 
 genesis_downloaded = False
