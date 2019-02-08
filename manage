@@ -28,7 +28,7 @@ usage () {
 
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
-        GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012 $0 start-web
+        $0 start-web GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012
 
   logs - Display the logs from the docker compose run (ctrl-c to exit).
 
@@ -47,8 +47,34 @@ exit 1
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
+toLower() {
+  echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
+}
+
 initEnv() {
-  export RUST_LOG=${RUST_LOG:-warning}
+
+  if [ -f .env ]; then
+    while read line; do
+      if [[ ! "$line" =~ ^\# ]] && [[ "$line" =~ .*= ]]; then
+        export ${line//[$'\r\n']}
+      fi
+    done <.env
+  fi
+
+  for arg in $@; do
+    # Remove recognized arguments from the list after processing.
+    shift
+    case "$arg" in
+      *=*)
+        export ${arg}
+        ;;
+      *)
+        # If not recognized, save it for later procesing ...
+        set -- "$@" "$arg"
+        ;;
+    esac
+  done
+
   IP=""
   IPS=""
   if [[ $1 == *","* ]]; then
@@ -57,40 +83,46 @@ initEnv() {
     IP="$1"
   fi
   export IP="$IP" IPS="$IPS"
+
+  export RUST_LOG=${RUST_LOG:-warning}
 }
+# =================================================================================================================
+
 
 pushd ${SCRIPT_HOME} >/dev/null
+COMMAND=$(toLower ${1})
+shift || COMMAND=usage
 
-case "$1" in
+case "${COMMAND}" in
   start|up)
-      initEnv "$2"
+      initEnv $@
       docker-compose up -d webserver node1 node2 node3 node4
       docker-compose logs -f
     ;;
   start-combined)
-      initEnv "$2"
+      initEnv $@
       docker-compose up -d webserver nodes
       docker-compose logs -f
     ;;
   start-web)
-      initEnv "$2"
+      initEnv $@
       docker-compose up -d webserver 
       docker-compose logs -f
     ;;
   cli)
-      initEnv "$2"
+      initEnv $@
       docker-compose run --rm client
     ;;
   logs)
-      initEnv "$2"
+      initEnv $@
       docker-compose logs -f
     ;;
   stop)
-      initEnv
+      initEnv $@
       docker-compose stop
     ;;
   down|rm)
-      initEnv
+      initEnv $@
       docker-compose down -v
     ;;
   build)
