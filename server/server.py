@@ -13,11 +13,11 @@ from .anchor import (
   NotReadyException,
   INDY_ROLE_TYPES,
   INDY_TXN_TYPES,
+  get_genesis_file,
 )
 
 logging.basicConfig(level=os.getenv('LOG_LEVEL', logging.INFO))
 LOGGER = logging.getLogger(__name__)
-
 
 PATHS = {
   'python': shutil.which('python3'),
@@ -227,7 +227,7 @@ async def ledger_seq(request):
 @ROUTES.get("/genesis")
 async def genesis(request):
   with open(
-    '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis',
+    get_genesis_file(),
       'r') as content_file:
     genesis = content_file.read()
   return web.Response(text=genesis)
@@ -301,4 +301,5 @@ if __name__ == '__main__':
   APP.add_routes(ROUTES)
   APP.on_startup.append(boot)
   LOGGER.info('Running webserver...')
-  web.run_app(APP, host='0.0.0.0', port=8000)
+  PORT = int(os.getenv('PORT', '8000'))
+  web.run_app(APP, host='0.0.0.0', port=PORT)

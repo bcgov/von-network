@@ -1,10 +1,13 @@
+import os
 import asyncio
+import aiohttp
 from datetime import datetime
 from enum import IntEnum
 import json
 import logging
 from pathlib import Path
 from typing import Sequence
+import tempfile
 
 import aiosqlite
 import base58
@@ -43,8 +46,15 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
-MAX_FETCH = 500
+MAX_FETCH = 50000
 RESYNC_TIME = 120
+
+genesis_downloaded = False
+GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
+
+LEDGER_SEED = os.getenv('LEDGER_SEED', '000000000000000000000000Trustee1')
+if LEDGER_SEED is None or 0 == len(LEDGER_SEED):
+  LEDGER_SEED = '000000000000000000000000Trustee1'
 
 def is_int(val):
   if isinstance(val, int):
@@ -52,6 +62,59 @@ def is_int(val):
   if isinstance(val, str) and val.isdigit():
     return True
   return False
+
+def run_coroutine_with_args(coroutine, *args):
+  loop = asyncio.new_event_loop()
+  asyncio.set_event_loop(loop)
+  try:
+    return loop.run_until_complete(coroutine(*args))
+  except:
+    raise
+  #finally:
+  #  loop.close()
+
+async def _fetch_url(the_url):
+  async with aiohttp.ClientSession() as session:
+    async with session.get(the_url) as resp:
+      r_status = resp.status
+      r_text = await resp.text()
+      return (r_status, r_text)
+
+def _fetch_genesis_txn(genesis_url: str, target_path: str) -> bool:
+  try:
+    (r_status, data) = run_coroutine_with_args(_fetch_url, genesis_url)
+  except:
+    raise
+
+  # check data is valid json
+  lines = data.splitlines()
+  if not lines or not json.loads(lines[0]):
+      raise Exception("Genesis transaction file is not valid JSON")
+
+  # write result to provided path
+  with open(target_path, "w") as output_file:
+      output_file.write(data)
+  return True
+
+def get_genesis_file():
+  global genesis_downloaded
+  global GENESIS_FILE
+
+  if genesis_downloaded:
+    return GENESIS_FILE
+
+  GENESIS_URL = os.getenv('GENESIS_URL')
+  if GENESIS_URL is not None and 0 < len(GENESIS_URL):
+    print("Downloading genesis from", GENESIS_URL)
+    f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
+    GENESIS_FILE = f.name
+    f.close()
+    _fetch_genesis_txn(GENESIS_URL, GENESIS_FILE)
+
+  genesis_downloaded = True
+
+  return GENESIS_FILE
+
 
 class LedgerType(IntEnum):
   POOL = 0
@@ -83,11 +146,11 @@ class AnchorHandle:
     pool_cfg = None # {'protocol': protocol_version}
     self._pool = NodePool(
       'nodepool',
-      '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis',
+      get_genesis_file(),
       pool_cfg,
     )
     self._wallet = Wallet(
-      '000000000000000000000000Trustee1',
+      LEDGER_SEED,
       'trustee_wallet',
     )
 
@@ -331,21 +394,25 @@ def txn_extract_terms(txn_json):
       result['ident'] = txn['data']['dest']
       result['alias'] = txn['data'].get('alias')
       short_verkey = None
-      verkey = txn['data']['verkey']
-      try:
-          did = base58.b58decode(txn['data']['dest'])
-          if verkey[0] == "~":
-            short_verkey = verkey
-            suffix = base58.b58decode(verkey[1:])
-            verkey = base58.b58encode(did + suffix).decode('ascii')
-          else:
-            long = base58.b58decode(verkey)
-            if long[0:16] == did:
-              short_verkey = '~' + base58.b58encode(long[16:]).decode('ascii')
-      except ValueError:
-        LOGGER.error("Error decoding verkey: %s", verkey)
-      result['short_verkey'] = short_verkey
-      result['verkey'] = verkey
+      if 'verkey' in txn['data']:
+        verkey = txn['data']['verkey']
+        try:
+            did = base58.b58decode(txn['data']['dest'])
+            if verkey[0] == "~":
+              short_verkey = verkey
+              suffix = base58.b58decode(verkey[1:])
+              verkey = base58.b58encode(did + suffix).decode('ascii')
+            else:
+              long = base58.b58decode(verkey)
+              if long[0:16] == did:
+                short_verkey = '~' + base58.b58encode(long[16:]).decode('ascii')
+        except ValueError:
+          LOGGER.error("Error decoding verkey: %s", verkey)
+        result['short_verkey'] = short_verkey
+        result['verkey'] = verkey
+      else:
+        result['short_verkey'] = None
+        result['verkey'] = None
       role_id = txn['data'].get('role')
       result['data'] = INDY_ROLE_TYPES.get(role_id)
 

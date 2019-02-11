@@ -26,6 +26,8 @@ services:
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
       - RUST_LOG=${RUST_LOG}
+      - GENESIS_URL=${GENESIS_URL}
+      - LEDGER_SEED=${LEDGER_SEED}
     networks:
       - von
     ports:

@@ -1,5 +1,12 @@
-# python3-indy==1.3.1-dev-441
-von-agent==1.1.2
-# von-agent==0.5.2
-# # The 'egg=' syntanx is required by the 'pipenv install' command.
-git+https://github.com/bcgov/von_agent.git#egg=von-agent
+pyyaml>=4.2b4
+aiodns~=1.1.0
+aiohttp~=3.3.0
+base58~=1.0.0
+cchardet~=2.1.0
+rlp~=0.6.0
+#indy-anoncreds-dev==1.0.46
+#indy-node-dev==1.6.636
+#indy-plenum-dev==1.6.566
+von-anchor==1.6.31
+#git+https://github.com/PSPC-SPAC-buyandsell/didauth.git@v1.2.2
+#git+https://github.com/PSPC-SPAC-buyandsell/von-x.git@v1.4.0
