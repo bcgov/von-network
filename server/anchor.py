@@ -46,8 +46,11 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
-MAX_FETCH = 50000
-RESYNC_TIME = 120
+# Sets the maximum number of transactions to fetch at a time.
+MAX_FETCH = int(os.getenv('MAX_FETCH', '50000'))
+
+# Sets the time between transaction fetches (updates); in seconds.
+RESYNC_TIME = int(os.getenv('RESYNC_TIME', '120'))
 
 genesis_downloaded = False
 GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
@@ -339,8 +342,9 @@ class AnchorHandle:
         if row:
           latest = row[0]
           fetched += 1
-          if fetched >= MAX_FETCH:
-            break
+          if MAX_FETCH > 0 and fetched >= MAX_FETCH:
+            LOGGER.debug("%s ledger fetched the maximum number of transaction(s); MAX_FETCH set to %s", ledger_type.name, fetched)
+            done = True
         else:
           done = True
     finally:
