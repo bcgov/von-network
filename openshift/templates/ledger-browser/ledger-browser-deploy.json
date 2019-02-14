@@ -232,7 +232,7 @@
       "name": "APPLICATION_DOMAIN",
       "displayName": "Application Hostname",
       "description": "The exposed hostname that will route to the Django service, if left blank a value will be defaulted.",
-      "value": ""
+      "value": "sovrin-mainnet-browser.vonx.io"
     },
     {
       "name": "WALLET_ENCRYPTION_KEY",
