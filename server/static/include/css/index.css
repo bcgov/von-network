@@ -23,6 +23,9 @@ header h1 {
 header a {
 	color: #e9f5ff;
 }
+header a.info-site {
+  color: #fcba19;
+}
 header h1 a:hover {
 	color: #9bf;
 }
