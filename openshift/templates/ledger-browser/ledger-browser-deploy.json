@@ -1,0 +1,325 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "${NAME}-deployment-template",
+    "annotations": {
+      "description": "Deployment template for the von-network ledger browser.",
+      "iconClass": "icon-python"
+    }
+  },
+  "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${WALLET_CREDENTIAL_STORE_NAME}",
+        "labels": {
+          "app": "${NAME}",
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "data": {
+        "key": "${WALLET_ENCRYPTION_KEY}",
+        "seed": "${INDY_WALLET_SEED}",
+        "did": "${INDY_WALLET_DID}"
+      },
+      "type": "Opaque"
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+          "description": "Exposes and load balances the application pods"
+        },
+        "labels": {
+          "app": "${NAME}",
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "8080-tcp",
+            "port": 8080,
+            "targetPort": "${{PORT}}"
+          }
+        ],
+        "selector": {
+          "name": "${NAME}"
+        }
+      }
+    },
+    {
+      "kind": "Route",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "labels": {
+          "app": "${NAME}",
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "spec": {
+        "host": "${APPLICATION_DOMAIN}",
+        "port": {
+          "targetPort": "8080-tcp"
+        },
+        "tls": {
+          "insecureEdgeTerminationPolicy": "Redirect",
+          "termination": "edge"
+        },
+        "to": {
+          "kind": "Service",
+          "name": "${NAME}",
+          "weight": 100
+        }
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+          "description": "Defines how to deploy the application server"
+        },
+        "labels": {
+          "app": "${NAME}",
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Rolling"
+        },
+        "triggers": [
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "${NAME}"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "namespace": "${IMAGE_NAMESPACE}",
+                "name": "${SOURCE_IMAGE_NAME}:${TAG_NAME}"
+              }
+            }
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "${NAME}"
+        },
+        "template": {
+          "metadata": {
+            "name": "${NAME}",
+            "labels": {
+              "name": "${NAME}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "${NAME}",
+                "image": " ",
+                "command": [
+                  "./scripts/start_webserver.sh"
+                ],
+                "ports": [
+                  {
+                    "containerPort": "${{PORT}}",
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 5,
+                  "periodSeconds": 30,
+                  "initialDelaySeconds": 3,
+                  "timeoutSeconds": 20,
+                  "httpGet": {
+                    "path": "/",
+                    "port": 8080
+                  }
+                },
+                "livenessProbe": {
+                  "failureThreshold": 5,
+                  "periodSeconds": 60,
+                  "initialDelaySeconds": 30,
+                  "timeoutSeconds": 20,
+                  "httpGet": {
+                    "path": "/",
+                    "port": 8080
+                  }
+                },
+                "env": [
+                  {
+                    "name": "GENESIS_URL",
+                    "value": "${GENESIS_URL}"
+                  },
+                  {
+                    "name": "IP",
+                    "value": "${IP}"
+                  },
+                  {
+                    "name": "PORT",
+                    "value": "${PORT}"
+                  },
+                  {
+                    "name": "LEDGER_SEED",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "${WALLET_CREDENTIAL_STORE_NAME}",
+                        "key": "seed"
+                      }
+                    }
+                  }
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "${CPU_REQUEST}",
+                    "memory": "${MEMORY_REQUEST}"
+                  },
+                  "limits": {
+                    "cpu": "${CPU_LIMIT}",
+                    "memory": "${MEMORY_LIMIT}"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Name",
+      "description": "The name assigned to all of the OpenShift resources associated to the server instance.",
+      "required": true,
+      "value": "ledger-browser"
+    },
+    {
+      "name": "APP_GROUP",
+      "displayName": "App Group",
+      "description": "The name assigned to all of the deployments in this project.",
+      "required": true,
+      "value": "von-network"
+    },
+    {
+      "name": "SOURCE_IMAGE_NAME",
+      "displayName": "Source Image Name",
+      "description": "The name of the image to use for this resource.",
+      "required": true,
+      "value": "von-network-base"
+    },
+    {
+      "name": "IMAGE_NAMESPACE",
+      "displayName": "Image Namespace",
+      "required": true,
+      "description": "The namespace of the OpenShift project containing the image stream for the application.",
+      "value": "devex-von-tools"
+    },
+    {
+      "name": "APPLICATION_DOMAIN",
+      "displayName": "Application Hostname",
+      "description": "The exposed hostname that will route to the Django service, if left blank a value will be defaulted.",
+      "value": ""
+    },
+    {
+      "name": "WALLET_ENCRYPTION_KEY",
+      "displayName": "Wallet Encryption Key",
+      "description": "The encryption key to be used for the wallets.  Needs to be basee64 encoded.",
+      "required": true,
+      "generate": "expression",
+      "from": "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+    },
+    {
+      "name": "INDY_WALLET_SEED",
+      "displayName": "Indy Wallet Seed",
+      "description": "The Seed used for the indy wallet.  Needs to be basee64 encoded.",
+      "required": true,
+      "generate": "expression",
+      "from": "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+    },
+    {
+      "name": "INDY_WALLET_DID",
+      "displayName": "Indy Wallet DID",
+      "description": "The DID associated to the indy wallet.  Needs to be basee64 encoded.",
+      "required": false,
+      "generate": "expression",
+      "from": "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+    },
+    {
+      "name": "WALLET_CREDENTIAL_STORE_NAME",
+      "displayName": "Wallet Credential Store Name",
+      "description": "The name of the wallet credential store (aka The name of the secret that contains the wallet credentials).",
+      "required": true,
+      "value": "wallet-credentials"
+    },
+    {
+      "name": "TAG_NAME",
+      "displayName": "Environment TAG name",
+      "description": "The TAG name for this environment, e.g., dev, test, prod",
+      "value": "prod",
+      "required": true
+    },
+    {
+      "name": "GENESIS_URL",
+      "displayName": "Genesis Url",
+      "description": "URL for downloading a copy of the genesis file defining the ledger connection for the environment.",
+      "required": false,
+      "value": "https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis"
+    },
+    {
+      "name": "IP",
+      "displayName": "Host IP",
+      "description": "The IP on which the server should listen.",
+      "required": false,
+      "value": "0.0.0.0"
+    },
+    {
+      "name": "PORT",
+      "displayName": "Host PORT",
+      "description": "The port on which the server should listen.",
+      "required": false,
+      "value": "8080"
+    },
+    {
+      "name": "CPU_REQUEST",
+      "displayName": "Resources CPU Request",
+      "description": "The resources CPU request (in cores) for this build.",
+      "required": true,
+      "value": "0m"
+    },
+    {
+      "name": "CPU_LIMIT",
+      "displayName": "Resources CPU Limit",
+      "description": "The resources CPU limit (in cores) for this build.",
+      "required": true,
+      "value": "1000m"
+    },
+    {
+      "name": "MEMORY_REQUEST",
+      "displayName": "Resources Memory Request",
+      "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
+      "required": true,
+      "value": "0Mi"
+    },
+    {
+      "name": "MEMORY_LIMIT",
+      "displayName": "Resources Memory Limit",
+      "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+      "required": true,
+      "value": "4000Mi"
+    }
+  ]
+}
