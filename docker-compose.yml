@@ -28,6 +28,11 @@ services:
       - RUST_LOG=${RUST_LOG}
       - GENESIS_URL=${GENESIS_URL}
       - LEDGER_SEED=${LEDGER_SEED}
+      - REGISTER_NEW_DIDS=${REGISTER_NEW_DIDS:-True}
+      - LEDGER_INSTANCE_NAME=${LEDGER_INSTANCE_NAME:-localhost}
+      - WEB_ANALYTICS_SCRIPT=${WEB_ANALYTICS_SCRIPT}
+      - INFO_SITE_TEXT=${INFO_SITE_TEXT}
+      - INFO_SITE_URL=${INFO_SITE_URL}
     networks:
       - von
     ports:

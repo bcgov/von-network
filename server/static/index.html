@@ -14,12 +14,13 @@
       crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
   <script src="include/js/common.js"></script>
+
+  {% include 'analytics.html' %}
+
 </head>
 <body>
-  <header>
-    <h1>BCovrin</h1>
-    <p class="lead">Contributed by the Province of British Columbia</p>
-  </header>
+
+  {% include 'header.html' %}
 
   <main>
     <div class="row-outer">
@@ -122,7 +123,7 @@
           </div>
         </div>
 
-
+        {% if REGISTER_NEW_DIDS %}
         <div class="panel panel-side authorize">
           <div class="panel-heading">
             <h2>
@@ -185,7 +186,9 @@
                 <label class="tool-label">Role</label>
                 <select name="role" v-model="reg_info.role">
                   <option value="">(None)</option>
+                  {% raw %}
                   <option v-for="opt in role_options" :value="opt.value">{{opt.label}}</option>
+                  {% endraw %}
                 </select>
               </div>
               <div class="form-group">
@@ -195,17 +198,21 @@
 
             <div class="register-result" v-if="reg_result">
               <h3>Identity successfully registered:</h3>
+              {% raw %}
               <code>
                 <span v-if="reg_result.seed"><b>Seed: </b> {{reg_result.seed}}<br></span>
                 <b>DID: </b> {{reg_result.did}}<br>
                 <b>Verkey:</b> {{reg_result.verkey}}
               </code>
+              {% endraw %}
             </div>
             <div class="error register-error" v-if="reg_error">
               Error: identity not registered.
             </div>
           </div>
         </div>
+        {% endif %}
+
       </aside>
     </div>
   </main>

@@ -10,12 +10,13 @@
   <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
   <script src="/include/js/common.js"></script>
+
+  {% include 'analytics.html' %}
+
 </head>
 <body>
-  <header>
-    <h1><a href="/">BCovrin</a></h1>
-    <p class="lead">Contributed by the Province of British Columbia</p>
-  </header>
+
+  {% include 'header.html' %}
 
   <main>
     <div class="row-outer">
@@ -38,6 +39,7 @@
               <div class="ledger-nav">
                 <div class="nav-left">
                   <div class="ledger">
+                    {% raw %}
                     <select class="tool-input" id="ledger-select" v-model="ledger" @change="updateLedger()">
                       <option value="">(Select)</option>
                       <option v-for="opt in ledgerOptions" :value="opt.value">{{opt.label}}</option>
@@ -45,6 +47,7 @@
                     <label class="count nav-label" v-if="nav.loaded">
                       {{nav.total || 0}} record(s)
                     </label>
+                    {% endraw %}
                   </div>
                   <ul class="pagination" v-if="nav.loaded">
                     <li class="page-item" v-if="nav.has_prev">
@@ -58,7 +61,9 @@
                       </label>
                     </li>
                     <li v-for="p in nav.pages" :class="'page-item' + (p.active ? ' active' : '')">
+                      {% raw %}
                       <a class="page-link" href="#" @click.prevent="gotoPage(p.index)">{{p.index}}</a>
+                      {% endraw %}
                     </li>
                     <li class="page-item" v-if="nav.has_next">
                       <a class="page-link" href="#" @click.prevent="nextPage" aria-label="Next">
@@ -76,8 +81,10 @@
                   <div class="filter">
                     <label class="nav-label">Type: </label>
                     <select class="tool-input" id="txn-type-select" v-model="txn_type" @change="updateLedger()">
+                      {% raw %}
                       <option value="">(Select)</option>
                       <option v-for="opt in txnTypeOptions" :value="opt.value">{{opt.label}}</option>
+                      {% endraw %}
                     </select>
                     <br>
                     <label class="nav-label">Filter: </label>
@@ -89,11 +96,14 @@
                 </div>
               </div>
               <div class="error" v-if="error">
+                {% raw %}
                 <p>
                   <span class="fa fa-warning"></span> {{error}}
                 </p>
+                {% endraw %}
               </div>
               <template v-if="loaded">
+                {% raw %}
                 <table class="ledger-data" v-if="txns.length">
                   <tbody>
                     <tr class="ledger-row" v-for="entry in txns">
@@ -229,6 +239,7 @@
                     <span class="fa fa-warning"></span> No transactions
                   </p>
                 </div>
+                {% endraw %}
               </template>
             </div>
           </div>
