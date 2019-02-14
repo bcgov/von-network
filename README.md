@@ -265,3 +265,13 @@ The genesis transaction record required to connect to the node pool is made avai
 #### Write new did for seed
 
 The node pool can have a trust anchor write a did for you. That feature is available in the UI.
+
+## Customize your Ledger Browser Deployment
+
+It is possible to customize some of the aspects of the Ledger Browser at run-time, by using the following environment variables:
+
+- `REGISTER_NEW_DIDS`: if set to `True`, it will enable the user interface allowing new identity owners to write a DID to the ledger. It defaults to `False`.
+- `LEDGER_INSTANCE_NAME`: the name of the ledger instance the Ledger Brwoser is connected to. Defaults to `Ledger Browser`.
+- `INFO_SITE_URL`: a URL that will be displayed in the header, and can be used to reference anotheran external website containing details/resources on the current ledger browser instance.
+- `INFO_SITE_TEXT`: the display text used for the `INFO_SITE_URL`. If not specified, it will default to the value set for `INFO_SITE_URL`.
+- `WEB_ANALYTICS_SCRIPT`: the JavaScript code used by web analytics servers. Populate this environment variable if you want to track the usage of your site with Matomo, Google Analytics or any other JavaScript based trackers. Include the whole ```<script type="text/javascript">...</script>``` tag, ensuring quotes are escaped properly for your command-line interpreter (e.g.: bash, git bash, etc.).

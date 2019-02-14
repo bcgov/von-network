@@ -5,6 +5,8 @@ import logging
 import os
 import shutil
 import yaml
+import aiohttp_jinja2
+import jinja2
 
 from aiohttp import web
 
@@ -25,18 +27,46 @@ PATHS = {
 
 os.chdir(os.path.dirname(__file__))
 
+REGISTER_NEW_DIDS = os.getenv('REGISTER_NEW_DIDS', False)
+LOGGER.info('REGISTER_NEW_DIDS is set to %s', REGISTER_NEW_DIDS)
+
+LEDGER_INSTANCE_NAME = os.getenv('LEDGER_INSTANCE_NAME', 'Ledger Browser')
+LOGGER.info('LEDGER_INSTANCE_NAME is set to "%s"', LEDGER_INSTANCE_NAME)
+
+WEB_ANALYTICS_SCRIPT = os.getenv('WEB_ANALYTICS_SCRIPT', '')
+LOGGER.info('Web analytics are %s', 'DISABLED' if WEB_ANALYTICS_SCRIPT is '' else 'ENABLED')
+
+
+INFO_SITE_URL = os.getenv('INFO_SITE_URL')
+INFO_SITE_TEXT = os.getenv('INFO_SITE_TEXT') or os.getenv('INFO_SITE_URL')
+
 APP = web.Application()
+aiohttp_jinja2.setup(APP,
+    loader=jinja2.FileSystemLoader('./static'))
+
 ROUTES = web.RouteTableDef()
 TRUST_ANCHOR = AnchorHandle()
 
-
 @ROUTES.get('/')
+@aiohttp_jinja2.template('index.html')
 async def index(request):
-  return web.FileResponse('static/index.html')
+  return {
+    'REGISTER_NEW_DIDS': REGISTER_NEW_DIDS,
+    'LEDGER_INSTANCE_NAME': LEDGER_INSTANCE_NAME,
+    'WEB_ANALYTICS_SCRIPT': WEB_ANALYTICS_SCRIPT,
+    'INFO_SITE_TEXT': INFO_SITE_TEXT,
+    'INFO_SITE_URL': INFO_SITE_URL
+  }
 
 @ROUTES.get('/browse/{ledger_ident:.*}')
+@aiohttp_jinja2.template('ledger.html')
 async def browse(request):
-  return web.FileResponse('static/ledger.html')
+  return {
+    'LEDGER_INSTANCE_NAME': LEDGER_INSTANCE_NAME,
+    'WEB_ANALYTICS_SCRIPT': WEB_ANALYTICS_SCRIPT,
+    'INFO_SITE_TEXT': INFO_SITE_TEXT,
+    'INFO_SITE_URL': INFO_SITE_URL
+  }
 
 @ROUTES.get('/favicon.ico')
 async def favicon(request):
