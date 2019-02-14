@@ -28,6 +28,8 @@ services:
       - RUST_LOG=${RUST_LOG}
       - GENESIS_URL=${GENESIS_URL}
       - LEDGER_SEED=${LEDGER_SEED}
+      - MAX_FETCH=${MAX_FETCH}
+      - RESYNC_TIME=${RESYNC_TIME}
     networks:
       - von
     ports:
