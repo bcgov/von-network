@@ -10,6 +10,29 @@
   },
   "objects": [
     {
+      "kind": "PersistentVolumeClaim",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${PERSISTENT_VOLUME_NAME}",
+        "labels": {
+          "app": "${NAME}-persistent",
+          "template": "${NAME}-persistent-template",
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "spec": {
+        "storageClassName": "${PERSISTENT_VOLUME_CLASS}",
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "${PERSISTENT_VOLUME_SIZE}"
+          }
+        }
+      }
+    },
+    {
       "kind": "Secret",
       "apiVersion": "v1",
       "metadata": {
@@ -126,6 +149,14 @@
             }
           },
           "spec": {
+            "volumes": [
+              {
+                "name": "${NAME}",
+                "persistentVolumeClaim": {
+                  "claimName": "${PERSISTENT_VOLUME_NAME}"
+                }
+              }
+            ],
             "containers": [
               {
                 "name": "${NAME}",
@@ -173,6 +204,30 @@
                     "value": "${PORT}"
                   },
                   {
+                    "name": "REGISTER_NEW_DIDS",
+                    "value": "${REGISTER_NEW_DIDS}"
+                  },
+                  {
+                    "name": "LEDGER_INSTANCE_NAME",
+                    "value": "${LEDGER_INSTANCE_NAME}"
+                  },
+                  {
+                    "name": "INFO_SITE_TEXT",
+                    "value": "${INFO_SITE_TEXT}"
+                  },
+                  {
+                    "name": "INFO_SITE_URL",
+                    "value": "${INFO_SITE_URL}"
+                  },
+                  {
+                    "name": "WEB_ANALYTICS_SCRIPT",
+                    "value": "${WEB_ANALYTICS_SCRIPT}"
+                  },
+                  {
+                    "name": "LEDGER_CACHE_PATH",
+                    "value": "${LEDGER_CACHE_PATH}"
+                  },
+                  {
                     "name": "LEDGER_SEED",
                     "valueFrom": {
                       "secretKeyRef": {
@@ -191,7 +246,13 @@
                     "cpu": "${CPU_LIMIT}",
                     "memory": "${MEMORY_LIMIT}"
                   }
-                }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "${NAME}",
+                    "mountPath": "${VOLUME_MOUNT_PATH}"
+                  }
+                ]
               }
             ]
           }
@@ -292,6 +353,76 @@
       "description": "The port on which the server should listen.",
       "required": false,
       "value": "8080"
+    },
+    {
+      "name": "REGISTER_NEW_DIDS",
+      "displayName": "Register New Dids",
+      "description": "If set to `True`, it will enable the user interface allowing new identity owners to write a DID to the ledger. It defaults to `False`.",
+      "required": false,
+      "value": "False"
+    },
+    {
+      "name": "LEDGER_INSTANCE_NAME",
+      "displayName": "Register New Dids",
+      "description": "The name of the ledger instance the Ledger Brwoser is connected to. Defaults to `Ledger Browser`.",
+      "required": false,
+      "value": "Sovrin Main Net"
+    },
+    {
+      "name": "INFO_SITE_TEXT",
+      "displayName": "Site Info Text",
+      "description": "The display text used for the `INFO_SITE_URL`. If not specified, it will default to the value set for `INFO_SITE_URL`.",
+      "required": false,
+      "value": "Verifiable Organizations Network"
+    },
+    {
+      "name": "INFO_SITE_URL",
+      "displayName": "Site Info URL",
+      "description": "A URL that will be displayed in the header, and can be used to reference another external website containing details/resources on the current ledger browser instance.",
+      "required": false,
+      "value": "https://vonx.io/"
+    },
+    {
+      "name": "WEB_ANALYTICS_SCRIPT",
+      "displayName": "Web Analytics Script",
+      "description": "The JavaScript code used by web analytics servers. Populate this environment variable if you want to track the usage of your site with Matomo, Google Analytics or any other JavaScript based trackers. Include the whole tag, ensuring quotes are escaped properly.",
+      "required": false,
+      "value": "<!-- Matomo --><script type=\"text/javascript\">var _paq = window._paq || [];/* tracker methods like \"setCustomDimension\" should be called before \"trackPageView\" */_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function() {var u=\"//matomo.vonx.io/\";_paq.push(['setTrackerUrl', u+'matomo.php']);_paq.push(['setSiteId', '3']);var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);})();</script><!-- End Matomo Code -->"
+    },
+    {
+      "name": "LEDGER_CACHE_PATH",
+      "displayName": "Ledger Cache Path",
+      "description": "The path to the ledger cache database.",
+      "required": false,
+      "value": "/home/indy/.indy_client/ledger-cache/ledger-cache-db"
+    },
+    {
+      "name": "VOLUME_MOUNT_PATH",
+      "displayName": "Volume Mount Path",
+      "description": "Volume mount path",
+      "required": true,
+      "value": "/home/indy/.indy_client/ledger-cache"
+    },
+    {
+      "name": "PERSISTENT_VOLUME_NAME",
+      "displayName": "Persistent Volume Name",
+      "description": "The name of the persistent volume associated with the deployment.",
+      "required": true,
+      "value": "ledger-browser-pvc"
+    },
+    {
+      "name": "PERSISTENT_VOLUME_SIZE",
+      "displayName": "Persistent Volume Size",
+      "description": "The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.",
+      "required": true,
+      "value": "5Gi"
+    },
+    {
+      "name": "PERSISTENT_VOLUME_CLASS",
+      "displayName": "Persistent Volume Class name",
+      "description": "The class of the volume; gluster-file, gluster-block, gluster-file-db",
+      "required": false,
+      "value": "gluster-file-db"
     },
     {
       "name": "CPU_REQUEST",
