@@ -17,7 +17,8 @@ RUN mkdir -p \
         $HOME/log \
         $HOME/.indy-cli/networks \
         $HOME/.indy_client/wallet \
-        $HOME/.indy_client/pool
+        $HOME/.indy_client/pool \
+        $HOME/.indy_client/ledger-cache
 
 # The root group needs access the directories under $HOME/.indy_client for the
 # container to function in OpenShift.
