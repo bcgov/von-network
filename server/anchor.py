@@ -158,7 +158,8 @@ class AnchorHandle:
     )
 
   async def open(self):
-    self._cache = LedgerCache()
+    LEDGER_CACHE_PATH = os.getenv('LEDGER_CACHE_PATH')
+    self._cache = LedgerCache(LEDGER_CACHE_PATH)
     await self._cache.open()
     await self._pool.open()
     await self._wallet.create()
@@ -447,6 +448,7 @@ class LedgerCache:
   async def open(self):
     await self.close()
     path = Path(self.db_path)
+    LOGGER.info('Ledger cache will be stored in %s', path)
     newDB = not path.exists()
     self.db = await aiosqlite.connect(str(path)).__aenter__()
     if newDB:
