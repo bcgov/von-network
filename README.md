@@ -138,67 +138,53 @@ GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/so
 
 1. Install unzip utility:
 
-```bash
-# Requires root privileges
-apt install unzip
-```
+    ```bash
+    # Requires root privileges
+    apt install unzip
+    ```
 
 2. Install Docker and Docker Compose:
 
-```bash
-curl -fsSL get.docker.com -o get-docker.sh
-```
+    ```bash
+    curl -fsSL get.docker.com -o get-docker.sh
+    ```
 
-```bash
-# Requires root privileges
-sh get-docker.sh
-```
+    ```bash
+    # Requires root privileges
+    sh get-docker.sh
+    ```
 
-```bash
-curl -L https://github.com/docker/compose/releases/download/1.17.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-```
+    ```bash
+    curl -L https://github.com/docker/compose/releases/download/1.17.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+    ```
 
-```bash
-chmod +x /usr/local/bin/docker-compose
-```
+    ```bash
+    chmod +x /usr/local/bin/docker-compose
+    ```
 
 3. Download this repository:
 
-```bash
-curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip && \
-    unzip bcovrin.zip && \
-    cd von-network-master && \
-    chmod a+w ./server/
-```
-
-3. Map service port to 80 in docker-compose.yml
-
-Change
-
-```yaml
-    ports:
-      - 9000:8000
-```
-
-to
-
-```yaml
-    ports:
-      - 80:8000
-```
+    ```bash
+    curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip && \
+        unzip bcovrin.zip && \
+        cd von-network-master && \
+        chmod a+w ./server/
+    ```
 
 4. Build the Docker container:
 
-```bash
-./manage build
-```
+    ```bash
+    ./manage build
+    ```
 
 5. Run the network of nodes:
 
-```bash
-# This command requires the publicly accesible ip address of the machine `public_ip_address`
-./manage start public_ip_address &
-```
+    ```bash
+    # This command requires the publicly accessible ip address of the machine `public_ip_address`
+    # WEB_SERVER_HOST_PORT maps the docker service port to a public port on the machine
+    # LEDGER_INSTANCE_NAME sets the display name of the ledger on the page headers.
+    ./manage start public_ip_address WEB_SERVER_HOST_PORT=80 "LEDGER_INSTANCE_NAME=My Ledger" &
+    ```
 
 ## Connecting to the Network
 
