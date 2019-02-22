@@ -39,7 +39,7 @@ services:
     networks:
       - von
     ports:
-      - 9000:8000
+      - ${WEB_SERVER_HOST_PORT:-9000}:8000
     volumes:
       #- ./server:/home/indy/server
       - webserver-cli:/home/indy/.indy-cli
