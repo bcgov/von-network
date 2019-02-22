@@ -61,12 +61,12 @@ initEnv() {
     done <.env
   fi
 
-  for arg in $@; do
+  for arg in "$@"; do
     # Remove recognized arguments from the list after processing.
     shift
     case "$arg" in
       *=*)
-        export ${arg}
+        export "${arg}"
         ;;
       *)
         # If not recognized, save it for later procesing ...
@@ -95,34 +95,34 @@ shift || COMMAND=usage
 
 case "${COMMAND}" in
   start|up)
-      initEnv $@
+      initEnv "$@"
       docker-compose up -d webserver node1 node2 node3 node4
       docker-compose logs -f
     ;;
   start-combined)
-      initEnv $@
+      initEnv "$@"
       docker-compose up -d webserver nodes
       docker-compose logs -f
     ;;
   start-web)
-      initEnv $@
+      initEnv "$@"
       docker-compose up -d webserver 
       docker-compose logs -f
     ;;
   cli)
-      initEnv $@
+      initEnv "$@"
       docker-compose run --rm client
     ;;
   logs)
-      initEnv $@
+      initEnv "$@"
       docker-compose logs -f
     ;;
   stop)
-      initEnv $@
+      initEnv "$@"
       docker-compose stop
     ;;
   down|rm)
-      initEnv $@
+      initEnv "$@"
       docker-compose down -v
     ;;
   build)
