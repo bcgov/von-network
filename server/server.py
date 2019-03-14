@@ -15,6 +15,7 @@ from .anchor import (
   NotReadyException,
   INDY_ROLE_TYPES,
   INDY_TXN_TYPES,
+  REGISTER_NEW_DIDS,
   get_genesis_file,
 )
 
@@ -27,7 +28,6 @@ PATHS = {
 
 os.chdir(os.path.dirname(__file__))
 
-REGISTER_NEW_DIDS = os.getenv('REGISTER_NEW_DIDS', False)
 LOGGER.info('REGISTER_NEW_DIDS is set to %s', REGISTER_NEW_DIDS)
 
 LEDGER_INSTANCE_NAME = os.getenv('LEDGER_INSTANCE_NAME', 'Ledger Browser')
@@ -51,7 +51,7 @@ TRUST_ANCHOR = AnchorHandle()
 @aiohttp_jinja2.template('index.html')
 async def index(request):
   return {
-    'REGISTER_NEW_DIDS': REGISTER_NEW_DIDS,
+    'REGISTER_NEW_DIDS': TRUST_ANCHOR._register_dids,
     'LEDGER_INSTANCE_NAME': LEDGER_INSTANCE_NAME,
     'WEB_ANALYTICS_SCRIPT': WEB_ANALYTICS_SCRIPT,
     'INFO_SITE_TEXT': INFO_SITE_TEXT,
@@ -86,6 +86,12 @@ def json_response(data, status=200, **kwargs):
 
 def not_ready():
   return web.json_response(data={"detail": "Not ready"}, status=503)
+
+
+# Expose genesis transaction for easy connection.
+@ROUTES.get("/config")
+async def config(request):
+  return json_response(TRUST_ANCHOR.public_config)
 
 
 @ROUTES.get("/status")

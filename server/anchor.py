@@ -56,9 +56,14 @@ genesis_downloaded = False
 GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
 
 ANONYMOUS = os.getenv('ANONYMOUS')
+ANONYMOUS = bool(ANONYMOUS and ANONYMOUS != '0' and ANONYMOUS.lower() != 'false')
 LEDGER_SEED = os.getenv('LEDGER_SEED')
 if not LEDGER_SEED and not ANONYMOUS:
   LEDGER_SEED = '000000000000000000000000Trustee1'
+
+REGISTER_NEW_DIDS = os.getenv('REGISTER_NEW_DIDS', False)
+REGISTER_NEW_DIDS = bool(REGISTER_NEW_DIDS and REGISTER_NEW_DIDS != '0' and REGISTER_NEW_DIDS.lower() != 'false')
+
 
 def is_int(val):
   if isinstance(val, int):
@@ -101,7 +106,7 @@ async def resolve_genesis_file():
   global genesis_downloaded
   global GENESIS_FILE
 
-  if not genesis_downloaded:
+  if not genesis_downloaded and not GENESIS_FILE:
     GENESIS_URL = os.getenv('GENESIS_URL')
     if GENESIS_URL:
       print("Downloading genesis from", GENESIS_URL)
@@ -109,9 +114,9 @@ async def resolve_genesis_file():
       GENESIS_FILE = f.name
       f.close()
       await _fetch_genesis_txn(GENESIS_URL, GENESIS_FILE)
-      genesis_downloaded = True
     else:
       raise AnchorException("No genesis file or URL defined")
+  genesis_downloaded = True
 
   return GENESIS_FILE
 
@@ -151,6 +156,7 @@ class AnchorHandle:
     self._protocol = protocol or DEFAULT_PROTOCOL
     self._ready = False
     self._ledger_lock = None
+    self._register_dids = REGISTER_NEW_DIDS and not ANONYMOUS
     self._sync_lock = None
     self._wallet = None
 
@@ -214,6 +220,10 @@ class AnchorHandle:
       await pool.close_pool_ledger(self._pool)
       self._pool = None
     await self._cache.close()
+
+  @property
+  def anonymous(self):
+    return self._anonymous
 
   @property
   def did(self):
@@ -442,6 +452,14 @@ class AnchorHandle:
       data["Node_info"]["Name"] = node
       ret.append(data)
     return ret
+
+  @property
+  def public_config(self):
+    return {
+      "anonymous": self.anonymous,
+      "register_new_dids": self._register_dids,
+      "ready": self.ready,
+    }
 
 
 def txn_extract_terms(txn_json):

@@ -116,16 +116,15 @@ function displayValidatorStatus(status, evt, statusCode) {
   }
 }
 
-$(function () {
-  updateStatus();
-});
 
 var app = new Vue({
-  el: '#vue-register',
+  el: '#vue-outer',
   data: {
+    anonymous: true,
     reg_info: {reg_type: 'seed', did: null, verkey: null, role: 'TRUST_ANCHOR', seed: null, alias: null},
     reg_error: null,
     reg_result: null,
+    register_new_dids: false,
     loading: false
   },
   computed: {
@@ -136,8 +135,29 @@ var app = new Vue({
     }
   },
   mounted: function() {
+    this.fetchConfig();
   },
   methods: {
+    fetchConfig: function() {
+      var self = this;
+      fetch('/config').then(function(response) {
+        if(response.ok) {
+          response.json().then(function(result) {
+            self.anonymous = result.anonymous;
+            self.register_new_dids = result.register_new_dids;
+            if(! self.anonymous) {
+              $(function () {
+                updateStatus();
+              });
+            }
+          });
+        }
+      }).catch(
+        function(err) {
+          console.error("Error fetching server config:", err);
+        }
+      );
+    },
     register: function() {
       this.loading = true;
       this.reg_error = null;

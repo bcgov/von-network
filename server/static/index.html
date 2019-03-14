@@ -23,9 +23,9 @@
   {% include 'header.html' %}
 
   <main>
-    <div class="row-outer">
+    <div class="row-outer" id="vue-outer">
       <div class="col-main">
-        <div class="panel panel-default panel-node-status">
+        <div class="panel panel-default panel-node-status" style="display: none" v-show="! anonymous">
           <div class="panel-heading">
             <h2>
               <span class="fa fa-tachometer"></span>
@@ -123,15 +123,14 @@
           </div>
         </div>
 
-        {% if REGISTER_NEW_DIDS == "True" %}
-        <div class="panel panel-side authorize">
+        <div class="panel panel-side authorize" style="display: none" v-show="register_new_dids">
           <div class="panel-heading">
             <h2>
               <span class="fa fa-key"></span>
               Authenticate a New DID
             </h2>
           </div>
-          <div class="panel-body" id="vue-register" style="display: none" v-show="true">
+          <div class="panel-body" v-show="true">
             <p>
               Easily write a new DID to the ledger for new identity owners.
             </p>
@@ -211,7 +210,6 @@
             </div>
           </div>
         </div>
-        {% endif %}
 
       </aside>
     </div>
