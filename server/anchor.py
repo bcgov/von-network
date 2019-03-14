@@ -1,23 +1,21 @@
-import os
 import asyncio
-import aiohttp
+import base64
 from datetime import datetime
 from enum import IntEnum
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Sequence
 import tempfile
 
+import aiohttp
 import aiosqlite
 import base58
+import libnacl
 
-from indy import ledger
-
-from von_anchor import AnchorSmith
-from von_anchor.anchor.base import _BaseAnchor
-from von_anchor.nodepool import NodePool
-from von_anchor.wallet import Wallet
+from indy import did, ledger, pool, wallet
+from indy.error import IndyError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +44,8 @@ INDY_ROLE_TYPES = {
   "101": "TRUST_ANCHOR",
 }
 
+DEFAULT_PROTOCOL = 2
+
 # Sets the maximum number of transactions to fetch at a time.
 MAX_FETCH = int(os.getenv('MAX_FETCH', '50000'))
 
@@ -55,8 +55,9 @@ RESYNC_TIME = int(os.getenv('RESYNC_TIME', '120'))
 genesis_downloaded = False
 GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
 
-LEDGER_SEED = os.getenv('LEDGER_SEED', '000000000000000000000000Trustee1')
-if LEDGER_SEED is None or 0 == len(LEDGER_SEED):
+ANONYMOUS = os.getenv('ANONYMOUS')
+LEDGER_SEED = os.getenv('LEDGER_SEED')
+if not LEDGER_SEED and not ANONYMOUS:
   LEDGER_SEED = '000000000000000000000000Trustee1'
 
 def is_int(val):
@@ -83,39 +84,39 @@ async def _fetch_url(the_url):
       r_text = await resp.text()
       return (r_status, r_text)
 
-def _fetch_genesis_txn(genesis_url: str, target_path: str) -> bool:
-  try:
-    (r_status, data) = run_coroutine_with_args(_fetch_url, genesis_url)
-  except:
-    raise
+async def _fetch_genesis_txn(genesis_url: str, target_path: str) -> bool:
+  (r_status, data) = await _fetch_url(genesis_url)
 
   # check data is valid json
   lines = data.splitlines()
   if not lines or not json.loads(lines[0]):
-      raise Exception("Genesis transaction file is not valid JSON")
+      raise AnchorException("Genesis transaction file is not valid JSON")
 
   # write result to provided path
   with open(target_path, "w") as output_file:
       output_file.write(data)
   return True
 
-def get_genesis_file():
+async def resolve_genesis_file():
   global genesis_downloaded
   global GENESIS_FILE
 
-  if genesis_downloaded:
-    return GENESIS_FILE
+  if not genesis_downloaded:
+    GENESIS_URL = os.getenv('GENESIS_URL')
+    if GENESIS_URL:
+      print("Downloading genesis from", GENESIS_URL)
+      f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
+      GENESIS_FILE = f.name
+      f.close()
+      await _fetch_genesis_txn(GENESIS_URL, GENESIS_FILE)
+      genesis_downloaded = True
+    else:
+      raise AnchorException("No genesis file or URL defined")
 
-  GENESIS_URL = os.getenv('GENESIS_URL')
-  if GENESIS_URL is not None and 0 < len(GENESIS_URL):
-    print("Downloading genesis from", GENESIS_URL)
-    f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
-    GENESIS_FILE = f.name
-    f.close()
-    _fetch_genesis_txn(GENESIS_URL, GENESIS_FILE)
+  return GENESIS_FILE
 
-  genesis_downloaded = True
-
+def get_genesis_file():
+  global GENESIS_FILE
   return GENESIS_FILE
 
 
@@ -134,55 +135,89 @@ class LedgerType(IntEnum):
     return LedgerType(value)
 
 
-class NotReadyException(Exception):
+class AnchorException(Exception):
+  pass
+
+class NotReadyException(AnchorException):
   pass
 
 
 class AnchorHandle:
-  def __init__(self):
+  def __init__(self, protocol: str = None):
+    self._anonymous = ANONYMOUS
     self._cache = None
-    self._instance = None
+    self._did = None
+    self._pool = None
+    self._protocol = protocol or DEFAULT_PROTOCOL
     self._ready = False
     self._ledger_lock = None
     self._sync_lock = None
+    self._wallet = None
 
-    pool_cfg = None # {'protocol': protocol_version}
-    self._pool = NodePool(
-      'nodepool',
-      get_genesis_file(),
-      pool_cfg,
-    )
-    self._wallet = Wallet(
-      LEDGER_SEED,
-      'trustee_wallet',
-    )
+  async def _open_pool(self):
+    pool_name = 'nodepool'
+    pool_cfg = {}
+    try:
+      await pool.set_protocol_version(self._protocol)
+      await pool.create_pool_ledger_config(pool_name, json.dumps({
+        'genesis_txn': await resolve_genesis_file(),
+      }))
+      self._pool = await pool.open_pool_ledger(pool_name, json.dumps(pool_cfg))
+    except IndyError as e:
+      raise AnchorException(str(e))
+
+  async def _open_wallet(self):
+    wallet_cfg = {
+      'id': 'trustee_wallet',
+      'freshness_time': 0,
+      # 'storage_type':
+    }
+    wallet_access = {'key': 'key'}
+
+    try:
+      await wallet.create_wallet(
+          config=json.dumps(wallet_cfg),
+          credentials=json.dumps(wallet_access))
+
+      self._wallet = await wallet.open_wallet(
+          config=json.dumps(wallet_cfg),
+          credentials=json.dumps(wallet_access))
+
+      (self._did, verkey) = await did.create_and_store_my_did(self._wallet, json.dumps(
+        {'seed': LEDGER_SEED}
+      ))
+    except IndyError as e:
+      raise AnchorException(str(e))
 
   async def open(self):
-    LEDGER_CACHE_PATH = os.getenv('LEDGER_CACHE_PATH')
-    self._cache = LedgerCache(LEDGER_CACHE_PATH)
-    await self._cache.open()
-    await self._pool.open()
-    await self._wallet.create()
-    self._instance = AnchorSmith(self._wallet, self._pool)
-    await self._instance.open()
-    self._ledger_lock = asyncio.Lock()
-    self._sync_lock = asyncio.Lock()
-    asyncio.get_event_loop().create_task(self.init_cache())
-    self._ready = True
+    try:
+      LEDGER_CACHE_PATH = os.getenv('LEDGER_CACHE_PATH')
+      self._cache = LedgerCache(LEDGER_CACHE_PATH)
+      await self._cache.open()
+      await self._open_pool()
+      if not self._anonymous:
+        await self._open_wallet()
+      self._ledger_lock = asyncio.Lock()
+      self._sync_lock = asyncio.Lock()
+      asyncio.get_event_loop().create_task(self.init_cache())
+      self._ready = True
+    except Exception as e:
+      LOGGER.exception(e)
+      raise
 
   async def close(self):
     self._ready = False
-    await self._instance.close()
-    await self._pool.close()
+    if self._wallet:
+      await wallet.close_wallet(self._wallet)
+      self._wallet = None
+    if self._pool:
+      await pool.close_pool_ledger(self._pool)
+      self._pool = None
     await self._cache.close()
 
   @property
   def did(self):
-    return self._wallet and self._wallet.did
-
-  @property
-  def instance(self):
-    return self._instance
+    return self._did
 
   @property
   def pool(self):
@@ -208,15 +243,44 @@ class AnchorHandle:
     ledger_type = LedgerType.for_value(ledger_type)
     return await self._cache.get_latest_seqno(ledger_type)
 
-  async def get_nym(self, did):
+  async def submit_request(self, req_json: str, signed: bool = False):
+    try:
+      if signed:
+        if not self._did:
+          raise AnchorException("Cannot sign request: no DID")
+        rv_json = await ledger.sign_and_submit_request(
+          self._pool, self._wallet, self._did, req_json
+        )
+      else:
+        rv_json = await ledger.submit_request(self._pool, req_json)
+      await asyncio.sleep(0)
+    except IndyError as e:
+      raise AnchorException(str(e))
+
+    resp = json.loads(rv_json)
+    if resp.get('op', '') in ('REQNACK', 'REJECT'):
+      raise AnchorException('Ledger rejected transaction request: {}'.format(resp['reason']))
+
+    return resp
+
+  async def get_nym(self, did: str):
     """
     Fetch a nym from the ledger
     """
     if not self.ready:
       raise NotReadyException()
 
-    data = await self._instance.get_nym(did)
-    return json.loads(data)
+    get_nym_req = await ledger.build_get_nym_request(self._did, did)
+    response = await self.submit_request(get_nym_req, True)
+    rv = {}
+
+    data_json = response['result']['data']  # it's double-encoded on the ledger
+    if data_json:
+        rv = json.loads(data_json)
+    return rv
+
+  def _txn2data(self, txn: dict):
+    return json.dumps((txn['result'].get('data', {}) or {}).get('txn', {}))
 
   async def get_txn(self, ledger_type, ident, cache=True, latest=False):
     """
@@ -239,17 +303,15 @@ class AnchorHandle:
 
     LOGGER.debug("Fetch %s %s", ledger_type, ident)
     req_json = await ledger.build_get_txn_request(self.did, ledger_type.name, int(ident))
-    txn_json = await self._instance._submit(req_json)
-    txn = json.loads(txn_json)
-    data_json = self.pool.protocol.txn2data(txn)
+    txn = await self.submit_request(req_json, False)
+    txn_data = (txn['result'].get('data', {}) or {})
 
-    if data_json and data_json != "{}":
-      data = txn["result"]["data"]
-      body_json = json.dumps(data, separators=(',',':'), sort_keys=True)
-      added = datetime.now() #self.pool.protocol.txntime(txn)
+    if txn_data and txn_data.get('txn'):
+      body_json = json.dumps(txn_data, separators=(',',':'), sort_keys=True)
+      added = datetime.now() # self._txntime(txn)
       txn_id = None
-      if "txnMetadata" in data:
-        txn_id = data["txnMetadata"].get("txnId")
+      if "txnMetadata" in txn_data:
+        txn_id = txn_data["txnMetadata"].get("txnId")
       if cache:
         await self._cache.add_txn(ledger_type, ident, txn_id, added, body_json, latest)
       return (ident, txn_id, added, body_json)
@@ -283,27 +345,29 @@ class AnchorHandle:
     """
     Register a DID and verkey on the ledger
     """
-    if not self.ready:
+    if not self.ready or not self.did:
       raise NotReadyException()
 
     LOGGER.info('Register agent')
     LOGGER.info("Get nym: %s", did)
     if not await self.get_nym(did):
       LOGGER.info("Send nym: %s/%s", did, verkey)
-      await self._instance.send_nym(did, verkey, alias, role)
+      req_json = await ledger.build_nym_request(self.did, did, verkey, alias, role)
+      await self.submit_request(req_json, True)
 
   async def seed_to_did(self, seed):
     """
     Resolve a DID and verkey from a seed
     """
-    wallet = Wallet(
-      seed,
-      seed + '-wallet'
-    )
-    async with _BaseAnchor(await wallet.create(), self.pool) as new_agent:
-      did = new_agent.did
-      verkey = new_agent.verkey
-      return (did, verkey)
+    if isinstance(seed, str):
+      if len(seed) != 32:
+        seed = base64.b64decode(seed)
+      else:
+        seed = seed.encode('ascii')
+    vk, sk = libnacl.crypto_sign_seed_keypair(seed)
+    did = base58.b58encode(vk[:16]).decode('ascii')
+    verkey = base58.b58encode(vk).decode('ascii')
+    return (did, verkey)
 
   async def init_cache(self):
     LOGGER.info("Syncing ledger cache")
@@ -361,12 +425,11 @@ class AnchorHandle:
     """
     Fetch the status of the validator nodes
     """
-    if not self.ready:
+    if not self.ready or not self.did:
       raise NotReadyException()
 
     req_json = await ledger.build_get_validator_info_request(self.did)
-    result = await self._instance._sign_submit(req_json)
-    node_data = json.loads(result)
+    node_data = await self.submit_request(req_json, True)
     node_aliases = list(node_data.keys())
     node_aliases.sort()
 

@@ -96,7 +96,7 @@ case "${COMMAND}" in
   start|up)
       initEnv "$@"
       docker-compose up -d webserver node1 node2 node3 node4
-      docker-compose logs -f
+      docker-compose logs -f webserver
     ;;
   start-combined)
       initEnv "$@"
@@ -105,8 +105,11 @@ case "${COMMAND}" in
     ;;
   start-web)
       initEnv "$@"
-      docker-compose up -d webserver 
-      docker-compose logs -f
+      if [ -z "$LEDGER_SEED" ]; then
+        export ANONYMOUS=1
+      fi
+      docker-compose up -d webserver
+      docker-compose logs -f webserver
     ;;
   cli)
       initEnv "$@"
