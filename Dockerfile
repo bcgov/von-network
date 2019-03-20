@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py35-1.6-8
+FROM bcgovimages/von-image:py35-1.8-1
 
 USER root
 
@@ -7,10 +7,11 @@ USER root
 #   under random UID.
 RUN usermod -a -G 0 indy
 
-RUN pip install --no-cache-dir \
-  aiosqlite~=0.6.0 \
-  "git+https://github.com/Supervisor/supervisor.git@0cc0a3989211996d502a0ac46c0ea320e1dec928"
+ADD server/requirements.txt server/
 
+RUN pip install --no-cache-dir -r server/requirements.txt
+
+ENV LOG_LEVEL ${LOG_LEVEL:-info}
 ENV RUST_LOG ${RUST_LOG:-warning}
 
 RUN mkdir -p \
