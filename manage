@@ -84,6 +84,7 @@ initEnv() {
   fi
   export IP="$IP" IPS="$IPS"
 
+  export LOG_LEVEL=${LOG_LEVEL:-info}
   export RUST_LOG=${RUST_LOG:-warning}
 }
 # =================================================================================================================

@@ -19,7 +19,7 @@ from .anchor import (
   get_genesis_file,
 )
 
-logging.basicConfig(level=os.getenv('LOG_LEVEL', logging.INFO))
+logging.basicConfig(level=(os.getenv('LOG_LEVEL', '').upper() or logging.INFO))
 LOGGER = logging.getLogger(__name__)
 
 PATHS = {
@@ -88,19 +88,15 @@ def not_ready():
   return web.json_response(data={"detail": "Not ready"}, status=503)
 
 
-# Expose genesis transaction for easy connection.
-@ROUTES.get("/config")
-async def config(request):
-  return json_response(TRUST_ANCHOR.public_config)
-
-
 @ROUTES.get("/status")
 async def status(request):
-  try:
-    response = await TRUST_ANCHOR.validator_info()
-  except NotReadyException:
-    return not_ready()
-  return json_response(response)
+  status = TRUST_ANCHOR.public_config
+  if status["ready"] and not status["anonymous"] and request.query.get("validators"):
+    try:
+      status["validators"] = await TRUST_ANCHOR.validator_info()
+    except:
+      status["validators"] = None
+  return json_response(status)
 
 
 @ROUTES.get("/status/text")
@@ -334,6 +330,7 @@ async def boot(app):
 
 
 if __name__ == '__main__':
+  logging.getLogger('indy.libindy').setLevel(logging.WARNING)
   APP.add_routes(ROUTES)
   APP.on_startup.append(boot)
   LOGGER.info('Running webserver...')

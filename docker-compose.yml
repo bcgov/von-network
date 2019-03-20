@@ -25,6 +25,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
       - GENESIS_URL=${GENESIS_URL:-}
       - ANONYMOUS=${ANONYMOUS:-}
@@ -42,7 +43,7 @@ services:
     ports:
       - ${WEB_SERVER_HOST_PORT:-9000}:8000
     volumes:
-      #- ./server:/home/indy/server
+      - ./server:/home/indy/server
       - webserver-cli:/home/indy/.indy-cli
 
   #
@@ -66,6 +67,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
     volumes:
       - nodes-data:/home/indy/ledger
@@ -82,6 +84,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
     volumes:
       - node1-data:/home/indy/ledger
@@ -98,6 +101,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
     volumes:
       - node2-data:/home/indy/ledger
@@ -114,6 +118,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
     volumes:
       - node3-data:/home/indy/ledger
@@ -130,6 +135,7 @@ services:
       - IP=${IP}
       - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
     volumes:
       - node4-data:/home/indy/ledger
