@@ -15,7 +15,7 @@ import base58
 import libnacl
 
 from indy import did, ledger, pool, wallet
-from indy.error import IndyError
+from indy.error import ErrorCode, IndyError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,8 +52,9 @@ MAX_FETCH = int(os.getenv('MAX_FETCH', '50000'))
 # Sets the time between transaction fetches (updates); in seconds.
 RESYNC_TIME = int(os.getenv('RESYNC_TIME', '120'))
 
-genesis_downloaded = False
-GENESIS_FILE = os.getenv('GENESIS_FILE', '/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis')
+GENESIS_FILE = os.getenv('GENESIS_FILE') or "/home/indy/.indy-cli/networks/sandbox/pool_transactions_genesis"
+GENESIS_URL = os.getenv('GENESIS_URL')
+GENESIS_VERIFIED = False
 
 ANONYMOUS = os.getenv('ANONYMOUS')
 ANONYMOUS = bool(ANONYMOUS and ANONYMOUS != '0' and ANONYMOUS.lower() != 'false')
@@ -103,20 +104,22 @@ async def _fetch_genesis_txn(genesis_url: str, target_path: str) -> bool:
   return True
 
 async def resolve_genesis_file():
-  global genesis_downloaded
   global GENESIS_FILE
+  global GENESIS_VERIFIED
+  global GENESIS_URL
 
-  if not genesis_downloaded and not GENESIS_FILE:
-    GENESIS_URL = os.getenv('GENESIS_URL')
-    if GENESIS_URL:
-      print("Downloading genesis from", GENESIS_URL)
+  if not GENESIS_VERIFIED:
+    if not GENESIS_URL and GENESIS_FILE and Path(GENESIS_FILE).exists():
+      print("Genesis file already exists:", GENESIS_FILE)
+    elif GENESIS_URL:
       f = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
       GENESIS_FILE = f.name
       f.close()
+      print("Downloading genesis file from:", GENESIS_URL)
       await _fetch_genesis_txn(GENESIS_URL, GENESIS_FILE)
     else:
       raise AnchorException("No genesis file or URL defined")
-  genesis_downloaded = True
+    GENESIS_VERIFIED = True
 
   return GENESIS_FILE
 
@@ -152,25 +155,37 @@ class AnchorHandle:
     self._anonymous = ANONYMOUS
     self._cache = None
     self._did = None
+    self._init_error = None
     self._pool = None
     self._protocol = protocol or DEFAULT_PROTOCOL
     self._ready = False
     self._ledger_lock = None
     self._register_dids = REGISTER_NEW_DIDS and not ANONYMOUS
     self._sync_lock = None
+    self._syncing = False
     self._wallet = None
 
   async def _open_pool(self):
+    global GENESIS_URL
     pool_name = 'nodepool'
     pool_cfg = {}
+    self._pool = None
     try:
       await pool.set_protocol_version(self._protocol)
+      if GENESIS_URL:
+        # auto-recreate pool
+        try:
+          await pool.delete_pool_ledger_config(pool_name)
+        except IndyError as e:
+          if e.error_code != ErrorCode.CommonIOError:
+            raise AnchorException("Error deleting pool configuration: {}".format(e))
       await pool.create_pool_ledger_config(pool_name, json.dumps({
         'genesis_txn': await resolve_genesis_file(),
       }))
       self._pool = await pool.open_pool_ledger(pool_name, json.dumps(pool_cfg))
     except IndyError as e:
-      raise AnchorException(str(e))
+      raise AnchorException("Error initializing ledger pool: {}".format(e))
+      self._init_error = "Error initializing ledger"
 
   async def _open_wallet(self):
     wallet_cfg = {
@@ -200,7 +215,8 @@ class AnchorHandle:
       LEDGER_CACHE_PATH = os.getenv('LEDGER_CACHE_PATH')
       self._cache = LedgerCache(LEDGER_CACHE_PATH)
       await self._cache.open()
-      await self._open_pool()
+      if not self._pool:
+        await self._open_pool()
       if not self._anonymous:
         await self._open_wallet()
       self._ledger_lock = asyncio.Lock()
@@ -405,6 +421,7 @@ class AnchorHandle:
     fetched = 0
     # may throw asyncio.TimeoutError
     locked = await asyncio.wait_for(self._sync_lock.acquire(), None if wait else 0.01)
+    self._syncing = True
     try:
       latest = await self._cache.get_latest_seqno(ledger_type)
       if latest:
@@ -424,6 +441,7 @@ class AnchorHandle:
           done = True
     finally:
       self._sync_lock.release()
+      self._syncing = False
     if fetched or wait:
       if done:
         LOGGER.info("%s ledger synced with %s transaction(s)", ledger_type.name, latest or 0)
@@ -457,8 +475,10 @@ class AnchorHandle:
   def public_config(self):
     return {
       "anonymous": self.anonymous,
+      "init_error": self._init_error,
       "register_new_dids": self._register_dids,
       "ready": self.ready,
+      "syncing": self._syncing,
     }
 
 
