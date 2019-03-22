@@ -15,10 +15,11 @@ from .anchor import (
   NotReadyException,
   INDY_ROLE_TYPES,
   INDY_TXN_TYPES,
+  REGISTER_NEW_DIDS,
   get_genesis_file,
 )
 
-logging.basicConfig(level=os.getenv('LOG_LEVEL', logging.INFO))
+logging.basicConfig(level=(os.getenv('LOG_LEVEL', '').upper() or logging.INFO))
 LOGGER = logging.getLogger(__name__)
 
 PATHS = {
@@ -27,7 +28,6 @@ PATHS = {
 
 os.chdir(os.path.dirname(__file__))
 
-REGISTER_NEW_DIDS = os.getenv('REGISTER_NEW_DIDS', False)
 LOGGER.info('REGISTER_NEW_DIDS is set to %s', REGISTER_NEW_DIDS)
 
 LEDGER_INSTANCE_NAME = os.getenv('LEDGER_INSTANCE_NAME', 'Ledger Browser')
@@ -51,7 +51,7 @@ TRUST_ANCHOR = AnchorHandle()
 @aiohttp_jinja2.template('index.html')
 async def index(request):
   return {
-    'REGISTER_NEW_DIDS': REGISTER_NEW_DIDS,
+    'REGISTER_NEW_DIDS': TRUST_ANCHOR._register_dids,
     'LEDGER_INSTANCE_NAME': LEDGER_INSTANCE_NAME,
     'WEB_ANALYTICS_SCRIPT': WEB_ANALYTICS_SCRIPT,
     'INFO_SITE_TEXT': INFO_SITE_TEXT,
@@ -90,11 +90,13 @@ def not_ready():
 
 @ROUTES.get("/status")
 async def status(request):
-  try:
-    response = await TRUST_ANCHOR.validator_info()
-  except NotReadyException:
-    return not_ready()
-  return json_response(response)
+  status = TRUST_ANCHOR.public_config
+  if status["ready"] and not status["anonymous"] and request.query.get("validators"):
+    try:
+      status["validators"] = await TRUST_ANCHOR.validator_info()
+    except:
+      status["validators"] = None
+  return json_response(status)
 
 
 @ROUTES.get("/status/text")
@@ -328,6 +330,7 @@ async def boot(app):
 
 
 if __name__ == '__main__':
+  logging.getLogger('indy.libindy').setLevel(logging.WARNING)
   APP.add_routes(ROUTES)
   APP.on_startup.append(boot)
   LOGGER.info('Running webserver...')

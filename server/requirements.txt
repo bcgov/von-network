@@ -2,12 +2,11 @@ pyyaml>=4.2b4
 aiodns~=1.1.0
 aiohttp~=3.3.0
 aiohttp-jinja2~=1.1.0
+aiosqlite~=0.6.0
 base58~=1.0.0
 cchardet~=2.1.0
 rlp~=0.6.0
+git+https://github.com/Supervisor/supervisor.git@0cc0a3989211996d502a0ac46c0ea320e1dec928
 #indy-anoncreds-dev==1.0.46
 #indy-node-dev==1.6.636
 #indy-plenum-dev==1.6.566
-von-anchor==1.6.31
-#git+https://github.com/PSPC-SPAC-buyandsell/didauth.git@v1.2.2
-#git+https://github.com/PSPC-SPAC-buyandsell/von-x.git@v1.4.0

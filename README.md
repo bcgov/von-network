@@ -79,7 +79,8 @@ If necessary, you can use `stop` instead of `down` to stop the containers but re
 For example to connect to the STN:
 
 ```bash
-./manage start-web GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis LEDGER_SEED=000000000000000000000IanCostanzo
+./manage start-web \
+   GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis
 ```
 
 

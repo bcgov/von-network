@@ -2,8 +2,8 @@
 
 set -e
 
-if [ ! -d "/home/indy/.indy-cli/networks/sandbox" ]; then
-    echo "Ledger does not exist - Creating..."
+if [ ! -d "/home/indy/.indy-cli/networks/sandbox" ] && [ -z "${GENESIS_URL}" ] && [ -z "${GENESIS_FILE}" ]; then
+  echo "Ledger does not exist - Creating genesis data..."
 	if [ ! -z "$IPS" ]; then
 		echo von_generate_transactions -s "$IPS"
 		von_generate_transactions -s "$IPS"
