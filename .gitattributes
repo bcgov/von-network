@@ -7,3 +7,4 @@
 *.json text eol=lf
 **/bin/**/* text eol=lf
 **/scripts/**/* text eol=lf
+**/genesis/**/* text eol=lf
