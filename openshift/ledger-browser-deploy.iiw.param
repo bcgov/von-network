@@ -13,7 +13,7 @@ INDY_WALLET_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
 INDY_WALLET_DID=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
 WALLET_CREDENTIAL_STORE_NAME=iiw-wallet-credentials
 TAG_NAME=prod
-GENESIS_URL=http://dflow.bcovrin.vonx.io/genesis
+GENESIS_URL=https://raw.githubusercontent.com/bcgov/von-network/master/genesis/iiw_demo_genesis
 IP=0.0.0.0
 PORT=8080
 REGISTER_NEW_DIDS=False
