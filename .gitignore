@@ -1,5 +1,10 @@
+# Certs and keys
 *.crt
 *.key
+
+# tmp script files
+*_DeploymentConfig.json
+*_BuildConfig.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
