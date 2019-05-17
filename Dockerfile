@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py35-1.8-5
+FROM bcgovimages/von-image:py35-1.8-4
 
 ENV LOG_LEVEL ${LOG_LEVEL:-info}
 ENV RUST_LOG ${RUST_LOG:-warning}
