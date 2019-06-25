@@ -172,13 +172,12 @@ class AnchorHandle:
     self._pool = None
     try:
       await pool.set_protocol_version(self._protocol)
-      if GENESIS_URL:
-        # auto-recreate pool
-        try:
-          await pool.delete_pool_ledger_config(pool_name)
-        except IndyError as e:
-          if e.error_code != ErrorCode.CommonIOError:
-            raise AnchorException("Error deleting pool configuration: {}".format(e))
+      # auto-recreate pool
+      try:
+        await pool.delete_pool_ledger_config(pool_name)
+      except IndyError as e:
+        if e.error_code != ErrorCode.CommonIOError:
+          raise AnchorException("Error deleting pool configuration: {}".format(e))
       await pool.create_pool_ledger_config(pool_name, json.dumps({
         'genesis_txn': await resolve_genesis_file(),
       }))
@@ -199,7 +198,13 @@ class AnchorHandle:
       await wallet.create_wallet(
           config=json.dumps(wallet_cfg),
           credentials=json.dumps(wallet_access))
+    except IndyError as e:
+      if e.e.error_code == ErrorCode.WalletAlreadyExistsError:
+        print("Wallet already exists")
+      else:
+        raise
 
+    try:
       self._wallet = await wallet.open_wallet(
           config=json.dumps(wallet_cfg),
           credentials=json.dumps(wallet_access))
