@@ -199,7 +199,7 @@ class AnchorHandle:
           config=json.dumps(wallet_cfg),
           credentials=json.dumps(wallet_access))
     except IndyError as e:
-      if e.e.error_code == ErrorCode.WalletAlreadyExistsError:
+      if e.error_code == ErrorCode.WalletAlreadyExistsError:
         print("Wallet already exists")
       else:
         raise
