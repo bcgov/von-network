@@ -170,21 +170,30 @@ class AnchorHandle:
     pool_name = 'nodepool'
     pool_cfg = {}
     self._pool = None
+
     try:
       await pool.set_protocol_version(self._protocol)
-      # auto-recreate pool
-      try:
-        await pool.delete_pool_ledger_config(pool_name)
-      except IndyError as e:
-        if e.error_code != ErrorCode.CommonIOError:
-          raise AnchorException("Error deleting pool configuration: {}".format(e))
+    except IndyError as e:
+      raise AnchorException("Error setting pool protocol version") from e
+
+    # remove existing pool config by the same name
+    try:
+      await pool.delete_pool_ledger_config(pool_name)
+    except IndyError as e:
+      if e.error_code != ErrorCode.CommonIOError:
+        raise AnchorException("Error deleting existing pool configuration") from e
+
+    try:
       await pool.create_pool_ledger_config(pool_name, json.dumps({
         'genesis_txn': await resolve_genesis_file(),
       }))
+    except IndyError as e:
+      raise AnchorException("Error creating pool configuration") from e
+
+    try:
       self._pool = await pool.open_pool_ledger(pool_name, json.dumps(pool_cfg))
     except IndyError as e:
-      raise AnchorException("Error initializing ledger pool: {}".format(e))
-      self._init_error = "Error initializing ledger"
+      raise AnchorException("Error initializing ledger pool") from e
 
   async def _open_wallet(self):
     wallet_cfg = {
@@ -202,7 +211,7 @@ class AnchorHandle:
       if e.error_code == ErrorCode.WalletAlreadyExistsError:
         print("Wallet already exists")
       else:
-        raise
+        raise AnchorException("Error creating wallet") from e
 
     try:
       self._wallet = await wallet.open_wallet(
@@ -213,7 +222,10 @@ class AnchorHandle:
         {'seed': LEDGER_SEED}
       ))
     except IndyError as e:
-      raise AnchorException(str(e))
+      if e.error_code == ErrorCode.DidAlreadyExistsError:
+        print("DID already exists in wallet")
+      else:
+        raise AnchorException("Error creating DID in wallet") from e
 
   async def open(self):
     try:
@@ -221,16 +233,24 @@ class AnchorHandle:
       self._cache = LedgerCache(LEDGER_CACHE_PATH)
       await self._cache.open()
       if not self._pool:
-        await self._open_pool()
+        try:
+          await self._open_pool()
+        except AnchorException:
+          self._init_error = "Error initializing ledger"
+          raise
       if not self._anonymous:
-        await self._open_wallet()
+        try:
+          await self._open_wallet()
+        except AnchorException:
+          self._init_error = "Error opening wallet"
+          raise
       self._ledger_lock = asyncio.Lock()
       self._sync_lock = asyncio.Lock()
       asyncio.get_event_loop().create_task(self.init_cache())
       self._ready = True
     except Exception as e:
       LOGGER.exception(e)
-      raise
+      raise AnchorException("Initialization error") from e
 
   async def close(self):
     self._ready = False
@@ -286,7 +306,7 @@ class AnchorHandle:
         rv_json = await ledger.submit_request(self._pool, req_json)
       await asyncio.sleep(0)
     except IndyError as e:
-      raise AnchorException(str(e))
+      raise AnchorException("Error submitting ledger transaction request") from e
 
     resp = json.loads(rv_json)
     if resp.get('op', '') in ('REQNACK', 'REJECT'):
