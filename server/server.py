@@ -1,3 +1,4 @@
+import asyncio
 import base64
 from datetime import datetime
 import json
@@ -94,7 +95,12 @@ async def status(request):
   if status["ready"] and not status["anonymous"] and request.query.get("validators"):
     try:
       status["validators"] = await TRUST_ANCHOR.validator_info()
+    except NotReadyException:
+      return not_ready()
+    except asyncio.CancelledError:
+      raise
     except:
+      LOGGER.exception("Error retrieving validator info")
       status["validators"] = None
   return json_response(status)
 

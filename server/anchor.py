@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from time import time
 from typing import Sequence
 import tempfile
 
@@ -166,7 +167,6 @@ class AnchorHandle:
     self._wallet = None
 
   async def _open_pool(self):
-    global GENESIS_URL
     pool_name = 'nodepool'
     pool_cfg = {}
     self._pool = None
@@ -176,7 +176,7 @@ class AnchorHandle:
     except IndyError as e:
       raise AnchorException("Error setting pool protocol version") from e
 
-    # remove existing pool config by the same name
+    # remove existing pool config by the same name in ledger browser mode
     try:
       await pool.delete_pool_ledger_config(pool_name)
     except IndyError as e:
@@ -193,9 +193,10 @@ class AnchorHandle:
     try:
       self._pool = await pool.open_pool_ledger(pool_name, json.dumps(pool_cfg))
     except IndyError as e:
-      raise AnchorException("Error initializing ledger pool") from e
+      raise AnchorException("Error opening pool ledger connection") from e
 
   async def _open_wallet(self):
+    global LEDGER_SEED
     wallet_cfg = {
       'id': 'trustee_wallet',
       'freshness_time': 0,
@@ -217,15 +218,38 @@ class AnchorHandle:
       self._wallet = await wallet.open_wallet(
           config=json.dumps(wallet_cfg),
           credentials=json.dumps(wallet_access))
-
-      (self._did, verkey) = await did.create_and_store_my_did(self._wallet, json.dumps(
-        {'seed': LEDGER_SEED}
-      ))
     except IndyError as e:
-      if e.error_code == ErrorCode.DidAlreadyExistsError:
-        print("DID already exists in wallet")
+      raise AnchorException("Error opening wallet") from e
+
+    if LEDGER_SEED:
+      try:
+        (self._did, verkey) = await did.create_and_store_my_did(self._wallet, json.dumps(
+          {'seed': LEDGER_SEED}
+        ))
+      except IndyError as e:
+        if e.error_code == ErrorCode.DidAlreadyExistsError:
+          print("DID already exists in wallet")
+        else:
+          raise AnchorException("Error creating DID in wallet") from e
+
+      if self._did:
+        # newly registered DID, set metadata
+        try:
+          did_meta = {'anchor': True, 'since': int(time())}
+          await did.set_did_metadata(self._wallet, self._did, json.dumps(did_meta))
+        except IndyError as e:
+          raise AnchorException("Error updating DID metadata") from e
       else:
-        raise AnchorException("Error creating DID in wallet") from e
+        # find DID in wallet
+        dids_with_meta = json.loads(await did.list_my_dids_with_meta(self._wallet))
+        for did_with_meta in dids_with_meta:
+          meta = json.loads(did_with_meta["metadata"]) if did_with_meta["metadata"] else {}
+          if not meta.get("anchor"):
+            continue
+          self._did, verkey = did_with_meta["did"], did_with_meta["verkey"]
+          break
+        if not self._did:
+          raise AnchorException("Error retrieving existing DID from wallet")
 
   async def open(self):
     try:
@@ -236,7 +260,7 @@ class AnchorHandle:
         try:
           await self._open_pool()
         except AnchorException:
-          self._init_error = "Error initializing ledger"
+          self._init_error = "Error initializing pool ledger"
           raise
       if not self._anonymous:
         try:
