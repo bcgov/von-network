@@ -6,7 +6,7 @@ HOST="${HOST:-0.0.0.0}"
 START_PORT="9700"
 NODE_NUM="1 2 3 4"
 
-if [ ! -d "/var/lib/indy/sandbox/keys" ]; then
+if [ ! -d "/home/indy/ledger/sandbox/keys" ]; then
     echo "Ledger does not exist - Creating..."
 
     if [ ! -z "$IPS" ]; then
