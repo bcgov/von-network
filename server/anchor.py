@@ -3,6 +3,7 @@ import base64
 from datetime import datetime
 from enum import IntEnum
 import json
+from hashlib import sha256
 import logging
 import os
 from pathlib import Path
@@ -175,6 +176,7 @@ class AnchorHandle:
         self._register_dids = REGISTER_NEW_DIDS and not ANONYMOUS
         self._sync_lock = None
         self._syncing = False
+        self._taa_accept = None
         self._taa_config = TAA_CONFIG
         self._wallet = None
 
@@ -290,42 +292,54 @@ class AnchorHandle:
         if not taa_config:
             print("No TAA defined")
 
-        if aml_config and "version" not in aml_config or "aml" not in aml_config:
+        if aml_config and ("version" not in aml_config or "aml" not in aml_config):
             raise AnchorException("Invalid AML configuration")
-        if taa_config and "version" not in taa_config or "text" not in taa_config:
+        if taa_config and ("version" not in taa_config or "text" not in taa_config):
             raise AnchorException("Invalid TAA configuration")
 
-        if aml_config:
-            get_aml_req = await ledger.build_get_acceptance_mechanisms_request(
-                self._did, None, None
+        aml_methods = {}
+        get_aml_req = await ledger.build_get_acceptance_mechanisms_request(
+            self._did, None, None
+        )
+        response = await self.submit_request(get_aml_req, True)
+        aml_found = response["result"]["data"]
+        aml_methods = aml_found and aml_found["aml"]
+
+        if aml_config and (
+            not aml_found or aml_found["version"] != aml_config["version"]
+        ):
+            aml_body = json.dumps(aml_config["aml"])
+            set_aml_req = await ledger.build_acceptance_mechanisms_request(
+                self._did, aml_body, aml_config["version"], aml_config.get("context")
             )
-            response = await self.submit_request(get_aml_req, True)
-            aml_found = response["result"]["data"]
+            await self.submit_request(set_aml_req, True)
+            print("Published AML", aml_config["version"])
+            aml_methods = aml_config["aml"]
 
-            if not aml_found or aml_found["version"] != aml_config["version"]:
-                aml_body = json.dumps(aml_config["aml"])
-                set_aml_req = await ledger.build_acceptance_mechanisms_request(
-                    self._did,
-                    aml_body,
-                    aml_config["version"],
-                    aml_config.get("context"),
-                )
-                await self.submit_request(set_aml_req, True)
-                print("Published AML", aml_config["version"])
+        taa_plaintext = None
+        get_taa_req = await ledger.build_get_txn_author_agreement_request(
+            self._did, None
+        )
+        response = await self.submit_request(get_taa_req, True)
+        taa_found = response["result"]["data"]
+        taa_plaintext = taa_found and (taa_found["version"] + taa_found["text"])
 
-        if taa_config:
-            get_taa_req = await ledger.build_get_txn_author_agreement_request(
-                self._did, None
+        if taa_config and (
+            not taa_found or taa_found["version"] != taa_config["version"]
+        ):
+            set_taa_req = await ledger.build_txn_author_agreement_request(
+                self._did, taa_config["text"], taa_config["version"]
             )
-            response = await self.submit_request(get_taa_req, True)
-            taa_found = response["result"]["data"]
+            await self.submit_request(set_taa_req, True)
+            print("Published TAA", taa_config["version"])
+            taa_plaintext = taa_config["version"] + taa_config["text"]
 
-            if not taa_found or taa_found["version"] != taa_config["version"]:
-                set_taa_req = await ledger.build_txn_author_agreement_request(
-                    self._did, taa_config["text"], taa_config["version"]
-                )
-                await self.submit_request(set_taa_req, True)
-                print("Published TAA", taa_config["version"])
+        if aml_methods and taa_plaintext:
+            self._taa_accept = {
+                "taaDigest": sha256(taa_plaintext.encode("utf-8")).digest().hex(),
+                "mechanism": next(iter(aml_methods)),
+                "time": int(time()),
+            }
 
     async def open(self):
         try:
@@ -399,11 +413,17 @@ class AnchorHandle:
         ledger_type = LedgerType.for_value(ledger_type)
         return await self._cache.get_latest_seqno(ledger_type)
 
-    async def submit_request(self, req_json: str, signed: bool = False):
+    async def submit_request(
+        self, req_json: str, signed: bool = False, apply_taa=False
+    ):
         try:
             if signed:
                 if not self._did:
                     raise AnchorException("Cannot sign request: no DID")
+                if apply_taa and self._taa_accept:
+                    req = json.loads(req_json)
+                    req["taaAcceptance"] = self._taa_accept
+                    req_json = json.dumps(req)
                 rv_json = await ledger.sign_and_submit_request(
                     self._pool, self._wallet, self._did, req_json
                 )
@@ -521,7 +541,7 @@ class AnchorHandle:
             req_json = await ledger.build_nym_request(
                 self.did, did, verkey, alias, role
             )
-            await self.submit_request(req_json, True)
+            await self.submit_request(req_json, True, True)
 
     async def seed_to_did(self, seed):
         """
