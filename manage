@@ -132,7 +132,7 @@ case "${COMMAND}" in
       docker build -t von-network-base .
     ;;
   rebuild)
-      docker-compose build -t von-network-base --no-cache
+      docker build --no-cache -t von-network-base .
     ;;
   *)
       usage;;
