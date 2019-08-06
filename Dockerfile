@@ -1,8 +1,9 @@
-FROM bcgovimages/von-image:node-1.9-0
+FROM bcgovimages/von-image:node-1.9-1
 
 ENV LOG_LEVEL ${LOG_LEVEL:-info}
 ENV RUST_LOG ${RUST_LOG:-warning}
 
+ADD config .
 ADD server/requirements.txt server/
 RUN pip install --no-cache-dir -r server/requirements.txt
 
