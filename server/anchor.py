@@ -181,7 +181,7 @@ class AnchorHandle:
 
         # remove existing pool config by the same name in ledger browser mode
         try:
-            pool_names = await pool.list_pools()
+            pool_names = {cfg["pool"] for cfg in await pool.list_pools()}
             if pool_name in pool_names:
                 await pool.delete_pool_ledger_config(pool_name)
         except IndyError as e:
