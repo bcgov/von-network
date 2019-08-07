@@ -291,6 +291,8 @@ class AnchorHandle:
                 taa_config = json.loads(taa_json)
         if not taa_config:
             print("No TAA defined")
+        elif not taa_config["text"]:
+            print("Blank TAA defined")
 
         if aml_config and ("version" not in aml_config or "aml" not in aml_config):
             raise AnchorException("Invalid AML configuration")
@@ -322,7 +324,11 @@ class AnchorHandle:
         )
         response = await self.submit_request(get_taa_req, True)
         taa_found = response["result"]["data"]
-        taa_plaintext = taa_found and (taa_found["version"] + taa_found["text"])
+        taa_plaintext = (
+            taa_found
+            and taa_found["text"]
+            and (taa_found["version"] + taa_found["text"])
+        )
 
         if taa_config and (
             not taa_found or taa_found["version"] != taa_config["version"]
@@ -332,7 +338,9 @@ class AnchorHandle:
             )
             await self.submit_request(set_taa_req, True)
             print("Published TAA", taa_config["version"])
-            taa_plaintext = taa_config["version"] + taa_config["text"]
+            taa_plaintext = taa_config["text"] and (
+                taa_config["version"] + taa_config["text"]
+            )
 
         if aml_methods and taa_plaintext:
             self._taa_accept = {
