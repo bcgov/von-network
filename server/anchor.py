@@ -547,7 +547,7 @@ class AnchorHandle:
         if not await self.get_nym(did):
             LOGGER.info("Send nym: %s/%s", did, verkey)
             req_json = await ledger.build_nym_request(
-                self.did, did, verkey, alias, role
+                self.did, did, verkey, alias or None, role
             )
             await self.submit_request(req_json, True, True)
 
