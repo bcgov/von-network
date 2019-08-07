@@ -43,8 +43,10 @@ services:
     ports:
       - ${WEB_SERVER_HOST_PORT:-9000}:8000
     volumes:
+      - ./config:/home/indy/config
       - ./server:/home/indy/server
       - webserver-cli:/home/indy/.indy-cli
+      - webserver-ledger:/home/indy/ledger
 
   #
   # Nodes
@@ -147,6 +149,7 @@ volumes:
   client-cli:
   client-data:
   webserver-cli:
+  webserver-ledger:
   node1-data:
   node2-data:
   node3-data:
