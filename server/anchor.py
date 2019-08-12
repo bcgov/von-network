@@ -39,7 +39,7 @@ INDY_TXN_TYPES = {
     "112": "CHANGE_KEY",
 }
 
-INDY_ROLE_TYPES = {"0": "TRUSTEE", "2": "STEWARD", "100": "TGB", "101": "TRUST_ANCHOR"}
+INDY_ROLE_TYPES = {"0": "TRUSTEE", "2": "STEWARD", "100": "TGB", "101": "ENDORSER"}
 
 DEFAULT_PROTOCOL = 2
 
@@ -80,17 +80,6 @@ def is_int(val):
     return False
 
 
-def run_coroutine_with_args(coroutine, *args):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coroutine(*args))
-    except:
-        raise
-    # finally:
-    #  loop.close()
-
-
 async def _fetch_url(the_url):
     async with aiohttp.ClientSession() as session:
         async with session.get(the_url) as resp:
@@ -120,12 +109,12 @@ async def resolve_genesis_file():
 
     if not GENESIS_VERIFIED:
         if not GENESIS_URL and GENESIS_FILE and Path(GENESIS_FILE).exists():
-            print("Genesis file already exists:", GENESIS_FILE)
+            LOGGER.info("Genesis file already exists: %s", GENESIS_FILE)
         elif GENESIS_URL:
             f = tempfile.NamedTemporaryFile(mode="w+b", delete=False)
             GENESIS_FILE = f.name
             f.close()
-            print("Downloading genesis file from:", GENESIS_URL)
+            LOGGER.info("Downloading genesis file from: %s", GENESIS_URL)
             await _fetch_genesis_txn(GENESIS_URL, GENESIS_FILE)
         else:
             raise AnchorException("No genesis file or URL defined")
@@ -166,7 +155,7 @@ class AnchorHandle:
     def __init__(self, protocol: str = None):
         self._anonymous = ANONYMOUS
         self._cache = None
-        self._aml_config = AML_CONFIG
+        self._aml_config_path = AML_CONFIG
         self._did = None
         self._init_error = None
         self._pool = None
@@ -177,7 +166,7 @@ class AnchorHandle:
         self._sync_lock = None
         self._syncing = False
         self._taa_accept = None
-        self._taa_config = TAA_CONFIG
+        self._taa_config_path = TAA_CONFIG
         self._wallet = None
 
     async def _open_pool(self):
@@ -192,12 +181,11 @@ class AnchorHandle:
 
         # remove existing pool config by the same name in ledger browser mode
         try:
-            await pool.delete_pool_ledger_config(pool_name)
+            pool_names = {cfg["pool"] for cfg in await pool.list_pools()}
+            if pool_name in pool_names:
+                await pool.delete_pool_ledger_config(pool_name)
         except IndyError as e:
-            if e.error_code != ErrorCode.CommonIOError:
-                raise AnchorException(
-                    "Error deleting existing pool configuration"
-                ) from e
+            raise AnchorException("Error deleting existing pool configuration") from e
 
         try:
             await pool.create_pool_ledger_config(
@@ -226,7 +214,7 @@ class AnchorHandle:
             )
         except IndyError as e:
             if e.error_code == ErrorCode.WalletAlreadyExistsError:
-                print("Wallet already exists")
+                LOGGER.info("Wallet already exists")
             else:
                 raise AnchorException("Error creating wallet") from e
 
@@ -244,7 +232,7 @@ class AnchorHandle:
                 )
             except IndyError as e:
                 if e.error_code == ErrorCode.DidAlreadyExistsError:
-                    print("DID already exists in wallet")
+                    LOGGER.info("DID already exists in wallet")
                 else:
                     raise AnchorException("Error creating DID in wallet") from e
 
@@ -277,20 +265,22 @@ class AnchorHandle:
 
     async def _register_txn_agreement(self):
         aml_config = None
-        if self._aml_config and os.path.isfile(self._aml_config):
-            aml_json = open(self._aml_config).read()
+        if self._aml_config_path and os.path.isfile(self._aml_config_path):
+            aml_json = open(self._aml_config_path).read()
             if aml_json:
                 aml_config = json.loads(aml_json)
         if not aml_config:
-            print("No AML defined")
+            LOGGER.info("No AML defined")
 
         taa_config = None
-        if self._taa_config and os.path.isfile(self._taa_config):
-            taa_json = open(self._taa_config).read()
+        if self._taa_config_path and os.path.isfile(self._taa_config_path):
+            taa_json = open(self._taa_config_path).read()
             if taa_json:
                 taa_config = json.loads(taa_json)
         if not taa_config:
-            print("No TAA defined")
+            LOGGER.info("No TAA defined")
+        elif not taa_config["text"]:
+            LOGGER.info("Blank TAA defined")
 
         if aml_config and ("version" not in aml_config or "aml" not in aml_config):
             raise AnchorException("Invalid AML configuration")
@@ -305,16 +295,20 @@ class AnchorHandle:
         aml_found = response["result"]["data"]
         aml_methods = aml_found and aml_found["aml"]
 
-        if aml_config and (
-            not aml_found or aml_found["version"] != aml_config["version"]
-        ):
-            aml_body = json.dumps(aml_config["aml"])
-            set_aml_req = await ledger.build_acceptance_mechanisms_request(
-                self._did, aml_body, aml_config["version"], aml_config.get("context")
-            )
-            await self.submit_request(set_aml_req, True)
-            print("Published AML", aml_config["version"])
-            aml_methods = aml_config["aml"]
+        if aml_config:
+            if not aml_found or aml_found["version"] != aml_config["version"]:
+                aml_body = json.dumps(aml_config["aml"])
+                set_aml_req = await ledger.build_acceptance_mechanisms_request(
+                    self._did,
+                    aml_body,
+                    aml_config["version"],
+                    aml_config.get("context"),
+                )
+                await self.submit_request(set_aml_req, True)
+                LOGGER.info("Published AML: %s", aml_config["version"])
+                aml_methods = aml_config["aml"]
+            else:
+                LOGGER.info("AML already published: %s", aml_config["version"])
 
         taa_plaintext = None
         get_taa_req = await ledger.build_get_txn_author_agreement_request(
@@ -322,17 +316,24 @@ class AnchorHandle:
         )
         response = await self.submit_request(get_taa_req, True)
         taa_found = response["result"]["data"]
-        taa_plaintext = taa_found and (taa_found["version"] + taa_found["text"])
+        taa_plaintext = (
+            taa_found
+            and taa_found["text"]
+            and (taa_found["version"] + taa_found["text"])
+        )
 
-        if taa_config and (
-            not taa_found or taa_found["version"] != taa_config["version"]
-        ):
-            set_taa_req = await ledger.build_txn_author_agreement_request(
-                self._did, taa_config["text"], taa_config["version"]
-            )
-            await self.submit_request(set_taa_req, True)
-            print("Published TAA", taa_config["version"])
-            taa_plaintext = taa_config["version"] + taa_config["text"]
+        if taa_config:
+            if not taa_found or taa_found["version"] != taa_config["version"]:
+                set_taa_req = await ledger.build_txn_author_agreement_request(
+                    self._did, taa_config["text"], taa_config["version"]
+                )
+                await self.submit_request(set_taa_req, True)
+                LOGGER.info("Published TAA: %s", taa_config["version"])
+                taa_plaintext = taa_config["text"] and (
+                    taa_config["version"] + taa_config["text"]
+                )
+            else:
+                LOGGER.info("TAA already published: %s", taa_config["version"])
 
         if aml_methods and taa_plaintext:
             self._taa_accept = {
@@ -352,7 +353,9 @@ class AnchorHandle:
                 except AnchorException:
                     self._init_error = "Error initializing pool ledger"
                     raise
-            if not self._anonymous:
+            if self._anonymous:
+                LOGGER.info("Running in anonymous mode")
+            else:
                 try:
                     await self._open_wallet()
                 except AnchorException:
@@ -368,7 +371,7 @@ class AnchorHandle:
             asyncio.get_event_loop().create_task(self.init_cache())
             self._ready = True
         except Exception as e:
-            LOGGER.exception(e)
+            LOGGER.exception("Initialization error:")
             raise AnchorException("Initialization error") from e
 
     async def close(self):
@@ -539,7 +542,7 @@ class AnchorHandle:
         if not await self.get_nym(did):
             LOGGER.info("Send nym: %s/%s", did, verkey)
             req_json = await ledger.build_nym_request(
-                self.did, did, verkey, alias, role
+                self.did, did, verkey, alias or None, role
             )
             await self.submit_request(req_json, True, True)
 
@@ -558,7 +561,7 @@ class AnchorHandle:
         return (did, verkey)
 
     async def init_cache(self):
-        LOGGER.info("Syncing ledger cache")
+        LOGGER.info("Syncing ledger cache...")
         for ledger_type in LedgerType:
             await self.sync_ledger_cache(ledger_type, True)
         LOGGER.info("Finished sync")

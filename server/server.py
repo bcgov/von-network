@@ -35,7 +35,7 @@ LEDGER_INSTANCE_NAME = os.getenv('LEDGER_INSTANCE_NAME', 'Ledger Browser')
 LOGGER.info('LEDGER_INSTANCE_NAME is set to "%s"', LEDGER_INSTANCE_NAME)
 
 WEB_ANALYTICS_SCRIPT = os.getenv('WEB_ANALYTICS_SCRIPT', '')
-LOGGER.info('Web analytics are %s', 'DISABLED' if WEB_ANALYTICS_SCRIPT is '' else 'ENABLED')
+LOGGER.info('Web analytics are %s', 'ENABLED' if not 'WEB_ANALYTICS_SCRIPT' else 'DISABLED')
 
 
 INFO_SITE_URL = os.getenv('INFO_SITE_URL')
@@ -133,10 +133,10 @@ async def ledger_json(request):
   start = (page - 1) * page_size + 1
   end = start + page_size - 1
   query = request.query.get('query')
-  if query is not None and query.strip() is '':
+  if query is not None and not query.strip():
     query = None
   txn_type = request.query.get('type')
-  if txn_type is not None and txn_type.strip() is '':
+  if txn_type is not None and not txn_type.strip():
     txn_type = None
 
   if txn_type is not None or query is not None:
@@ -288,7 +288,9 @@ async def register(request):
   did = body.get('did')
   verkey = body.get('verkey')
   alias = body.get('alias')
-  role = body.get('role', 'TRUST_ANCHOR')
+  role = body.get('role', 'ENDORSER')
+  if role == 'TRUST_ANCHOR':
+    role = 'ENDORSER'
 
   if seed:
     if seed.endswith('='):

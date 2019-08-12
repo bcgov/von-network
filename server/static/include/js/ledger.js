@@ -1,14 +1,14 @@
 Vue.filter(
   'concat',
-  function(values) {
+  function (values) {
     return (values || []).join(", ");
   }
 );
 
 Vue.filter(
   'format_time',
-  function(value) {
-    return new Date(value*1000).toLocaleString();
+  function (value) {
+    return new Date(value * 1000).toLocaleString();
   }
 );
 
@@ -34,7 +34,7 @@ const INDY_ROLE_TYPES = {
   "0": "TRUSTEE",
   "2": "STEWARD",
   "100": "TGB",
-  "101": "TRUST_ANCHOR",
+  "101": "ENDORSER",
 }
 
 const LEDGER_TXNS = [
@@ -60,45 +60,45 @@ var app = new Vue({
     txn_type: '',
     txns: [],
   },
-  mounted: function() {
-    if(window.history && history.pushState) {
+  mounted: function () {
+    if (window.history && history.pushState) {
       window.addEventListener('popstate', this.load.bind(this));
     }
     this.load();
   },
   computed: {
-    haveFilter: function() {
+    haveFilter: function () {
       return this.query !== '' || this.txn_type !== '';
     },
-    ledgerOptions: function() {
+    ledgerOptions: function () {
       return [
-        {value: 'domain', label: 'Domain'},
-        {value: 'pool', label: 'Pool'},
-        {value: 'config', label: 'Config'},
+        { value: 'domain', label: 'Domain' },
+        { value: 'pool', label: 'Pool' },
+        { value: 'config', label: 'Config' },
       ];
     },
-    txnTypeOptions: function() {
+    txnTypeOptions: function () {
       var opts = [];
-      for(var idx = 0; idx < LEDGER_TXNS.length; idx++) {
+      for (var idx = 0; idx < LEDGER_TXNS.length; idx++) {
         var k = LEDGER_TXNS[idx];
-        opts.push({value: k, label: INDY_TXN_TYPES[k]});
+        opts.push({ value: k, label: INDY_TXN_TYPES[k] });
       }
-      opts.sort(function(a, b) { return parseInt(a.value) < parseInt(b.value); });
+      opts.sort(function (a, b) { return parseInt(a.value) < parseInt(b.value); });
       return opts;
     }
   },
   methods: {
-    load: function() {
+    load: function () {
       this.loadPageParams();
       this.loadPage();
     },
-    txnType: function(val) {
+    txnType: function (val) {
       return INDY_TXN_TYPES[val] || val;
     },
-    roleType: function(val) {
+    roleType: function (val) {
       return INDY_ROLE_TYPES[val] || val || '(none)';
     },
-    loadPageParams: function() {
+    loadPageParams: function () {
       var query = this.getPageParams();
       this.page = parseInt(query.page || 1, 10);
       this.page_size = parseInt(query.page_size || 10, 10);
@@ -110,53 +110,53 @@ var app = new Vue({
       this.query = query.query || '';
       this.txn_type = query.txn_type || '';
     },
-    getPageParams: function() {
+    getPageParams: function () {
       // would be automatic but we're not using vue-router
       var q = document.location.search;
       var ret = {};
-      if(q) {
+      if (q) {
         q = q.substring(1);
         var parts = q.split('&');
-        for(var i = 0; i < parts.length; i++) {
+        for (var i = 0; i < parts.length; i++) {
           keyval = parts[i].split('=', 2);
-          if(keyval.length == 2) {
+          if (keyval.length == 2) {
             ret[decodeURIComponent(keyval[0])] = decodeURIComponent(keyval[1]);
           }
         }
       }
       return ret;
     },
-    showEntry: function(ident) {
+    showEntry: function (ident) {
       this.navToPage(ident);
     },
-    showLedger: function(value) {
+    showLedger: function (value) {
       this.ledger = value;
-      this.navToPage(null, {page: 1});
+      this.navToPage(null, { page: 1 });
     },
-    updateLedger: function() {
-      this.navToPage(null, {page: 1, query: this.query, txn_type: this.txn_type});
+    updateLedger: function () {
+      this.navToPage(null, { page: 1, query: this.query, txn_type: this.txn_type });
     },
-    updateQuery: function(q) {
+    updateQuery: function (q) {
       this.query = q;
       this.updateLedger();
     },
-    clearFilter: function() {
-      this.navToPage(null, {page: 1, query: '', txn_type: ''});
+    clearFilter: function () {
+      this.navToPage(null, { page: 1, query: '', txn_type: '' });
     },
-    entryUrl: function(ident) {
+    entryUrl: function (ident) {
       var url = '/browse/' + this.ledger;
-      if(ident) url += '/' + ident;
+      if (ident) url += '/' + ident;
       return url;
     },
-    navToPage: function(ident, params) {
+    navToPage: function (ident, params) {
       var url = this.entryUrl(ident);
       var query = this.getPageParams();
-      if(params) {
-        for(var k in params)
+      if (params) {
+        for (var k in params)
           query[k] = params[k];
       }
       url += encodeQueryString(query);
-      if(window.history && history.pushState) {
+      if (window.history && history.pushState) {
         history.pushState(null, null, url);
         this.loadPageParams();
         this.loadPage();
@@ -164,43 +164,43 @@ var app = new Vue({
         document.location = url;
       }
     },
-    loadPage: function() {
+    loadPage: function () {
       this.loading = true;
       var url = '/ledger/' + encodeURIComponent(this.ledger)
       var ident = this.ident;
-      if(ident)
+      if (ident)
         url += '/' + encodeURIComponent(this.ident);
       else
-        url += encodeQueryString({page: this.page, page_size: this.page_size, query: this.query, type: this.txn_type});
+        url += encodeQueryString({ page: this.page, page_size: this.page_size, query: this.query, type: this.txn_type });
       var self = this;
-      var reqno = ++ this.reqno;
+      var reqno = ++this.reqno;
       fetch(url).then(
-          function(res) {
-            if(self.reqno == reqno && res.status) {
-              if(res.status == 200) {
-                res.json().then(function(result) {
-                  self.onReceive(result, ident);
-                });
-              } else {
-                self.onError(res, ident);
-              }
+        function (res) {
+          if (self.reqno == reqno && res.status) {
+            if (res.status == 200) {
+              res.json().then(function (result) {
+                self.onReceive(result, ident);
+              });
+            } else {
+              self.onError(res, ident);
             }
           }
-        ).catch(
-          function(err) {
-            if(self.reqno == reqno) {
-              self.onError(err, ident);
-            }
+        }
+      ).catch(
+        function (err) {
+          if (self.reqno == reqno) {
+            self.onError(err, ident);
           }
-        );
+        }
+      );
     },
-    pageRange: function(data) {
+    pageRange: function (data) {
       var display_count = 5;
       var current = null;
       var start = null;
       var end = null;
       var ret = [];
-      if(data) {
+      if (data) {
         current = data.page;
         end = Math.min(current + display_count - 1, Math.ceil(data.total / data.page_size));
         start = Math.max(1, Math.min(current, end - display_count + 1));
@@ -209,7 +209,7 @@ var app = new Vue({
         start = Math.max(1, current - display_count + 1);
         end = this.page;
       }
-      for(var i = start; i <= end; i++) {
+      for (var i = start; i <= end; i++) {
         ret.push(
           {
             active: i == current,
@@ -219,16 +219,16 @@ var app = new Vue({
       }
       return ret;
     },
-    toggleData: function(index) {
-      this.txns[index].expanded = ! this.txns[index].expanded;
+    toggleData: function (index) {
+      this.txns[index].expanded = !this.txns[index].expanded;
     },
-    onReceive: function(data, ident) {
-      if(ident) {
-        this.nav = {loaded: false, ident: true};
+    onReceive: function (data, ident) {
+      if (ident) {
+        this.nav = { loaded: false, ident: true };
         this.loadTxns([data]);
       } else {
         var pages = this.pageRange(data);
-        var last = pages.length ? pages[pages.length-1].index : data.page;
+        var last = pages.length ? pages[pages.length - 1].index : data.page;
         this.nav = {
           loaded: true,
           first: data.first_index,
@@ -244,9 +244,9 @@ var app = new Vue({
       this.loaded = true;
       this.loading = false;
     },
-    loadTxns: function(results) {
+    loadTxns: function (results) {
       var txns = [];
-      for(var idx = 0; idx < results.length; idx++) {
+      for (var idx = 0; idx < results.length; idx++) {
         var wrapper = results[idx];
         var txn = {
           index: idx,
@@ -264,13 +264,13 @@ var app = new Vue({
       }
       this.txns = txns;
     },
-    onError: function(res, ident) {
+    onError: function (res, ident) {
       var err = "Error loading transaction data.";
-      if(ident) {
-        if(res && res.status == 404) err = 'Transaction not found';
-        this.nav = {loaded: false, ident: true};
+      if (ident) {
+        if (res && res.status == 404) err = 'Transaction not found';
+        this.nav = { loaded: false, ident: true };
       } else {
-        if(res && res.status == 404) err = 'Page not found';
+        if (res && res.status == 404) err = 'Page not found';
         this.nav = {
           loaded: true,
           has_prev: this.page > 1,
@@ -282,13 +282,13 @@ var app = new Vue({
       this.loaded = false;
       this.loading = false;
     },
-    gotoPage: function(page) {
-      this.navToPage(null, {page: page});
+    gotoPage: function (page) {
+      this.navToPage(null, { page: page });
     },
-    prevPage: function() {
+    prevPage: function () {
       this.gotoPage(Math.max(1, this.page - 1));
     },
-    nextPage: function() {
+    nextPage: function () {
       this.gotoPage(this.page + 1);
     }
   }

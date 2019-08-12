@@ -5,7 +5,7 @@ var app = new Vue({
     anonymous: true,
     init_error: null,
     ready: false,
-    reg_info: {reg_type: 'seed', did: null, verkey: null, role: 'TRUST_ANCHOR', seed: null, alias: null},
+    reg_info: { reg_type: 'seed', did: null, verkey: null, role: 'ENDORSER', seed: null, alias: null },
     reg_error: null,
     reg_result: null,
     register_new_dids: false,
@@ -14,52 +14,52 @@ var app = new Vue({
     syncing: false
   },
   computed: {
-    role_options: function() {
+    role_options: function () {
       return [
-        {value: 'TRUST_ANCHOR', label: 'Trust Anchor'}
+        { value: 'ENDORSER', label: 'Endorser' }
       ];
     }
   },
-  mounted: function() {
+  mounted: function () {
     this.fetchStatus();
   },
   methods: {
-    fetchStatus: function() {
+    fetchStatus: function () {
       var self = this;
-      fetch('/status?validators=' + (this.ready ? '1' : '')).then(function(response) {
-        if(response.ok) {
-          response.json().then(function(result) {
+      fetch('/status?validators=' + (this.ready ? '1' : '')).then(function (response) {
+        if (response.ok) {
+          response.json().then(function (result) {
             var prev_ready = self.ready;
             self.anonymous = result.anonymous;
             self.init_error = result.init_error;
             self.ready = result.ready;
             self.register_new_dids = result.register_new_dids;
             self.syncing = result.syncing;
-            if(self.ready) {
+            if (self.ready) {
               self.status = result.validators ? self.formatValidatorStatus(result.validators) : null;
-              setTimeout(function() { self.fetchStatus(); }, prev_ready ? 60000 : 1000);
+              setTimeout(function () { self.fetchStatus(); }, prev_ready ? 60000 : 1000);
             } else {
-              setTimeout(function() { self.fetchStatus(); }, 10000);
+              setTimeout(function () { self.fetchStatus(); }, 10000);
             }
           });
         }
       }).catch(
-        function(err) {
+        function (err) {
           console.error("Error fetching server config:", err);
         }
       );
     },
-    formatValidatorStatus: function(status) {
+    formatValidatorStatus: function (status) {
       var formatted = {
-        err: ! Array.isArray(status),
+        err: !Array.isArray(status),
         rows: []
       };
 
-      if(! formatted.err) {
+      if (!formatted.err) {
         for (var idx = 0; idx < status.length; idx++) {
           var node = status[idx],
-              info = node.Node_info,
-              result = {};
+            info = node.Node_info,
+            result = {};
 
           result.name = info.Name;
           result.did = info.did;
@@ -90,15 +90,15 @@ var app = new Vue({
           result.dash_array = 339.292;
           result.dash_offset = result.dash_array * (1 - result.progress);
 
-          var shorten = function(val) {
-            if(typeof val === 'number') {
-              if(val > 1000000) {
+          var shorten = function (val) {
+            if (typeof val === 'number') {
+              if (val > 1000000) {
                 return (val / 1000000).toPrecision(3) + 'M';
               }
-              if(val > 1000) {
+              if (val > 1000) {
                 return (val / 1000).toPrecision(3) + 'K';
               }
-              if(Math.trunc(val) == val) {
+              if (Math.trunc(val) == val) {
                 return val;
               }
               return val.toPrecision(3);
@@ -121,13 +121,13 @@ var app = new Vue({
 
       return formatted;
     },
-    register: function() {
+    register: function () {
       this.loading = true;
       this.reg_error = null;
       this.reg_result = null;
       var self = this;
-      var info = {role: this.reg_info.role, alias: this.reg_info.alias};
-      if(this.reg_info.reg_type == 'seed') {
+      var info = { role: this.reg_info.role, alias: this.reg_info.alias };
+      if (this.reg_info.reg_type == 'seed') {
         info.did = this.reg_info.did;
         info.seed = this.reg_info.seed;
       } else {
@@ -139,25 +139,26 @@ var app = new Vue({
         body: JSON.stringify(info),
         headers: {
           'Content-Type': 'application/json'
-        }}).then(
-          function(res) {
-            if(res.status == 200) {
-              res.json().then(function(result) {
-                self.reg_result = result;
-                self.loading = false;
-              });
-            } else {
-              console.log(res);
-              self.reg_error = true;
+        }
+      }).then(
+        function (res) {
+          if (res.status == 200) {
+            res.json().then(function (result) {
+              self.reg_result = result;
               self.loading = false;
-            }
-          }
-        ).catch(
-          function(err) {
+            });
+          } else {
+            console.log(res);
             self.reg_error = true;
             self.loading = false;
           }
-        );
+        }
+      ).catch(
+        function (err) {
+          self.reg_error = true;
+          self.loading = false;
+        }
+      );
     }
   }
 });
