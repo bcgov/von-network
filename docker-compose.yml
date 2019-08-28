@@ -7,6 +7,8 @@ services:
     image: von-network-base
     command: 'bash -c ''./scripts/start_client.sh'''
     environment:
+      - IP=${IP}
+      - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
       - RUST_LOG=${RUST_LOG}
     networks:
