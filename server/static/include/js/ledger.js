@@ -27,7 +27,17 @@ const INDY_TXN_TYPES = {
   "109": "POOL_UPGRADE",
   "110": "NODE_UPGRADE",
   "111": "POOL_CONFIG",
-  "112": "CHANGE_KEY"
+  "112": "CHANGE_KEY",
+  "113": "REVOC_REG_DEF",
+  "114": "REVOC_REG_ENTRY",
+  "115": "GET_REVOC_REG_DEF",
+  "116": "GET_REVOC_REG",
+  "117": "GET_REVOC_REG_DELTA",
+  "118": "POOL_RESTART",
+  "119": "VALIDATOR_INFO",
+  "120": "AUTH_RULE",
+  "121": "GET_AUTH_RULE",
+  "122": "AUTH_RULES"
 }
 
 const INDY_ROLE_TYPES = {
@@ -38,7 +48,7 @@ const INDY_ROLE_TYPES = {
 }
 
 const LEDGER_TXNS = [
-  "0", "1", "100", "101", "102",
+  "0", "1", "100", "101", "102", "112", "113", "114", "120"
 ];
 
 var app = new Vue({

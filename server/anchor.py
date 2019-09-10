@@ -28,7 +28,7 @@ INDY_TXN_TYPES = {
     "100": "ATTRIB",
     "101": "SCHEMA",
     "102": "CRED_DEF",
-    "103": "DISCO",
+    "103": "DISCLO",
     "104": "GET_ATTR",
     "105": "GET_NYM",
     "107": "GET_SCHEMA",
@@ -37,6 +37,16 @@ INDY_TXN_TYPES = {
     "110": "NODE_UPGRADE",
     "111": "POOL_CONFIG",
     "112": "CHANGE_KEY",
+    "113": "REVOC_REG_DEF",
+    "114": "REVOC_REG_ENTRY",
+    "115": "GET_REVOC_REG_DEF",
+    "116": "GET_REVOC_REG",
+    "117": "GET_REVOC_REG_DELTA",
+    "118": "POOL_RESTART",
+    "119": "VALIDATOR_INFO",
+    "120": "AUTH_RULE",
+    "121": "GET_AUTH_RULE",
+    "122": "AUTH_RULES",
 }
 
 INDY_ROLE_TYPES = {"0": "TRUSTEE", "2": "STEWARD", "100": "TGB", "101": "ENDORSER"}
