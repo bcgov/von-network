@@ -1,6 +1,6 @@
 import asyncio
 import base64
-from datetime import datetime
+from datetime import date, datetime
 from enum import IntEnum
 import json
 from hashlib import sha256
@@ -346,10 +346,11 @@ class AnchorHandle:
                 LOGGER.info("TAA already published: %s", taa_config["version"])
 
         if aml_methods and taa_plaintext:
+            rough_time = int(datetime.combine(date.today(), datetime.min.time()).timestamp())
             self._taa_accept = {
                 "taaDigest": sha256(taa_plaintext.encode("utf-8")).digest().hex(),
                 "mechanism": next(iter(aml_methods)),
-                "time": int(time()),
+                "time": rough_time,
             }
 
     async def open(self):
