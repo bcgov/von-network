@@ -139,3 +139,7 @@ Temporary Items
 .mnt
 
 Pipfile
+
+# Custom TAA
+config/aml.json
+config/taa.json
