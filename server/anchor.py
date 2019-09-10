@@ -817,8 +817,8 @@ class LedgerCache:
         LOGGER.info("Resetting ledger cache")
         await self.perform(
             """
-      TRUNCATE latest;
-      TRUNCATE transactions
+      DELETE FROM latest;
+      DELETE FROM transactions
       """,
             script=True,
         )
