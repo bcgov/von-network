@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -14,6 +15,7 @@
   {% include 'analytics.html' %}
 
 </head>
+
 <body>
 
   {% include 'header.html' %}
@@ -88,7 +90,8 @@
                     </select>
                     <br>
                     <label class="nav-label">Filter: </label>
-                    <input class="tool-input" id="query-input" placeholder="" size="30" :value="query" @keyup.enter="updateQuery($event.target.value)" @focus="$event.target.select()">
+                    <input class="tool-input" id="query-input" placeholder="" size="30" :value="query"
+                      @keyup.enter="updateQuery($event.target.value)" @focus="$event.target.select()">
                     <div class="clear-filter" v-if="haveFilter" @click.prevent="clearFilter()">
                       <span class="fa fa-times-circle"></span> Clear filter
                     </div>
@@ -116,7 +119,9 @@
                           <label>Transaction ID:</label> <span class="ident">{{entry.txnMetadata.txnId}}</span>
                         </div>
                         <div v-if="entry.txnMetadata.txnTime" class="line misc">
-                          <label>Transaction time:</label> <span class="ident">{{entry.txnMetadata.txnTime | format_time}} ({{entry.txnMetadata.txnTime}})</span>
+                          <label>Transaction time:</label> <span
+                            class="ident">{{entry.txnMetadata.txnTime | format_time}}
+                            ({{entry.txnMetadata.txnTime}})</span>
                         </div>
                         <div v-if="entry.reqSignature && entry.reqSignature.values" class="line misc">
                           <label>Signed by:</label> <span class="ident">{{entry.reqSignature.values[0].from}}</span>
@@ -167,7 +172,8 @@
                             <label>Node port:</label> <span class="ident">{{entry.txn.data.data.node_port}}</span>
                           </div>
                           <div class="line misc" v-if="entry.txn.data.data.services">
-                            <label>Services:</label> <span class="ident">{{entry.txn.data.data.services | concat}}</span>
+                            <label>Services:</label> <span
+                              class="ident">{{entry.txn.data.data.services | concat}}</span>
                           </div>
                         </template>
                         <template v-if="entry.txn.type == '1'">
@@ -226,6 +232,52 @@
                               </li>
                             </ul>
                         </template>
+                        <template v-if="entry.txn.type == '113'">
+                          <div class="line misc">
+                            <label>Revocation registry type:</label> <span
+                              class="ident">{{entry.txn.data.revocDefType}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Credential definition ID:</label> <span
+                              class="ident">{{entry.txn.data.credDefId}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Tag:</label> <span class="ident">{{entry.txn.data.tag}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Issuance type:</label> <span
+                              class="ident">{{entry.txn.data.value.issuanceType}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Maximum credential count:</label> <span
+                              class="ident">{{entry.txn.data.value.maxCredNum}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Tails file hash:</label> <span
+                              class="ident">{{entry.txn.data.value.tailsHash}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Tails file location:</label> <span
+                              class="ident">{{entry.txn.data.value.tailsLocation}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Accumulator key:</label> <span
+                              class="ident">{{entry.txn.data.value.publicKeys.accumKey.z}}</span>
+                          </div>
+                        </template>
+                        <template v-if="entry.txn.type == '114'">
+                          <div class="line misc">
+                            <label>Revocation registry type:</label> <span
+                              class="ident">{{entry.txn.data.revocDefType}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Revocation registry ID:</label> <span
+                              class="ident">{{entry.txn.data.revocRegDefId}}</span>
+                          </div>
+                          <div class="line misc">
+                            <label>Accumulator value:</label> <span class="ident">{{entry.txn.data.value.accum}}</span>
+                          </div>
+                        </template>
                         <div class="ledger-entry-title active" @click.prevent="toggleData(entry.index)">
                           Raw Data <span :class="'fa fa-chevron-' + (entry.expanded ? 'up' : 'down')"></span>
                         </div>
@@ -249,4 +301,5 @@
   </main>
   <script src="/include/js/ledger.js?v=1" type="text/javascript"></script>
 </body>
+
 </html>
