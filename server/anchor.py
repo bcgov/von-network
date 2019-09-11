@@ -346,7 +346,9 @@ class AnchorHandle:
                 LOGGER.info("TAA already published: %s", taa_config["version"])
 
         if aml_methods and taa_plaintext:
-            rough_time = int(datetime.combine(date.today(), datetime.min.time()).timestamp())
+            rough_time = int(
+                datetime.combine(date.today(), datetime.min.time()).timestamp()
+            )
             self._taa_accept = {
                 "taaDigest": sha256(taa_plaintext.encode("utf-8")).digest().hex(),
                 "mechanism": next(iter(aml_methods)),
@@ -592,13 +594,27 @@ class AnchorHandle:
             pass
         LOGGER.debug("Finished resync")
 
+    def compare_txns(self, txnA: dict, txnB: dict) -> bool:
+        match = True
+        for k in ("txn", "txnMetadata", "reqSignature"):
+            if txnA[k] != txnB[k]:
+                match = False
+                print(txnA)
+                print("<<<>>>")
+                print(txnB)
+                break
+        return match
+
     async def sync_ledger_cache(self, ledger_type: LedgerType, wait=False):
         done = False
         fetched = 0
-        # may throw asyncio.TimeoutError
-        locked = await asyncio.wait_for(
-            self._sync_lock.acquire(), None if wait else 0.01
-        )
+        try:
+            locked = await asyncio.wait_for(
+                self._sync_lock.acquire(), None if wait else 0.01
+            )
+        except asyncio.TimeoutError:
+            LOGGER.error("Timeout waiting for ledger sync lock")
+            return False
         self._syncing = True
         try:
             latest = await self._cache.get_latest_seqno(ledger_type)
@@ -608,7 +624,9 @@ class AnchorHandle:
                 if (
                     not cache_txn
                     or not txn
-                    or json.loads(cache_txn[3]) != json.loads(txn[3])
+                    or not self.compare_txns(
+                        json.loads(cache_txn[3]), json.loads(txn[3])
+                    )
                 ):
                     await self._cache.reset()
             while not done:
@@ -626,6 +644,8 @@ class AnchorHandle:
                         done = True
                 else:
                     done = True
+        except AnchorException:
+            LOGGER.exception("Error syncing ledger cache:")
         finally:
             self._sync_lock.release()
             self._syncing = False
