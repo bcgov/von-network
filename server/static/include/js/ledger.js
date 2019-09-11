@@ -16,10 +16,14 @@ const INDY_TXN_TYPES = {
   "0": "NODE",
   "1": "NYM",
   "3": "GET_TXN",
+  "4": "TXN_AUTHOR_AGREEMENT",
+  "5": "TXN_AUTHOR_AGREEMENT_AML",
+  "6": "GET_TXN_AUTHOR_AGREEMENT",
+  "7": "GET_TXN_AUTHOR_AGREEMENT_AML",
   "100": "ATTRIB",
   "101": "SCHEMA",
   "102": "CRED_DEF",
-  "103": "DISCO",
+  "103": "DISCLO",
   "104": "GET_ATTR",
   "105": "GET_NYM",
   "107": "GET_SCHEMA",
@@ -48,7 +52,7 @@ const INDY_ROLE_TYPES = {
 }
 
 const LEDGER_TXNS = [
-  "0", "1", "100", "101", "102", "112", "113", "114", "120"
+  "0", "1", "4", "5", "100", "101", "102", "112", "113", "114", "120"
 ];
 
 var app = new Vue({

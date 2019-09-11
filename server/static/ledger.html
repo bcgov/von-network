@@ -167,6 +167,31 @@
                             <label>Verkey:</label> <span class="ident">{{entry.txn.data.verkey}}</span>
                           </div>
                         </template>
+                        <template v-if="entry.txn.type == '4'">
+                          <div class="line misc" v-if="entry.txn.data.version">
+                            <label>Version:</label> <span class="ident">{{entry.txn.data.version}}</span>
+                          </div>
+                          <div class="block misc" v-if="entry.txn.data.text">
+                            <label>AML:</label> <span class="ident">{{entry.txn.data.text}}</span>
+                          </div>
+                        </template>
+                        <template v-if="entry.txn.type == '5'">
+                          <div class="line misc" v-if="entry.txn.data.version">
+                            <label>Version:</label> <span class="ident">{{entry.txn.data.version}}</span>
+                          </div>
+                          <div class="line misc" v-if="entry.txn.data.amlContext">
+                            <label>Context:</label> <span class="ident">{{entry.txn.data.amlContext}}</span>
+                          </div>
+                          <div class="block misc">
+                            <label>AML:</label>
+                            <dl>
+                              <template v-for="(amlVal, amlType) in entry.txn.data.aml">
+                                <dt class="ident">{{amlType}}</dt>
+                                <dd>{{amlVal}}</dd>
+                              </template>
+                            </dl>
+                          </div>
+                        </template>
                         <template v-if="entry.txn.type == '100'">
                           <div class="line misc">
                             <label>Nym:</label> <span class="ident">{{entry.txn.data.dest}}</span>
