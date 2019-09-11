@@ -372,11 +372,20 @@ h2 .fa {
   min-width: 1.5em;
   padding: 0.25em 0.8em;
 }
+.pagination .page-text {
+  cursor: default;
+  display: block;
+  padding: 0.25em 0.4em;
+}
 .pagination .page-item+.page-item {
   margin-left: -1px;
 }
 .pagination .page-item.active {
+  background-color: rgba(255, 255, 255, 0.8);
   font-weight: bold;
+}
+.pagination .page-item.active .page-link {
+  color: #000;
 }
 .pagination .page-item.disabled {
   border-color: #aaa;
@@ -427,6 +436,13 @@ h2 .fa {
 }
 .ledger-entry .line {
   padding-left: 2em;
+  text-indent: -1em;
+}
+.ledger-entry .block {
+  padding-left: 2em;
+}
+.ledger-entry .block label {
+  display: block;
   text-indent: -1em;
 }
 .ledger-entry .misc {

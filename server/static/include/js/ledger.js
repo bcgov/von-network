@@ -205,27 +205,54 @@ var app = new Vue({
       );
     },
     pageRange: function (data) {
-      var display_count = 5;
+      var display_range = 3;
       var current = null;
       var start = null;
+      var last = null;
       var end = null;
       var ret = [];
       if (data) {
         current = data.page;
-        end = Math.min(current + display_count - 1, Math.ceil(data.total / data.page_size));
-        start = Math.max(1, Math.min(current, end - display_count + 1));
+        last = Math.ceil(data.total / data.page_size);
+        end = Math.min(Math.max(display_range * 2 + 1, current + display_range), last);
+        start = Math.max(1, Math.min(current - display_range, last - display_range * 2));
       } else {
         current = this.page;
-        start = Math.max(1, current - display_count + 1);
-        end = this.page;
+        end = last = this.page;
+        start = Math.max(1, current - display_range);
+      }
+      if (start > 1) {
+        ret.push({
+          index: 1,
+          link: true
+        });
+        if (start > 2) {
+          ret.push({
+            text: "...",
+          });
+          start++;
+        }
       }
       for (var i = start; i <= end; i++) {
         ret.push(
           {
             active: i == current,
-            index: i
+            index: i,
+            link: true
           }
         );
+      }
+      if (last > end) {
+        if (last > end + 1) {
+          ret.pop();
+          ret.push({
+            text: "...",
+          });
+        }
+        ret.push({
+          index: last,
+          link: true
+        });
       }
       return ret;
     },

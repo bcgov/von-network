@@ -52,30 +52,11 @@
                     {% endraw %}
                   </div>
                   <ul class="pagination" v-if="nav.loaded">
-                    <li class="page-item" v-if="nav.has_prev">
-                      <a class="page-link" href="#" @click.prevent="prevPage" aria-label="Previous">
-                        <span aria-hidden="true" class="fa fa-chevron-left"></span> Previous
-                      </a>
-                    </li>
-                    <li class="page-item disabled" v-else>
-                      <label class="page-link">
-                        <span aria-hidden="true" class="fa fa-chevron-left"></span> Previous
-                      </label>
-                    </li>
                     <li v-for="p in nav.pages" :class="'page-item' + (p.active ? ' active' : '')">
                       {% raw %}
-                      <a class="page-link" href="#" @click.prevent="gotoPage(p.index)">{{p.index}}</a>
+                      <a class="page-link" href="#" @click.prevent="gotoPage(p.index)" v-if="p.link">{{p.index}}</a>
+                      <span class="page-text" v-else>{{p.text}}</span>
                       {% endraw %}
-                    </li>
-                    <li class="page-item" v-if="nav.has_next">
-                      <a class="page-link" href="#" @click.prevent="nextPage" aria-label="Next">
-                        Next <span aria-hidden="true" class="fa fa-chevron-right"></span>
-                      </a>
-                    </li>
-                    <li class="page-item disabled" v-else>
-                      <label class="page-link">
-                        Next <span aria-hidden="true" class="fa fa-chevron-right"></span>
-                      </label>
                     </li>
                   </ul>
                 </div>
@@ -112,26 +93,22 @@
                     <tr class="ledger-row" v-for="entry in txns">
                       <td class="ledger-index"><span class="number">#{{entry.txnMetadata.seqNo}}</span></td>
                       <td class="ledger-entry">
-                        <div class="ledger-entry-title">
-                          Message Wrapper
-                        </div>
-                        <div v-if="entry.txnMetadata.txnId" class="line misc">
-                          <label>Transaction ID:</label> <span class="ident">{{entry.txnMetadata.txnId}}</span>
-                        </div>
-                        <div v-if="entry.txnMetadata.txnTime" class="line misc">
-                          <label>Transaction time:</label> <span
-                            class="ident">{{entry.txnMetadata.txnTime | format_time}}
-                            ({{entry.txnMetadata.txnTime}})</span>
-                        </div>
-                        <div v-if="entry.reqSignature && entry.reqSignature.values" class="line misc">
-                          <label>Signed by:</label> <span class="ident">{{entry.reqSignature.values[0].from}}</span>
-                        </div>
-                        <div v-if="entry.rootHash" class="line misc">
-                          <label>Root hash:</label> <span class="ident">{{entry.rootHash}}</span>
-                        </div>
-                        <div v-if="entry.auditPath && entry.auditPath.length" class="line misc">
-                          <label>Audit path:</label> <span class="ident">{{entry.auditPath | concat}}</span>
-                        </div>
+                        <template v-if="entry.txnMetadata.txnId">
+                          <div class="ledger-entry-title">
+                            Message Wrapper
+                          </div>
+                          <div v-if="entry.txnMetadata.txnId" class="line misc">
+                            <label>Transaction ID:</label> <span class="ident">{{entry.txnMetadata.txnId}}</span>
+                          </div>
+                          <div v-if="entry.txnMetadata.txnTime" class="line misc">
+                            <label>Transaction time:</label> <span
+                              class="ident">{{entry.txnMetadata.txnTime | format_time}}
+                              ({{entry.txnMetadata.txnTime}})</span>
+                          </div>
+                          <div v-if="entry.reqSignature && entry.reqSignature.values" class="line misc">
+                            <label>Signed by:</label> <span class="ident">{{entry.reqSignature.values[0].from}}</span>
+                          </div>
+                        </template>
                         <template v-if="entry.txn && entry.txn.metadata && entry.txn.metadata.from">
                           <div class="ledger-entry-title">
                             Metadata
@@ -260,9 +237,9 @@
                             <label>Tails file location:</label> <span
                               class="ident">{{entry.txn.data.value.tailsLocation}}</span>
                           </div>
-                          <div class="line misc">
-                            <label>Accumulator key:</label> <span
-                              class="ident">{{entry.txn.data.value.publicKeys.accumKey.z}}</span>
+                          <div class="block misc">
+                            <label>Accumulator key:</label>
+                            <span class="ident">{{entry.txn.data.value.publicKeys.accumKey.z}}</span>
                           </div>
                         </template>
                         <template v-if="entry.txn.type == '114'">
@@ -270,11 +247,11 @@
                             <label>Revocation registry type:</label> <span
                               class="ident">{{entry.txn.data.revocDefType}}</span>
                           </div>
-                          <div class="line misc">
+                          <div class="block misc">
                             <label>Revocation registry ID:</label> <span
                               class="ident">{{entry.txn.data.revocRegDefId}}</span>
                           </div>
-                          <div class="line misc">
+                          <div class="block misc">
                             <label>Accumulator value:</label> <span class="ident">{{entry.txn.data.value.accum}}</span>
                           </div>
                         </template>
