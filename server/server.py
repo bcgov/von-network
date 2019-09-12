@@ -143,7 +143,7 @@ async def ledger_json(request):
     rows, count = await TRUST_ANCHOR.get_txn_search(request.match_info["ledger_name"], query, txn_type, page_size, start-1)
   else:
     rows = await TRUST_ANCHOR.get_txn_range(request.match_info["ledger_name"], start, end)
-    count = await TRUST_ANCHOR.get_latest_seqno(request.match_info["ledger_name"])
+    count = await TRUST_ANCHOR.get_max_seqno(request.match_info["ledger_name"])
   last_modified = None
   results = []
   for row in rows:

@@ -25,6 +25,10 @@ INDY_TXN_TYPES = {
     "0": "NODE",
     "1": "NYM",
     "3": "GET_TXN",
+    "4": "TXN_AUTHOR_AGREEMENT",
+    "5": "TXN_AUTHOR_AGREEMENT_AML",
+    "6": "GET_TXN_AUTHOR_AGREEMENT",
+    "7": "GET_TXN_AUTHOR_AGREEMENT_AML",
     "100": "ATTRIB",
     "101": "SCHEMA",
     "102": "CRED_DEF",
@@ -429,6 +433,10 @@ class AnchorHandle:
         ledger_type = LedgerType.for_value(ledger_type)
         return await self._cache.get_latest_seqno(ledger_type)
 
+    async def get_max_seqno(self, ledger_type):
+        ledger_type = LedgerType.for_value(ledger_type)
+        return await self._cache.get_max_seqno(ledger_type)
+
     async def submit_request(
         self, req_json: str, signed: bool = False, apply_taa=False
     ):
@@ -700,17 +708,20 @@ class AnchorHandle:
 def txn_extract_terms(txn_json):
     data = json.loads(txn_json)
     result = {}
-    type = None
+    txntype = None
+    ledger_size = None
+
     if data:
-        meta = data.get("txnMetadata", {})
-        result["txnid"] = meta.get("txnId")
+        ledger_size = data.get("ledgerSize")
+        txnmeta = data.get("txnMetadata", {})
+        result["txnid"] = txnmeta.get("txnId")
         txn = data.get("txn", {})
-        type = txn.get("type")
+        txntype = txn.get("type")
 
         meta = txn.get("metadata", {})
         result["sender"] = meta.get("from")
 
-        if type == "1":
+        if txntype == "1":
             # NYM
             result["ident"] = txn["data"]["dest"]
             result["alias"] = txn["data"].get("alias")
@@ -739,25 +750,25 @@ def txn_extract_terms(txn_json):
             role_id = txn["data"].get("role")
             result["data"] = INDY_ROLE_TYPES.get(role_id)
 
-        elif type == "100":
+        elif txntype == "100":
             # ATTRIB
             result["ident"] = txn["data"]["dest"]
             raw_data = txn["data"].get("raw", "{}")
             data = json.loads(raw_data) or {}
             result["alias"] = data.get("endpoint", {}).get("endpoint")
 
-        elif type == "101":
+        elif txntype == "101":
             # SCHEMA
             result["ident"] = "{} {}".format(
                 txn["data"]["data"]["name"], txn["data"]["data"]["version"]
             )
             result["data"] = " ".join(txn["data"]["data"]["attr_names"])
 
-        elif type == "102":
+        elif txntype == "102":
             # CRED_DEF
             result["data"] = " ".join(txn["data"]["data"]["primary"]["r"].keys())
 
-    return type, result
+    return txntype, result, ledger_size
 
 
 class LedgerCache:
@@ -812,6 +823,10 @@ class LedgerCache:
         LOGGER.info("Initializing transaction database")
         await self.perform(
             """
+      CREATE TABLE existent (
+        ledger integer PRIMARY KEY,
+        seqno integer NOT NULL DEFAULT 0
+      );
       CREATE TABLE latest (
         ledger integer PRIMARY KEY,
         seqno integer NOT NULL DEFAULT 0
@@ -837,6 +852,7 @@ class LedgerCache:
         LOGGER.info("Resetting ledger cache")
         await self.perform(
             """
+      DELETE FROM existent;
       DELETE FROM latest;
       DELETE FROM transactions
       """,
@@ -846,6 +862,12 @@ class LedgerCache:
     async def get_latest_seqno(self, ledger_type: LedgerType):
         row = await self.queryone(
             "SELECT seqno FROM latest WHERE ledger=?", (ledger_type.value,)
+        )
+        return row and row[0] or None
+
+    async def get_max_seqno(self, ledger_type: LedgerType):
+        row = await self.queryone(
+            "SELECT seqno FROM existent WHERE ledger=?", (ledger_type.value,)
         )
         return row and row[0] or None
 
@@ -933,7 +955,7 @@ class LedgerCache:
     async def add_txn(
         self, ledger_type: LedgerType, seq_no, txn_id, added, value: str, latest=False
     ):
-        txn_type, terms = txn_extract_terms(value)
+        txn_type, terms, ledger_size = txn_extract_terms(value)
         terms_id = None
         if terms:
             term_names = list(terms.keys())
@@ -949,12 +971,20 @@ class LedgerCache:
         )
         if latest:
             await self.set_latest(ledger_type, seq_no)
+            await self.set_existent(ledger_type, ledger_size or seq_no)
 
     async def set_latest(self, ledger_type: LedgerType, seq_no):
         await self.perform(
             "REPLACE INTO latest (ledger, seqno) VALUES (?, ?)",
             (ledger_type.value, seq_no),
         )
+
+    async def set_existent(self, ledger_type: LedgerType, seq_no):
+        await self.perform(
+            "REPLACE INTO existent (ledger, seqno) VALUES (?, ?)",
+            (ledger_type.value, seq_no),
+        )
+        print("set max", ledger_type, seq_no)
 
     async def __aenter__(self) -> "LedgerCache":
         await self.open()
