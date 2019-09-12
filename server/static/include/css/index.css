@@ -383,7 +383,7 @@ h2 .fa {
   margin-left: -1px;
 }
 .pagination .page-item.active {
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: #d1e1ff;
   font-weight: bold;
 }
 .pagination .page-item.active .page-link {
