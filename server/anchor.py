@@ -613,6 +613,10 @@ class AnchorHandle:
                 break
         return match
 
+    async def reset_ledger_cache(self):
+        async with self._sync_lock:
+            await self._cache.reset()
+
     async def sync_ledger_cache(self, ledger_type: LedgerType, wait=False):
         done = False
         fetched = 0
@@ -984,7 +988,6 @@ class LedgerCache:
             "REPLACE INTO existent (ledger, seqno) VALUES (?, ?)",
             (ledger_type.value, seq_no),
         )
-        print("set max", ledger_type, seq_no)
 
     async def __aenter__(self) -> "LedgerCache":
         await self.open()
