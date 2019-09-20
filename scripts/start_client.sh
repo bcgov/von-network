@@ -16,4 +16,4 @@ fi
 mkdir -p .indy_client/pool/sandbox
 cp /home/indy/ledger/sandbox/pool_transactions_genesis .indy_client/pool/sandbox/sandbox.txn
 
-indy-cli
+indy-cli "$@"

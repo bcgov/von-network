@@ -15,7 +15,8 @@ services:
       - von
     volumes:
       - client-cli:/home/indy/.indy-cli
-      - client-data:/var/lib/indy
+      - client-data:/home/indy/.indy_client
+      - ./tmp:/tmp
 
   #
   # Webserver
