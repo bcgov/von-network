@@ -14,7 +14,6 @@ services:
     networks:
       - von
     volumes:
-      - client-cli:/home/indy/.indy-cli
       - client-data:/home/indy/.indy_client
       - ./tmp:/tmp
 
@@ -149,7 +148,6 @@ networks:
   von:
 
 volumes:
-  client-cli:
   client-data:
   webserver-cli:
   webserver-ledger:
