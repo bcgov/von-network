@@ -114,6 +114,10 @@ function initEnv() {
 
 function runCliCommand() {
   initEnv "$@"
+
+  cliCmd="${1}"
+  shift || cliCmd=""
+
   cmd="${terminalEmu} docker-compose \
     --log-level ERROR run "
 
@@ -123,14 +127,23 @@ function runCliCommand() {
     for path in ${paths}; do
       path=${path%%+(/)}
       mountPoint=${path##*/}
-      cmd+=" --volume='/${path}:/home/indy/${mountPoint}'"
+      if [[ "$OSTYPE" == "msys" ]]; then
+        # When running on Windows, you need to prefix the path with an extra '/'
+        path="/${path}"
+      fi
+      cmd+=" --volume='${path}:/home/indy/${mountPoint}'"
     done
   fi
 
+  # Need to escape quotes so they don't get removed along the way ...
+  escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
+  
+  # Quote the escaped args so docker-compose does not try to perform any processing on them ...
+  # Separate the command and the args so they don't get treated as one argument by the scripts in the container ...
   cmd+="
     --rm client \
-    ./scripts/manage $@"
-  
+    ./scripts/manage ${cliCmd} \"${escapedArgs}\""
+
   eval ${cmd}
 }
 # =================================================================================================================
@@ -171,10 +184,10 @@ case "${COMMAND}" in
         -f webserver
     ;;
   cli)
-      runCliCommand "$@"
+      runCliCommand $@
     ;;
   indy-cli)
-      runCliCommand "indy-cli $@"
+      runCliCommand indy-cli $@
     ;;
   logs)
       initEnv "$@"

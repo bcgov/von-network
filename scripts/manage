@@ -3,6 +3,8 @@ set -e
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 
+INDY_CLI_EXE=$(type -p indy-cli)
+
 # =================================================================================================================
 # Usage:
 # -----------------------------------------------------------------------------------------------------------------
@@ -37,11 +39,11 @@ exit 1
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
-toLower() {
+function toLower() {
   echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
 }
 
-reset () {
+function reset () {
   echo "Resetting pools ..."
   rm -rf ~/.indy_client/pool/*
   echo "Resetting wallets ..."
@@ -51,7 +53,7 @@ reset () {
   fi
 }
 
-init-pool () {
+function init-pool () {
   name=${1}
   genesisUrl=${2}
   if [ -z "${name}" ] || [ -z "${genesisUrl}" ]; then
@@ -63,25 +65,46 @@ init-pool () {
   mkdir -p .indy_client/pool/${name}
   curl ${genesisUrl} -o .indy_client/pool/${name}/${name}.txn
 }
+
+function start-client () {
+  ./scripts/start_client.sh "${@}"
+}
+
+function indy-cli() {
+  indyCliArgs="${1}"
+  shift || indyCliArgs=""
+  
+  batchTemplate=$(find . -name "${indyCliArgs}")
+  if [ ! -z "${batchTemplate}" ]; then
+    batchfile="${batchTemplate}.run"
+    # Escape quotes so they don't get removed during the variable substitution ...
+    escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
+    cmd="${escapedArgs} envsubst < ${batchTemplate} > ${batchfile}"
+    eval ${cmd}
+    indyCliArgs="${batchfile}"
+  fi
+
+  eval ${INDY_CLI_EXE} ${indyCliArgs}
+
+  # Clean up ...
+  if [ -f "${batchfile}" ]; then
+    rm -rf "${batchfile}"
+  fi
+}
 # =================================================================================================================
 
 COMMAND=$(toLower ${1})
 shift || COMMAND="start-client"
 
+if [ -z "${COMMAND}" ]; then
+  COMMAND="start-client"
+fi
+
 case "${COMMAND}" in
-  reset)
-    reset
-    ;;
-  init-pool)
-    init-pool "$@"
-    ;;
-  start-client)
-    ./scripts/start_client.sh
-    ;;
   help)
     usage
     ;;
   *)
-    eval "${COMMAND} ${@}"
+    ${COMMAND} ${@}
     ;;
 esac
