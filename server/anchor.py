@@ -507,7 +507,14 @@ class AnchorHandle:
         req_json = await ledger.build_get_txn_request(
             self.did, ledger_type.name, int(ident)
         )
-        txn = await self.submit_request(req_json, False)
+        try:
+            txn = await self.submit_request(req_json, False)
+        except AnchorException as e:
+            raise AnchorException(
+                "Exception when fetching transaction {}/{}".format(
+                    ledger_type.name, ident
+                )
+            ) from e
         txn_data = txn["result"].get("data", {}) or {}
 
         if txn_data and txn_data.get("txn"):
