@@ -22,7 +22,7 @@ services:
   #
   webserver:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_webserver.sh'''
+    command: 'bash -c ''sleep 10; ./scripts/start_webserver.sh;'''
     environment:
       - IP=${IP}
       - IPS=${IPS}
