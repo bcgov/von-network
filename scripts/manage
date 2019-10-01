@@ -93,9 +93,7 @@ function indy-cli() {
 }
 # =================================================================================================================
 
-COMMAND=$(toLower ${1})
-shift || COMMAND="start-client"
-
+COMMAND=${1}
 if [ -z "${COMMAND}" ]; then
   COMMAND="start-client"
 fi
@@ -105,6 +103,7 @@ case "${COMMAND}" in
     usage
     ;;
   *)
-    ${COMMAND} ${@}
+    escapedCmd=$(echo "${@}" | sed "s~'~\\\'~g" | sed 's~\"~\\"~g' | sed 's~,~\\,~g')
+    eval ${escapedCmd}
     ;;
 esac
