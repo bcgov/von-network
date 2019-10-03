@@ -1,0 +1,23 @@
+# ===================================================================================
+# Attach Wallet
+# -----------------------------------------------------------------------------------
+# Attaches a wallet to the cli-session
+#
+# Params:
+# walletName:
+#   - The name of the wallet to be imported.
+#   - Example; myorg_issuer
+#
+# storageType:
+#   - The wallet storage type.
+#   - Remote Wallet Example; postgres_storage
+#   - Local Wallet Example; default
+#
+# storageConfig:
+#   - The wallet storage configuration.
+#   - Remote Wallet Example; '{"url":"192.168.65.3:5435"}'
+#   - Local Wallet Example; '{}'
+# ===================================================================================
+
+wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+exit
