@@ -21,7 +21,7 @@ In the `Domain` Ledger screen ([example](http://greenlight.bcovrin.vonx.io/brows
 
 ## Indy-Cli Container Environment
 
-This repository also provide a fully containerized Indy-Cli enviroment which allows you to use the Indy-Cli without having to build or install the Indy-SDK or any of it's dependancies on your machine.
+This repository also provides a fully containerized Indy-Cli enviroment which allows you to use the Indy-Cli without having to build or install the Indy-SDK or any of it's dependancies on your machine.
 
 The environemnt provides a set of batch script templates and a simple variable substitution layer that allows the scripts to be reused for a number of purposes.
 
