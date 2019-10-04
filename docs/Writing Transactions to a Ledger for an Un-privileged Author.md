@@ -77,6 +77,8 @@ _In the following examples:_
 - `/c/von-network/cli-scripts` is the abosulte path to the scripts contained in this repository.
 - The examples are using a local docker environment so some services are being accessed via the DOCKERHOST IP address (192.168.65.3 in these examples).  For Windows and MAC environments you can use `host.docker.internal`.  If you need to determine the DOCKERHOST IP address run `./manage dockerhost`
 
+**Note:** The following example uses an existing wallet created by an agent.  If you are performing these opperations on a wallet you have created using the Indy-Cli, be sure to initialize the wallet with DID metadata to ensure it is conpatible with agents expecting this information.  Refer to to the **Pro Tips** section below for details.
+
 ### 1. Optional/Recommened - Playing the role of the Author - Export the agent's wallet - it will contain a VON-compatible DID with metadata
 
 ```
