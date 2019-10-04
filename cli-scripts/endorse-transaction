@@ -1,7 +1,7 @@
 # ===================================================================================
-# Write an Endorser signed Transaction to a Ledger
+# Endorse a signed Transaction
 # -----------------------------------------------------------------------------------
-# Writes an endorser signed transaction to a ledger.
+# Endorse a signed transaction and write it out to a file.
 # Requires an author signed transaction file.
 #
 #   - This is an endorser operation.
@@ -12,8 +12,6 @@
 #         in the cli without connecting to a pool.
 #
 #   - A wallet containing the endorser's DID MUST be attacted and open.
-#
-#   - The DID of both the author and endorser MUST be present on the connected ledger.
 #
 # Params:
 # walletName:
@@ -40,17 +38,17 @@
 #   - The transaction will be written to the ledger.
 #   - Example; sandbox
 #
-# authorDid:
-#   - The DID of the transaction author.
-#   - Example; VePGZfzvcgmT3GTdYgpDiT
-#
 # endorserDid:
 #   - The DID of the endorser.
 #   - Example; DFuDqCYpeDNXLuc3MKooX3
 #
 # inputFile:
 #   - The full path to the file containing the author signed transaction.
-#   - Example; /tmp/dev_schema_signed.txt
+#   - Example; /tmp/dev_schema_author_signed.txt
+#
+# outputFile:
+#   - The full path to the file to write the transaction.
+#   - Example; /tmp/dev_schema_endorser_signed.txt
 # ===================================================================================
 
 load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
@@ -60,12 +58,9 @@ pool connect ${poolName}
 wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 did use ${endorserDid}
-ledger get-nym did=${endorserDid}
-ledger get-nym did=${authorDid}
-did list
 ledger load-transaction file=${inputFile}
 ledger sign-multi
-ledger custom context
+ledger save-transaction file=${outputFile}
 wallet close
 wallet detach ${walletName}
 exit
