@@ -145,8 +145,6 @@ small, .small {
 }
 
 .tag {
-	-background-color: #fef9f9;
-	-border: 1px solid #b67;
 	background-color: #fefdf8;
 	border: 1px solid #f9b714;
 	border-radius: 0.3em;
@@ -258,8 +256,6 @@ h2 .fa {
 	border: 1px solid #ddd;
 	-box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
 }
-.panel-node .panel-status {
-}
 .node-status {
 	display: flex;
 	padding: 0.8rem;
@@ -357,10 +353,12 @@ h2 .fa {
   text-align: center;
 }
 .pagination .page-item:first-child {
-  border-radius: 4px 0 0 4px;
+  border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
 }
 .pagination .page-item:last-child {
-  border-radius: 0 4px 4px 0;
+	border-bottom-right-radius: 4px;
+	border-top-right-radius: 4px;
 }
 .pagination .page-item {
   border: 1px solid #9bf;
@@ -372,11 +370,20 @@ h2 .fa {
   min-width: 1.5em;
   padding: 0.25em 0.8em;
 }
+.pagination .page-text {
+  cursor: default;
+  display: block;
+  padding: 0.25em 0.4em;
+}
 .pagination .page-item+.page-item {
   margin-left: -1px;
 }
 .pagination .page-item.active {
+  background-color: #d1e1ff;
   font-weight: bold;
+}
+.pagination .page-item.active .page-link {
+  color: #000;
 }
 .pagination .page-item.disabled {
   border-color: #aaa;
@@ -429,8 +436,20 @@ h2 .fa {
   padding-left: 2em;
   text-indent: -1em;
 }
+.ledger-entry .block {
+  padding-left: 2em;
+}
+.ledger-entry .block label {
+  display: block;
+  text-indent: -1em;
+}
 .ledger-entry .misc {
   font-size: 90%;
+}
+.ledger-entry dl {
+  margin-bottom: 0;
+  margin-top: 0;
+  padding-top: 0;
 }
 .ledger-entry ul {
   margin-top: 0;

@@ -1,6 +1,6 @@
 import asyncio
 import base64
-from datetime import datetime
+from datetime import date, datetime
 from enum import IntEnum
 import json
 from hashlib import sha256
@@ -25,10 +25,14 @@ INDY_TXN_TYPES = {
     "0": "NODE",
     "1": "NYM",
     "3": "GET_TXN",
+    "4": "TXN_AUTHOR_AGREEMENT",
+    "5": "TXN_AUTHOR_AGREEMENT_AML",
+    "6": "GET_TXN_AUTHOR_AGREEMENT",
+    "7": "GET_TXN_AUTHOR_AGREEMENT_AML",
     "100": "ATTRIB",
     "101": "SCHEMA",
     "102": "CRED_DEF",
-    "103": "DISCO",
+    "103": "DISCLO",
     "104": "GET_ATTR",
     "105": "GET_NYM",
     "107": "GET_SCHEMA",
@@ -37,6 +41,16 @@ INDY_TXN_TYPES = {
     "110": "NODE_UPGRADE",
     "111": "POOL_CONFIG",
     "112": "CHANGE_KEY",
+    "113": "REVOC_REG_DEF",
+    "114": "REVOC_REG_ENTRY",
+    "115": "GET_REVOC_REG_DEF",
+    "116": "GET_REVOC_REG",
+    "117": "GET_REVOC_REG_DELTA",
+    "118": "POOL_RESTART",
+    "119": "VALIDATOR_INFO",
+    "120": "AUTH_RULE",
+    "121": "GET_AUTH_RULE",
+    "122": "AUTH_RULES",
 }
 
 INDY_ROLE_TYPES = {"0": "TRUSTEE", "2": "STEWARD", "100": "TGB", "101": "ENDORSER"}
@@ -336,10 +350,13 @@ class AnchorHandle:
                 LOGGER.info("TAA already published: %s", taa_config["version"])
 
         if aml_methods and taa_plaintext:
+            rough_time = int(
+                datetime.combine(date.today(), datetime.min.time()).timestamp()
+            )
             self._taa_accept = {
                 "taaDigest": sha256(taa_plaintext.encode("utf-8")).digest().hex(),
                 "mechanism": next(iter(aml_methods)),
-                "time": int(time()),
+                "time": rough_time,
             }
 
     async def open(self):
@@ -416,6 +433,10 @@ class AnchorHandle:
         ledger_type = LedgerType.for_value(ledger_type)
         return await self._cache.get_latest_seqno(ledger_type)
 
+    async def get_max_seqno(self, ledger_type):
+        ledger_type = LedgerType.for_value(ledger_type)
+        return await self._cache.get_max_seqno(ledger_type)
+
     async def submit_request(
         self, req_json: str, signed: bool = False, apply_taa=False
     ):
@@ -486,7 +507,14 @@ class AnchorHandle:
         req_json = await ledger.build_get_txn_request(
             self.did, ledger_type.name, int(ident)
         )
-        txn = await self.submit_request(req_json, False)
+        try:
+            txn = await self.submit_request(req_json, False)
+        except AnchorException as e:
+            raise AnchorException(
+                "Exception when fetching transaction {}/{}".format(
+                    ledger_type.name, ident
+                )
+            ) from e
         txn_data = txn["result"].get("data", {}) or {}
 
         if txn_data and txn_data.get("txn"):
@@ -581,13 +609,31 @@ class AnchorHandle:
             pass
         LOGGER.debug("Finished resync")
 
+    def compare_txns(self, txnA: dict, txnB: dict) -> bool:
+        match = True
+        for k in ("txn", "txnMetadata", "reqSignature"):
+            if txnA[k] != txnB[k]:
+                match = False
+                print(txnA)
+                print("<<<>>>")
+                print(txnB)
+                break
+        return match
+
+    async def reset_ledger_cache(self):
+        async with self._sync_lock:
+            await self._cache.reset()
+
     async def sync_ledger_cache(self, ledger_type: LedgerType, wait=False):
         done = False
         fetched = 0
-        # may throw asyncio.TimeoutError
-        locked = await asyncio.wait_for(
-            self._sync_lock.acquire(), None if wait else 0.01
-        )
+        try:
+            locked = await asyncio.wait_for(
+                self._sync_lock.acquire(), None if wait else 0.01
+            )
+        except asyncio.TimeoutError:
+            LOGGER.error("Timeout waiting for ledger sync lock")
+            return False
         self._syncing = True
         try:
             latest = await self._cache.get_latest_seqno(ledger_type)
@@ -597,7 +643,9 @@ class AnchorHandle:
                 if (
                     not cache_txn
                     or not txn
-                    or json.loads(cache_txn[3]) != json.loads(txn[3])
+                    or not self.compare_txns(
+                        json.loads(cache_txn[3]), json.loads(txn[3])
+                    )
                 ):
                     await self._cache.reset()
             while not done:
@@ -615,6 +663,8 @@ class AnchorHandle:
                         done = True
                 else:
                     done = True
+        except AnchorException:
+            LOGGER.exception("Error syncing ledger cache:")
         finally:
             self._sync_lock.release()
             self._syncing = False
@@ -669,17 +719,20 @@ class AnchorHandle:
 def txn_extract_terms(txn_json):
     data = json.loads(txn_json)
     result = {}
-    type = None
+    txntype = None
+    ledger_size = None
+
     if data:
-        meta = data.get("txnMetadata", {})
-        result["txnid"] = meta.get("txnId")
+        ledger_size = data.get("ledgerSize")
+        txnmeta = data.get("txnMetadata", {})
+        result["txnid"] = txnmeta.get("txnId")
         txn = data.get("txn", {})
-        type = txn.get("type")
+        txntype = txn.get("type")
 
         meta = txn.get("metadata", {})
         result["sender"] = meta.get("from")
 
-        if type == "1":
+        if txntype == "1":
             # NYM
             result["ident"] = txn["data"]["dest"]
             result["alias"] = txn["data"].get("alias")
@@ -708,25 +761,25 @@ def txn_extract_terms(txn_json):
             role_id = txn["data"].get("role")
             result["data"] = INDY_ROLE_TYPES.get(role_id)
 
-        elif type == "100":
+        elif txntype == "100":
             # ATTRIB
             result["ident"] = txn["data"]["dest"]
             raw_data = txn["data"].get("raw", "{}")
             data = json.loads(raw_data) or {}
             result["alias"] = data.get("endpoint", {}).get("endpoint")
 
-        elif type == "101":
+        elif txntype == "101":
             # SCHEMA
             result["ident"] = "{} {}".format(
                 txn["data"]["data"]["name"], txn["data"]["data"]["version"]
             )
             result["data"] = " ".join(txn["data"]["data"]["attr_names"])
 
-        elif type == "102":
+        elif txntype == "102":
             # CRED_DEF
             result["data"] = " ".join(txn["data"]["data"]["primary"]["r"].keys())
 
-    return type, result
+    return txntype, result, ledger_size
 
 
 class LedgerCache:
@@ -781,6 +834,10 @@ class LedgerCache:
         LOGGER.info("Initializing transaction database")
         await self.perform(
             """
+      CREATE TABLE existent (
+        ledger integer PRIMARY KEY,
+        seqno integer NOT NULL DEFAULT 0
+      );
       CREATE TABLE latest (
         ledger integer PRIMARY KEY,
         seqno integer NOT NULL DEFAULT 0
@@ -806,8 +863,9 @@ class LedgerCache:
         LOGGER.info("Resetting ledger cache")
         await self.perform(
             """
-      TRUNCATE latest;
-      TRUNCATE transactions
+      DELETE FROM existent;
+      DELETE FROM latest;
+      DELETE FROM transactions
       """,
             script=True,
         )
@@ -815,6 +873,12 @@ class LedgerCache:
     async def get_latest_seqno(self, ledger_type: LedgerType):
         row = await self.queryone(
             "SELECT seqno FROM latest WHERE ledger=?", (ledger_type.value,)
+        )
+        return row and row[0] or None
+
+    async def get_max_seqno(self, ledger_type: LedgerType):
+        row = await self.queryone(
+            "SELECT seqno FROM existent WHERE ledger=?", (ledger_type.value,)
         )
         return row and row[0] or None
 
@@ -902,7 +966,7 @@ class LedgerCache:
     async def add_txn(
         self, ledger_type: LedgerType, seq_no, txn_id, added, value: str, latest=False
     ):
-        txn_type, terms = txn_extract_terms(value)
+        txn_type, terms, ledger_size = txn_extract_terms(value)
         terms_id = None
         if terms:
             term_names = list(terms.keys())
@@ -918,10 +982,17 @@ class LedgerCache:
         )
         if latest:
             await self.set_latest(ledger_type, seq_no)
+            await self.set_existent(ledger_type, ledger_size or seq_no)
 
     async def set_latest(self, ledger_type: LedgerType, seq_no):
         await self.perform(
             "REPLACE INTO latest (ledger, seqno) VALUES (?, ?)",
+            (ledger_type.value, seq_no),
+        )
+
+    async def set_existent(self, ledger_type: LedgerType, seq_no):
+        await self.perform(
+            "REPLACE INTO existent (ledger, seqno) VALUES (?, ?)",
             (ledger_type.value, seq_no),
         )
 

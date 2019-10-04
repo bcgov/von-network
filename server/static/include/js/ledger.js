@@ -16,10 +16,14 @@ const INDY_TXN_TYPES = {
   "0": "NODE",
   "1": "NYM",
   "3": "GET_TXN",
+  "4": "TXN_AUTHOR_AGREEMENT",
+  "5": "TXN_AUTHOR_AGREEMENT_AML",
+  "6": "GET_TXN_AUTHOR_AGREEMENT",
+  "7": "GET_TXN_AUTHOR_AGREEMENT_AML",
   "100": "ATTRIB",
   "101": "SCHEMA",
   "102": "CRED_DEF",
-  "103": "DISCO",
+  "103": "DISCLO",
   "104": "GET_ATTR",
   "105": "GET_NYM",
   "107": "GET_SCHEMA",
@@ -27,7 +31,17 @@ const INDY_TXN_TYPES = {
   "109": "POOL_UPGRADE",
   "110": "NODE_UPGRADE",
   "111": "POOL_CONFIG",
-  "112": "CHANGE_KEY"
+  "112": "CHANGE_KEY",
+  "113": "REVOC_REG_DEF",
+  "114": "REVOC_REG_ENTRY",
+  "115": "GET_REVOC_REG_DEF",
+  "116": "GET_REVOC_REG",
+  "117": "GET_REVOC_REG_DELTA",
+  "118": "POOL_RESTART",
+  "119": "VALIDATOR_INFO",
+  "120": "AUTH_RULE",
+  "121": "GET_AUTH_RULE",
+  "122": "AUTH_RULES"
 }
 
 const INDY_ROLE_TYPES = {
@@ -38,7 +52,7 @@ const INDY_ROLE_TYPES = {
 }
 
 const LEDGER_TXNS = [
-  "0", "1", "100", "101", "102",
+  "0", "1", "4", "5", "100", "101", "102", "112", "113", "114", "120"
 ];
 
 var app = new Vue({
@@ -195,27 +209,54 @@ var app = new Vue({
       );
     },
     pageRange: function (data) {
-      var display_count = 5;
+      var display_range = 3;
       var current = null;
       var start = null;
+      var last = null;
       var end = null;
       var ret = [];
       if (data) {
         current = data.page;
-        end = Math.min(current + display_count - 1, Math.ceil(data.total / data.page_size));
-        start = Math.max(1, Math.min(current, end - display_count + 1));
+        last = Math.ceil(data.total / data.page_size);
+        end = Math.min(Math.max(display_range * 2 + 1, current + display_range), last);
+        start = Math.max(1, Math.min(current - display_range, last - display_range * 2));
       } else {
         current = this.page;
-        start = Math.max(1, current - display_count + 1);
-        end = this.page;
+        end = last = this.page;
+        start = Math.max(1, current - display_range);
+      }
+      if (start > 1) {
+        ret.push({
+          index: 1,
+          link: true
+        });
+        if (start > 2) {
+          ret.push({
+            text: "...",
+          });
+          start++;
+        }
       }
       for (var i = start; i <= end; i++) {
         ret.push(
           {
             active: i == current,
-            index: i
+            index: i,
+            link: true
           }
         );
+      }
+      if (last > end) {
+        if (last > end + 1) {
+          ret.pop();
+          ret.push({
+            text: "...",
+          });
+        }
+        ret.push({
+          index: last,
+          link: true
+        });
       }
       return ret;
     },
