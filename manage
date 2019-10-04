@@ -185,6 +185,11 @@ case "${COMMAND}" in
         --log-level ERROR logs \
         -f webserver
     ;;
+  synctest)
+      initEnv "$@"
+      docker-compose up -d synctest node1 node2 node3 node4
+      docker-compose logs -f synctest
+    ;;
   cli)
       runCliCommand $@
     ;;
