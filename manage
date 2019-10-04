@@ -47,6 +47,8 @@ usage () {
          are not deleted so they will be reused the next time you run start.
 
   rebuild - Rebuild the docker images.
+
+  dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
 EOF
 exit 1
 }
@@ -211,6 +213,9 @@ case "${COMMAND}" in
     ;;
   rebuild)
       docker build --no-cache -t von-network-base .
+    ;;
+  dockerhost)
+      echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
     ;;
   *)
       usage;;
