@@ -25,7 +25,7 @@ This repository also provides a fully containerized Indy-Cli enviroment which al
 
 The environemnt provides a set of batch script templates and a simple variable substitution layer that allows the scripts to be reused for a number of purposes.
 
-For examples of how to use this environemnt, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing\ Transactions\ to\ a\ Ledger\ for\ an\ Un-privileged\ Author.md)
+For examples of how to use this environemnt, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing%20Transactions%20to%20a%20Ledger%20for%20an%20Un-privileged%20Author.md)
 
 
 ## VON Quick Start Guide
