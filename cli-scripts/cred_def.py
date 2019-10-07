@@ -66,7 +66,7 @@ author_did = os.getenv('authorDid', 'VePGZfzvcgmT3GTdYgpDiT')
 seq_no = int(os.getenv('schemaId', '10'))
 schema_name = os.getenv('schemaName', 'ian-permit.ian-co')
 schema_version = os.getenv('schemaVersion', '1.0.0')
-schema_attributes = os.getenv('schemaAttributes', "'corp_num','legal_name','permit_id','permit_type','permit_issued_date','permit_status','effective_date'")
+schema_attributes = os.getenv('schemaAttributes', 'corp_num,legal_name,permit_id,permit_type,permit_issued_date,permit_status,effective_date').split(",")
 
 def print_log(value_color="", value_noncolor=""):
     """set the colors for text."""
@@ -105,7 +105,7 @@ async def write_schema_and_cred_def():
                 'name': schema_name,
                 'version': schema_version,
                 'ver': '1.0',
-                'attrNames': [schema_attributes]
+                'attrNames': schema_attributes
             }
         }
         schema_data = schema['data']
