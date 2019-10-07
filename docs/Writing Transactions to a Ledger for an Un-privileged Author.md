@@ -1,5 +1,5 @@
 # Writing Transactions to a Ledger for an Un-privileged Author
-The following steps descride, by example, how schema and cred-def transactions are generated, signed, and written to the ledger for a non-privilaged author.  The process uses a fully containerized Indy-CLI environment so there is no need to have the Indy-CLI or any of it's dependancies installed on your machine.
+The following steps descride, by example, how schema and cred-def transactions are generated, signed, and written to the ledger for a non-privilaged author.  The process uses a fully containerized Indy-CLI environment so there is no need to have the Indy-CLI or any of it's dependencies installed on your machine.
 
 The procedure can be used to write transactions to any ledger by simply initializing the containerized Indy-CLI environment with the genisis file from the desired pool.
 
