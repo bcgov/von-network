@@ -3,12 +3,12 @@
 # -----------------------------------------------------------------------------------
 # Writes an author signed credential definition transaction to a file.
 # The resulting file containes a signed schema trasaction that is ready to be signed
-# by the identified endorcer and written to the ledger.
+# by the identified endorser and written to the ledger.
 #
 #   - This is a schema author (issuer) operation.
 #
 #   - In order to set the protocol version you MUST connect to a pool.
-#     If you do not the protocolVersion in the resulting transaction will be set to 1.
+#     If you do not, the protocolVersion in the resulting transaction will be set to 1.
 #       - Libindy uses a global variable for the protocol version, you can not set it 
 #         in the cli without connecting to a pool.
 #
