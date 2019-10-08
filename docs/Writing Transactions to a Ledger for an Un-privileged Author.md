@@ -83,7 +83,6 @@ _In the following examples:_
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli export-wallet \
   walletName=myorg_issuer \
   storageType=postgres_storage \
@@ -97,7 +96,6 @@ _In the following examples:_
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli create-signed-schema \
   walletName=myorg_issuer \
   storageType=postgres_storage \
@@ -115,7 +113,6 @@ _In the following examples:_
 **Export a copy of the wallet in it's current state:**
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli export-wallet \
   walletName=myorg_issuer \
   storageType=postgres_storage \
@@ -130,7 +127,6 @@ As the author you would send the resulting file to your endorser for signing.
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli create-wallet \
   walletName=endorser_wallet \
   storageType=default \
@@ -143,7 +139,6 @@ As the author you would send the resulting file to your endorser for signing.
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli endorse-transaction \
   walletName=endorser_wallet \
   storageType=default \
@@ -161,7 +156,6 @@ As the endorser you would send the resulting file to the author to write to the 
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli write-transaction \
   poolName=localpool \
   authorDid=NFP8kaWvCupbDQHQhErwXb \
@@ -204,7 +198,6 @@ Make a note of the `primary` (the **Cred def primary**) produced by this script,
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli create-signed-cred-def \
   walletName=myorg_issuer \
   storageType=postgres_storage \
@@ -223,7 +216,6 @@ Make a note of the `primary` (the **Cred def primary**) produced by this script,
 **Export a copy of the wallet in it's current state:**
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli export-wallet \
   walletName=myorg_issuer \
   storageType=postgres_storage \
@@ -239,7 +231,6 @@ As the author you would send the resulting file to your endorser for signing.
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli endorse-transaction \
   walletName=endorser_wallet \
   storageType=default \
@@ -258,7 +249,6 @@ As the endorser you would send the resulting file to the author to write to the 
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli write-transaction \
   poolName=localpool \
   authorDid=NFP8kaWvCupbDQHQhErwXb \
@@ -275,7 +265,6 @@ Response:
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli export-wallet \
   walletName=myorg_issuer \
   storageType=postgres_storage \
@@ -373,7 +362,6 @@ The above example performs all operations on an existing wallet created by an ag
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli create-wallet \
   walletName=lcrb_wallet \
   storageType=default \
@@ -408,7 +396,6 @@ This will write DID metadata to the wallet.  It assumes the DID you have specifi
 
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli did-list \
   walletName=lcrb_wallet \
   storageType=default \
@@ -454,7 +441,6 @@ oc -n devex-von-bc-registries-agent-dev port-forward wallet-db-3-xcp56 5444:5432
 For example:
 ```
 ./manage \
-  -v /c/von-network/cli-scripts \
   indy-cli import-wallet \
   walletName=lcrb_wallet \
   storageType=postgres_storage \
