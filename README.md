@@ -21,11 +21,11 @@ In the `Domain` Ledger screen ([example](http://greenlight.bcovrin.vonx.io/brows
 
 ## Indy-Cli Container Environment
 
-This repository also provides a fully containerized Indy-Cli enviroment which allows you to use the Indy-Cli without having to build or install the Indy-SDK or any of it's dependancies on your machine.
+This repository also provides a fully containerized Indy-Cli environment which allows you to use the Indy-Cli without having to build or install the Indy-SDK or any of it's dependencies on your machine.
 
-The environemnt provides a set of batch script templates and a simple variable substitution layer that allows the scripts to be reused for a number of purposes.
+The environment provides a set of batch script templates and a simple variable substitution layer that allows the scripts to be reused for a number of purposes.
 
-For examples of how to use this environemnt, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing%20Transactions%20to%20a%20Ledger%20for%20an%20Un-privileged%20Author.md)
+For examples of how to use this environment, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing%20Transactions%20to%20a%20Ledger%20for%20an%20Un-privileged%20Author.md)
 
 
 ## VON Quick Start Guide
