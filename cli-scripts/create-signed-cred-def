@@ -18,6 +18,22 @@
 #     signed by the author.  This can all be done in a single command, it does not need
 #     to be done multiple steps.
 #
+# Example:
+# ./manage \
+#   indy-cli create-signed-cred-def \
+#   walletName=myorg_issuer \
+#   storageType=postgres_storage \
+#   storageConfig='{"url":"192.168.65.3:5435"}' \
+#   storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+#   poolName=localpool \
+#   authorDid=NFP8kaWvCupbDQHQhErwXb \
+#   endorserDid=DFuDqCYpeDNXLuc3MKooX3 \
+#   schemaId=10 \
+#   signatureType=CL \
+#   tag=tag \
+#   primaryKey='<primary-from-cred_def.py/>' \
+#   outputFile=/tmp/ian-permit.ian-co_author_signed_cred_def.txn
+#
 # Params:
 # walletName:
 #   - The name of the wallet to be imported.

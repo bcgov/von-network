@@ -3,6 +3,15 @@
 # -----------------------------------------------------------------------------------
 # Imports a wallet from a file.
 #
+# Example:
+# ./manage \
+#   indy-cli import-wallet \
+#   walletName=lcrb_wallet \
+#   storageType=postgres_storage \
+#   storageConfig='{"url":"host.docker.internal:5444"}' \
+#   storageCredentials='{"account":"USER_ewnp","password":"DLKD0sd098hsd9jsdf","admin_account":"postgres","admin_password":"98s7df987w4hfn90wemofwf2j0"}' \
+#   importPath=/tmp/lcrb_wallet_with_schemas_cred_defs_and_metadata.export
+#
 # Params:
 # walletName:
 #   - The name of the wallet to be imported.

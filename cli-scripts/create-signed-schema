@@ -18,6 +18,21 @@
 #     signed by the author.  This can all be done in a single command, it does not need
 #     to be done multiple steps.
 #
+# Example:
+# ./manage \
+#   indy-cli create-signed-schema \
+#   walletName=myorg_issuer \
+#   storageType=postgres_storage \
+#   storageConfig='{"url":"192.168.65.3:5435"}' \
+#   storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+#   poolName=localpool \
+#   authorDid=NFP8kaWvCupbDQHQhErwXb \
+#   endorserDid=DFuDqCYpeDNXLuc3MKooX3 \
+#   schemaName=ian-permit.ian-co \
+#   schemaVersion=1.0.0 \
+#   schemaAttributes=corp_num,legal_name,permit_id,permit_type,permit_issued_date,permit_status,effective_date \
+#   outputFile=/tmp/ian-permit.ian-co_author_signed_schema.txn
+#
 # Params:
 # walletName:
 #   - The name of the wallet to be imported.

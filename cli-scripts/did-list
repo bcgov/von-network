@@ -6,7 +6,6 @@
 # Example:
 #
 # ./manage \
-#   -v /c/von-network/cli-scripts \
 #   indy-cli did-list \
 #   walletName=myorg_issuer \
 #   storageType=postgres_storage \
