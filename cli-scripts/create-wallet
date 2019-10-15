@@ -3,6 +3,15 @@
 # -----------------------------------------------------------------------------------
 # Creates a remote wallet and initializes it with a DID.
 #
+# Example:
+# ./manage \
+#   indy-cli create-wallet \
+#   walletName=endorser_wallet \
+#   storageType=default \
+#   storageConfig='{}' \
+#   storageCredentials='{}' \
+#   walletSeed=ENDORSER123450000000000000000000
+#
 # Params:
 # walletName:
 #   - The name of the wallet to be imported.

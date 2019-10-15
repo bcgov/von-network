@@ -4,6 +4,15 @@
 # Exports a wallet to a file.
 # - The exported data is encrypted using a user supplied key.
 #
+# Example:
+# ./manage \
+#   indy-cli export-wallet \
+#   walletName=myorg_issuer \
+#   storageType=postgres_storage \
+#   storageConfig='{"url":"192.168.65.3:5435"}' \
+#   storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+#   exportPath=/tmp/myorg_issuer_wallet_initialized_with_did.export
+#
 # Params:
 # walletName:
 #   - The name of the wallet to be exported.

@@ -7,11 +7,23 @@
 #   - This is an endorser operation.
 #
 #   - In order to set the protocol version you MUST connect to a pool.
-#     If you do not the protocolVersion in the resulting transaction will be set to 1.
+#     If you do not, the protocolVersion in the resulting transaction will be set to 1.
 #       - Libindy uses a global variable for the protocol version, you can not set it 
 #         in the cli without connecting to a pool.
 #
 #   - A wallet containing the endorser's DID MUST be attacted and open.
+#
+# Example:
+# ./manage \
+#   indy-cli endorse-transaction \
+#   walletName=endorser_wallet \
+#   storageType=default \
+#   storageConfig='{}' \
+#   storageCredentials='{}' \
+#   poolName=localpool \
+#   endorserDid=DFuDqCYpeDNXLuc3MKooX3 \
+#   inputFile=/tmp/ian-permit.ian-co_author_signed_schema.txn \
+#   outputFile=/tmp/ian-permit.ian-co_endorser_signed_schema.txn
 #
 # Params:
 # walletName:
