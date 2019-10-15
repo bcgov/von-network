@@ -1,7 +1,7 @@
 # Writing Transactions to a Ledger for an Un-privileged Author
-The following steps descride, by example, how schema and cred-def transactions are generated, signed, and written to the ledger for a non-privilaged author.  The process uses a fully containerized Indy-CLI environment so there is no need to have the Indy-CLI or any of it's dependencies installed on your machine.
+The following steps describe, by example, how schema and cred-def transactions are generated, signed, and written to the ledger for a non-privileged author.  The process uses a fully containerized Indy-CLI environment so there is no need to have the Indy-CLI or any of it's dependencies installed on your machine.
 
-The procedure can be used to write transactions to any ledger by simply initializing the containerized Indy-CLI environment with the genisis file from the desired pool.
+The procedure can be used to write transactions to any ledger by simply initializing the containerized Indy-CLI environment with the genesis file from the desired pool.
 
 ## Prerequisites
 
@@ -66,7 +66,7 @@ INDY_LEDGER_URL="" AUTO_REGISTER_DID=0 INDY_GENESIS_URL=http://192.168.65.3:9000
 
 **Note:** The DID for the application must already exist on the ledger.
 
-**Note:** The agent will fail to fully syncronize since it's DID doesn't have privileges to write the schema(s) and cred-defs to the ledger.
+**Note:** The agent will fail to fully synchronize since it's DID doesn't have privileges to write the schema(s) and cred-defs to the ledger.
 
 **Note:** Leave the OrgBook and VON Agent services running, we will be using the agent's wallet database.
 
@@ -74,10 +74,10 @@ INDY_LEDGER_URL="" AUTO_REGISTER_DID=0 INDY_GENESIS_URL=http://192.168.65.3:9000
 
 _In the following examples:_
 - Commands are run in your `von-network` directory, as we are using the Indy-CLI container.
-- `/c/von-network/cli-scripts` is the abosulte path to the scripts contained in this repository.
+- `/c/von-network/cli-scripts` is the absolute path to the scripts contained in this repository.
 - The examples are using a local docker environment so some services are being accessed via the DOCKERHOST IP address (192.168.65.3 in these examples).  For Windows and MAC environments you can use `host.docker.internal`.  If you need to determine the DOCKERHOST IP address run `./manage dockerhost`
 
-**Note:** The following example uses an existing wallet created by an agent.  If you are performing these opperations on a wallet you have created using the Indy-Cli, be sure to initialize the wallet with DID metadata to ensure it is conpatible with agents expecting this information.  Refer to to the **Pro Tips** section below for details.
+**Note:** The following example uses an existing wallet created by an agent.  If you are performing these operations on a wallet you have created using the Indy-Cli, be sure to initialize the wallet with DID metadata to ensure it is compatible with agents expecting this information.  Refer to to the **Pro Tips** section below for details.
 
 ### 1. Optional/Recommened - Playing the role of the Author - Export the agent's wallet - it will contain a VON-compatible DID with metadata
 
@@ -363,7 +363,7 @@ This will delete all the data for each of the applications.  You'll have to re-i
 
 ## Creating a Wallet using the Indy-Cli Container
 
-The above example performs all operations on an existing wallet created by an agent.  Sometimes it is not possible or practicle to operate on an existing wallet or the restored export of and existing wallet.  In some cases it is simply easier to start from the beginning using a local wallet.
+The above example performs all operations on an existing wallet created by an agent.  Sometimes it is not possible or practical to operate on an existing wallet or the restored export of and existing wallet.  In some cases it is simply easier to start from the beginning using a local wallet.
 
 ### Creating a new local wallet
 

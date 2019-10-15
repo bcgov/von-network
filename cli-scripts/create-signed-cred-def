@@ -2,7 +2,7 @@
 # Write an Author signed Cred Def to a File
 # -----------------------------------------------------------------------------------
 # Writes an author signed credential definition transaction to a file.
-# The resulting file containes a signed schema trasaction that is ready to be signed
+# The resulting file contains a signed schema trasaction that is ready to be signed
 # by the identified endorcer and written to the ledger.
 #
 #   - This is a schema author (issuer) operation.
