@@ -1,0 +1,48 @@
+# ===================================================================================
+# Write an signed Transaction to a Ledger
+# -----------------------------------------------------------------------------------
+# Writes an signed transaction to a ledger.
+#
+#   - In order to set the protocol version you MUST connect to a pool.
+#     If you do not, the protocolVersion in the resulting transaction will be set to 1.
+#       - Libindy uses a global variable for the protocol version, you can not set it 
+#         in the cli without connecting to a pool.
+#
+#   - The DID of both the author and endorser MUST be present on the connected ledger.
+#
+# Example:
+# ./manage \
+#   indy-cli write-transaction \
+#   poolName=localpool \
+#   authorDid=NFP8kaWvCupbDQHQhErwXb \
+#   endorserDid=DFuDqCYpeDNXLuc3MKooX3 \
+#   inputFile=/tmp/ian-permit.ian-co_endorser_signed_schema.txn
+#
+# Params:
+# poolName:
+#   - The name of the ledger pool to use during the operations.
+#   - The transaction will be written to the ledger.
+#   - Example; sandbox
+#
+# authorDid:
+#   - The DID of the transaction author.
+#   - Example; VePGZfzvcgmT3GTdYgpDiT
+#
+# endorserDid:
+#   - The DID of the endorser.
+#   - Example; DFuDqCYpeDNXLuc3MKooX3
+#
+# inputFile:
+#   - The full path to the file containing the author signed transaction.
+#   - Example; /tmp/dev_schema_signed.txt
+# ===================================================================================
+
+load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
+
+pool connect ${poolName}
+
+ledger get-nym did=${endorserDid}
+ledger get-nym did=${authorDid}
+ledger load-transaction file=${inputFile}
+ledger custom context
+exit

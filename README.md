@@ -19,6 +19,15 @@ By using the "Authenticate a new DID" part of the UI or posting the appropriate 
 
 In the `Domain` Ledger screen ([example](http://greenlight.bcovrin.vonx.io/browse/domain)), you can browse through all of the transactions that have been created on this instance of the Ledger.  As well, you can use a drop down filter to see only specific Ledger transaction types (`nym` - aka DID, `schema`, `CredDef`, etc.), and search for strings in the content of the transactions.
 
+## Indy-Cli Container Environment
+
+This repository also provides a fully containerized Indy-Cli environment which allows you to use the Indy-Cli without having to build or install the Indy-SDK or any of it's dependencies on your machine.
+
+The environment provides a set of batch script templates and a simple variable substitution layer that allows the scripts to be reused for a number of purposes.
+
+For examples of how to use this environment, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing%20Transactions%20to%20a%20Ledger%20for%20an%20Un-privileged%20Author.md)
+
+
 ## VON Quick Start Guide
 
 The [VON Quick Start Guide](https://github.com/bcgov/greenlight/blob/master/docker/VONQuickStartGuide.md) provides the instructions for running a local instance of the VON applications, including an Indy Network, an instance of [TheOrgBook](https://github.com/bcgov/TheOrgBook) and [GreenLight](https://github.com/bcgov/greenlight). This is a great way to see the **VON Network** in action.
@@ -238,7 +247,7 @@ Once you have done this, your environment should be able to automatically connec
 See [von-connector](https://github.com/nrempel/von-connector) for an example.
  -->
 
-### Extra Features for Development
+## Extra Features for Development
 
 Running BCovrin also runs a thin webserver (at [http://localhost:9000](http://localhost:9000) when using docker) to expose some convenience functions:
 

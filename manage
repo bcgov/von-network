@@ -5,6 +5,13 @@ set -e
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-von}"
+export DEFAULT_CLI_SCRIPT_DIR='./cli-scripts'
+
+# Running on Windows?
+if [[ "$OSTYPE" == "msys" ]]; then
+  # Prefix interactive terminal commands ...
+  terminalEmu="winpty"
+fi
 
 # =================================================================================================================
 # Usage:
@@ -32,8 +39,6 @@ usage () {
 
   logs - Display the logs from the docker compose run (ctrl-c to exit).
 
-  cli - Start client container
-
   down - Brings down the services and removes the volumes (storage) and containers.
   rm - Same as down
 
@@ -41,17 +46,100 @@ usage () {
          are not deleted so they will be reused the next time you run start.
 
   rebuild - Rebuild the docker images.
+
+  dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
+
+  indy-cli - Run indy-cli commands.
+
+        - Refer to the cli-scripts directory for available scripts and their parameters.
+        - Refer to './docs/Writing Transactions to a Ledger for an Un-privileged Author.md' for
+          additional examples.
+        
+        $0 [options] indy-cli [command] [parameters]
+
+        Options:
+          -v <FullyQualifiedPathToScripts/>
+            - Mount a script volume to the container.
+            - By default the 'cli-scripts' directory is mounted to the container.
+
+        Examples:
+        
+        $0 indy-cli
+          - Start an interactive indy-cli session in your Indy-Cli Container.
+
+        $0 \\
+          indy-cli create-wallet \\
+          walletName=myorg_issuer \\
+          storageType=default \\
+          storageConfig='{}' \\
+          storageCredentials='{}' \\
+          walletSeed=0000000000000000000000000MyAgent
+
+          - Create and initialize a new wallet in your Indy-Cli Container.
+
+        $0 \\
+          cli \\
+          walletName=myorg_issuer \\
+          storageType=default \\
+          storageConfig='{}' \\
+          storageCredentials='{}' \\
+          walletDid=NFP8kaWvCupbDQHQhErwXb \\
+          walletSeed=0000000000000000000000000MyAgent \\
+          walletKey=key \\
+          python cli-scripts/set_did_metadata.py
+
+          - Set DID metadata on a wallet in your Indy-Cli Container.
+
+  cli - Run a command in an Indy-Cli Container.  By default 
+        
+        $0 [options] cli [command]
+
+        Options:
+          -v <FullyQualifiedPathToScripts/>
+            - Mount a script volume to the container.
+            - By default the 'cli-scripts' directory is mounted to the container.
+        
+        Examples:
+        
+        $0 cli bash
+          - Open a bash shell within your Indy-Cli Container
+
+        $0 -v /MyScripts cli bash
+          - Open a bash shell within your Indy-Cli Container.  Mount the `/MyScripts` directory to the container.
+
+        $0 cli reset
+          - Reset your Indy-CLI container's environment
+
+        $0 cli init-pool localpool http://192.168.65.3:9000/genesis
+        $0 cli init-pool MainNet https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
+          - Initialize the pool for your Indy-CLI container's environment.
 EOF
 exit 1
 }
+
+# -----------------------------------------------------------------------------------------------------------------
+# Initialization:
+# -----------------------------------------------------------------------------------------------------------------
+while getopts v:h FLAG; do
+  case $FLAG in
+    v ) VOLUMES=$OPTARG ;;
+    h ) usage ;;
+    \? ) #unrecognized option - show help
+      echo -e \\n"Invalid script option: -${OPTARG}"\\n
+      usage
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
-toLower() {
+function toLower() {
   echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
 }
 
-initEnv() {
+function initEnv() {
 
   if [ -f .env ]; then
     while read line; do
@@ -77,15 +165,56 @@ initEnv() {
 
   IP=""
   IPS=""
-  if [[ $1 == *","* ]]; then
-    IPS="$1"
-  else
-    IP="$1"
+  if [ ! -z $(echo ${1} | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}') ]; then 
+    if [[ $1 == *","* ]]; then
+      IPS="$1"
+    else
+      IP="$1"
+    fi
   fi
   export IP="$IP" IPS="$IPS"
 
   export LOG_LEVEL=${LOG_LEVEL:-info}
   export RUST_LOG=${RUST_LOG:-warning}
+}
+
+function runCliCommand() {
+  initEnv "$@"
+
+  cliCmd="${1}"
+  shift || cliCmd=""
+
+  cmd="${terminalEmu} docker-compose \
+    --log-level ERROR run "
+
+  if [ -z "${VOLUMES}" ] && [ -d "${DEFAULT_CLI_SCRIPT_DIR}" ] ; then
+    VOLUMES=$(realpath ${DEFAULT_CLI_SCRIPT_DIR})
+  fi
+
+  if [ ! -z "${VOLUMES}" ]; then
+    shopt -s extglob
+    paths=$(echo "${VOLUMES}" | sed -n 1'p' | tr ',' '\n')
+    for path in ${paths}; do
+      path=${path%%+(/)}
+      mountPoint=${path##*/}
+      if [[ "$OSTYPE" == "msys" ]]; then
+        # When running on Windows, you need to prefix the path with an extra '/'
+        path="/${path}"
+      fi
+      cmd+=" --volume='${path}:/home/indy/${mountPoint}'"
+    done
+  fi
+
+  # Need to escape quotes and commas so they don't get removed along the way ...
+  escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
+  
+  # Quote the escaped args so docker-compose does not try to perform any processing on them ...
+  # Separate the command and the args so they don't get treated as one argument by the scripts in the container ...
+  cmd+="
+    --rm client \
+    ./scripts/manage ${cliCmd} \"${escapedArgs}\""
+
+  eval ${cmd}
 }
 # =================================================================================================================
 
@@ -96,21 +225,33 @@ shift || COMMAND=usage
 case "${COMMAND}" in
   start|up)
       initEnv "$@"
-      docker-compose up -d webserver node1 node2 node3 node4
-      docker-compose logs -f
+      docker-compose \
+        --log-level ERROR up \
+        -d webserver node1 node2 node3 node4
+      docker-compose \
+        --log-level ERROR logs \
+        -f
     ;;
   start-combined)
       initEnv "$@"
-      docker-compose up -d webserver nodes
-      docker-compose logs -f
+      docker-compose \
+        --log-level ERROR up \
+        -d webserver nodes
+      docker-compose \
+        --log-level ERROR logs \
+        -f
     ;;
   start-web)
       initEnv "$@"
       if [ -z "$LEDGER_SEED" ]; then
         export ANONYMOUS=1
       fi
-      docker-compose up -d webserver
-      docker-compose logs -f webserver
+      docker-compose \
+        --log-level ERROR up \
+        -d webserver
+      docker-compose \
+        --log-level ERROR logs \
+        -f webserver
     ;;
   synctest)
       initEnv "$@"
@@ -118,26 +259,36 @@ case "${COMMAND}" in
       docker-compose logs -f synctest
     ;;
   cli)
-      initEnv "$@"
-      docker-compose run --rm client
+      runCliCommand $@
+    ;;
+  indy-cli)
+      runCliCommand indy-cli $@
     ;;
   logs)
       initEnv "$@"
-      docker-compose logs -f
+      docker-compose \
+        --log-level ERROR logs \
+        -f
     ;;
   stop)
       initEnv "$@"
-      docker-compose stop
+      docker-compose \
+        --log-level ERROR stop
     ;;
   down|rm)
       initEnv "$@"
-      docker-compose down -v
+      docker-compose \
+        --log-level ERROR down \
+        -v
     ;;
   build)
       docker build -t von-network-base .
     ;;
   rebuild)
       docker build --no-cache -t von-network-base .
+    ;;
+  dockerhost)
+      echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
     ;;
   *)
       usage;;

@@ -1,0 +1,13 @@
+# ===================================================================================
+# Detach Wallet
+# -----------------------------------------------------------------------------------
+# Detaches a wallet to the cli-session
+#
+# Params:
+# walletName:
+#   - The name of the wallet to be imported.
+#   - Example; myorg_issuer
+# ===================================================================================
+
+wallet detach ${walletName}
+exit

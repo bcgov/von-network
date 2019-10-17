@@ -1,0 +1,48 @@
+# ===================================================================================
+# Create remote wallet
+# -----------------------------------------------------------------------------------
+# Creates a remote wallet and initializes it with a DID.
+#
+# Example:
+# ./manage \
+#   indy-cli create-wallet \
+#   walletName=endorser_wallet \
+#   storageType=default \
+#   storageConfig='{}' \
+#   storageCredentials='{}' \
+#   walletSeed=ENDORSER123450000000000000000000
+#
+# Params:
+# walletName:
+#   - The name of the wallet to be imported.
+#   - Example; endorser_wallet
+# 
+# storageType:
+#   - The wallet storage type.
+#   - Remote Wallet Example; postgres_storage
+#   - Local Wallet Example; default
+#
+# storageConfig:
+#   - The wallet storage configuration.
+#   - Remote Wallet Example; '{"url":"192.168.65.3:5435"}'
+#   - Local Wallet Example; '{}'
+#
+# storageCredentials:
+#   - The wallet storage credentials.
+#   - Remote Wallet Example; '{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}'
+#   - Local Wallet Example; '{}'
+#
+# walletSeed:
+#   - The seed to use for initializing the wallet.
+#   - Example; ENDORSER123450000000000000000000
+# ===================================================================================
+
+load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
+
+wallet create ${walletName} key storage_type=${storageType} storage_config=${storageConfig} storage_credentials=${storageCredentials}
+wallet open ${walletName} key storage_credentials=${storageCredentials}
+did new seed=${walletSeed}
+did list
+wallet close
+wallet detach ${walletName}
+exit
