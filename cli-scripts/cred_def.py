@@ -68,6 +68,9 @@ schema_name = os.getenv('schemaName', 'ian-permit.ian-co')
 schema_version = os.getenv('schemaVersion', '1.0.0')
 schema_attributes = os.getenv('schemaAttributes', 'corp_num,legal_name,permit_id,permit_type,permit_issued_date,permit_status,effective_date').split(",")
 
+cred_def_tag = os.getenv('tag', 'tag')
+cred_def_type = os.getenv('type', 'CL')
+
 def print_log(value_color="", value_noncolor=""):
     """set the colors for text."""
     HEADER = '\033[92m'
@@ -113,8 +116,6 @@ async def write_schema_and_cred_def():
 
         # 11.
         print_log('\n11. Creating and storing CRED DEFINITION using anoncreds as Trust Anchor, for the given Schema\n')
-        cred_def_tag = 'tag'
-        cred_def_type = 'CL'
         cred_def_config = json.dumps({"support_revocation": False})
 
         (cred_def_id, cred_def_json) = await anoncreds.issuer_create_and_store_credential_def(
