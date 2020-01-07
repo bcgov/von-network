@@ -189,6 +189,7 @@ Use the value of the `seqNo` you noted in the previous step as the value for `sc
   schemaName=ian-permit.ian-co \
   schemaVersion=1.0.0 \
   schemaAttributes=corp_num,legal_name,permit_id,permit_type,permit_issued_date,permit_status,effective_date \
+  tag=tag \
   python cli-scripts/cred_def.py
 ```
 
