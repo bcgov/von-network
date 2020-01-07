@@ -201,7 +201,7 @@ function runCliCommand() {
         # When running on Windows, you need to prefix the path with an extra '/'
         path="/${path}"
       fi
-      cmd+=" --volume='${path}:/home/indy/${mountPoint}'"
+      cmd+=" --volume='${path}:/home/indy/${mountPoint}:Z'"
     done
   fi
 
