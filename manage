@@ -156,6 +156,9 @@ function initEnv() {
       *=*)
         export "${arg}"
         ;;
+      --logs)
+        TAIL_LOGS=1
+        ;;
       *)
         # If not recognized, save it for later procesing ...
         set -- "$@" "$arg"
@@ -216,6 +219,25 @@ function runCliCommand() {
 
   eval ${cmd}
 }
+
+function tailLogs() {
+  (
+    local OPTIND
+    local unset _force
+    while getopts f FLAG; do
+      case $FLAG in
+        f ) local _force=1 ;;
+      esac
+    done
+    shift $((OPTIND-1))
+
+    if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
+      docker-compose \
+        --log-level ERROR logs \
+        -f "$@"
+    fi
+  )
+}
 # =================================================================================================================
 
 pushd ${SCRIPT_HOME} >/dev/null
@@ -225,36 +247,17 @@ shift || COMMAND=usage
 case "${COMMAND}" in
   start|up)
       initEnv "$@"
-
-      # Set argument defaults
-      SHOW_LOG=true
-      
-      # Get argument values
-      while [ "$1" != "" ]; do
-          case $1 in
-            --no_logs )    SHOW_LOG=false;;
-          esac
-          shift
-      done
-
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
-
-      if [ "$SHOW_LOG" = true ]; then
-        docker-compose \
-          --log-level ERROR logs \
-          -f
-      fi
+      tailLogs
     ;;
   start-combined)
       initEnv "$@"
       docker-compose \
         --log-level ERROR up \
         -d webserver nodes
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      tailLogs
     ;;
   start-web)
       initEnv "$@"
@@ -264,14 +267,14 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver
-      docker-compose \
-        --log-level ERROR logs \
-        -f webserver
+      tailLogs webserver
     ;;
   synctest)
       initEnv "$@"
-      docker-compose up -d synctest node1 node2 node3 node4
-      docker-compose logs -f synctest
+      docker-compose \
+        --log-level ERROR up \
+        -d synctest node1 node2 node3 node4
+      tailLogs -f synctest
     ;;
   cli)
       runCliCommand $@
@@ -281,9 +284,7 @@ case "${COMMAND}" in
     ;;
   logs)
       initEnv "$@"
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      tailLogs -f "$@"
     ;;
   stop)
       initEnv "$@"
