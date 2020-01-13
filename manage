@@ -225,12 +225,27 @@ shift || COMMAND=usage
 case "${COMMAND}" in
   start|up)
       initEnv "$@"
+
+      # Set argument defaults
+      SHOW_LOG=true
+      
+      # Get argument values
+      while [ "$1" != "" ]; do
+          case $1 in
+            --no_logs )    SHOW_LOG=false;;
+          esac
+          shift
+      done
+
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+
+      if [ "$SHOW_LOG" = true ]; then
+        docker-compose \
+          --log-level ERROR logs \
+          -f
+      fi
     ;;
   start-combined)
       initEnv "$@"
