@@ -28,6 +28,10 @@ The environment provides a set of batch script templates and a simple variable s
 For examples of how to use this environment, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing%20Transactions%20to%20a%20Ledger%20for%20an%20Un-privileged%20Author.md)
 
 
+## Ledger Troubleshooting
+
+Refer to the [Troubleshooting](./docs/Troubleshooting.md) document for some tips and tools you can use to troubleshoot issues with a ledger.
+
 ## VON Quick Start Guide
 
 The [VON Quick Start Guide](https://github.com/bcgov/greenlight/blob/master/docker/VONQuickStartGuide.md) provides the instructions for running a local instance of the VON applications, including an Indy Network, an instance of [TheOrgBook](https://github.com/bcgov/TheOrgBook) and [GreenLight](https://github.com/bcgov/greenlight). This is a great way to see the **VON Network** in action.
