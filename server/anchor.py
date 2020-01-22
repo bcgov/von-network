@@ -7,17 +7,17 @@ from hashlib import sha256
 import logging
 import os
 from pathlib import Path
-from time import time
 from typing import Sequence
 import tempfile
 
 import aiohttp
 import aiosqlite
 import base58
-import libnacl
 
-from indy import did, ledger, pool, wallet
-from indy.error import ErrorCode, IndyError
+from indy import ledger, pool
+from indy.error import IndyError
+from plenum.common.signer_simple import SimpleSigner
+from stp_core.crypto.nacl_wrappers import SigningKey
 
 LOGGER = logging.getLogger(__name__)
 
@@ -142,6 +142,14 @@ def get_genesis_file():
     return GENESIS_FILE
 
 
+def seed_as_bytes(seed):
+    if not seed or isinstance(seed, bytes):
+        return seed
+    if len(seed) != 32:
+        return base64.b64decode(seed)
+    return seed.encode("ascii")
+
+
 class LedgerType(IntEnum):
     POOL = 0
     DOMAIN = 1
@@ -177,11 +185,12 @@ class AnchorHandle:
         self._ready = False
         self._ledger_lock = None
         self._register_dids = REGISTER_NEW_DIDS and not ANONYMOUS
+        self._seed = seed_as_bytes(LEDGER_SEED)
         self._sync_lock = None
         self._syncing = False
         self._taa_accept = None
         self._taa_config_path = TAA_CONFIG
-        self._wallet = None
+        self._verkey = None
 
     async def _open_pool(self):
         pool_name = "nodepool"
@@ -212,70 +221,6 @@ class AnchorHandle:
             self._pool = await pool.open_pool_ledger(pool_name, json.dumps(pool_cfg))
         except IndyError as e:
             raise AnchorException("Error opening pool ledger connection") from e
-
-    async def _open_wallet(self):
-        global LEDGER_SEED
-        wallet_cfg = {
-            "id": "trustee_wallet",
-            "freshness_time": 0,
-            # 'storage_type':
-        }
-        wallet_access = {"key": "key"}
-
-        try:
-            await wallet.create_wallet(
-                config=json.dumps(wallet_cfg), credentials=json.dumps(wallet_access)
-            )
-        except IndyError as e:
-            if e.error_code == ErrorCode.WalletAlreadyExistsError:
-                LOGGER.info("Wallet already exists")
-            else:
-                raise AnchorException("Error creating wallet") from e
-
-        try:
-            self._wallet = await wallet.open_wallet(
-                config=json.dumps(wallet_cfg), credentials=json.dumps(wallet_access)
-            )
-        except IndyError as e:
-            raise AnchorException("Error opening wallet") from e
-
-        if LEDGER_SEED:
-            try:
-                (self._did, verkey) = await did.create_and_store_my_did(
-                    self._wallet, json.dumps({"seed": LEDGER_SEED})
-                )
-            except IndyError as e:
-                if e.error_code == ErrorCode.DidAlreadyExistsError:
-                    LOGGER.info("DID already exists in wallet")
-                else:
-                    raise AnchorException("Error creating DID in wallet") from e
-
-            if self._did:
-                # newly registered DID, set metadata
-                try:
-                    did_meta = {"anchor": True, "since": int(time())}
-                    await did.set_did_metadata(
-                        self._wallet, self._did, json.dumps(did_meta)
-                    )
-                except IndyError as e:
-                    raise AnchorException("Error updating DID metadata") from e
-            else:
-                # find DID in wallet
-                dids_with_meta = json.loads(
-                    await did.list_my_dids_with_meta(self._wallet)
-                )
-                for did_with_meta in dids_with_meta:
-                    meta = (
-                        json.loads(did_with_meta["metadata"])
-                        if did_with_meta["metadata"]
-                        else {}
-                    )
-                    if not meta.get("anchor"):
-                        continue
-                    self._did, verkey = did_with_meta["did"], did_with_meta["verkey"]
-                    break
-                if not self._did:
-                    raise AnchorException("Error retrieving existing DID from wallet")
 
     async def _register_txn_agreement(self):
         aml_config = None
@@ -373,11 +318,7 @@ class AnchorHandle:
             if self._anonymous:
                 LOGGER.info("Running in anonymous mode")
             else:
-                try:
-                    await self._open_wallet()
-                except AnchorException:
-                    self._init_error = "Error opening wallet"
-                    raise
+                self._did, self._verkey = await self.seed_to_did(self._seed)
                 try:
                     await self._register_txn_agreement()
                 except AnchorException:
@@ -393,9 +334,6 @@ class AnchorHandle:
 
     async def close(self):
         self._ready = False
-        if self._wallet:
-            await wallet.close_wallet(self._wallet)
-            self._wallet = None
         if self._pool:
             await pool.close_pool_ledger(self._pool)
             self._pool = None
@@ -416,10 +354,6 @@ class AnchorHandle:
     @property
     def ready(self):
         return self._ready
-
-    @property
-    def wallet(self):
-        return self._wallet
 
     async def fetch_tail_txn(self, ledger_type: LedgerType, max_seqno=None):
         async with self._ledger_lock:
@@ -444,15 +378,13 @@ class AnchorHandle:
             if signed:
                 if not self._did:
                     raise AnchorException("Cannot sign request: no DID")
+                req = json.loads(req_json)
                 if apply_taa and self._taa_accept:
-                    req = json.loads(req_json)
                     req["taaAcceptance"] = self._taa_accept
-                    req_json = json.dumps(req)
-                rv_json = await ledger.sign_and_submit_request(
-                    self._pool, self._wallet, self._did, req_json
-                )
-            else:
-                rv_json = await ledger.submit_request(self._pool, req_json)
+                signer = SimpleSigner(self._did, self._seed)
+                req["signature"] = signer.sign(req)
+                req_json = json.dumps(req)
+            rv_json = await ledger.submit_request(self._pool, req_json)
             await asyncio.sleep(0)
         except IndyError as e:
             raise AnchorException("Error submitting ledger transaction request") from e
@@ -576,14 +508,10 @@ class AnchorHandle:
 
     async def seed_to_did(self, seed):
         """
-    Resolve a DID and verkey from a seed
-    """
-        if isinstance(seed, str):
-            if len(seed) != 32:
-                seed = base64.b64decode(seed)
-            else:
-                seed = seed.encode("ascii")
-        vk, sk = libnacl.crypto_sign_seed_keypair(seed)
+        Resolve a DID and verkey from a seed
+        """
+        seed = seed_as_bytes(seed)
+        vk = bytes(SigningKey(seed).verify_key)
         did = base58.b58encode(vk[:16]).decode("ascii")
         verkey = base58.b58encode(vk).decode("ascii")
         return (did, verkey)
