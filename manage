@@ -19,15 +19,15 @@ fi
 usage () {
   cat <<-EOF
 
-  Usage: $0 [command] [options]
+  Usage: $0 [command] [--logs] [options]
 
   Commands:
 
   build - Build the docker images for the project.
           You need to do this first.
 
-  up - Starts all containers and docker-compose logs.
-       Use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
+  up - Starts all containers
+       When using the '--logs' option, use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
         Examples:
         $0 start
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
@@ -37,7 +37,7 @@ usage () {
         Example:
         $0 start-web GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012
 
-  logs - Display the logs from the docker compose run (ctrl-c to exit).
+  logs - To tail the logs of running containers (ctrl-c to exit).
 
   down - Brings down the services and removes the volumes (storage) and containers.
   rm - Same as down
