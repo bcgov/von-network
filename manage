@@ -38,6 +38,7 @@ usage () {
         $0 start-web GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012
 
   logs - To tail the logs of running containers (ctrl-c to exit).
+         Use the '--no-tail' option to only print log without tailing.
 
   down - Brings down the services and removes the volumes (storage) and containers.
   rm - Same as down
@@ -220,21 +221,31 @@ function runCliCommand() {
   eval ${cmd}
 }
 
-function tailLogs() {
+function logs() {
   (
     local OPTIND
     local unset _force
-    while getopts f FLAG; do
+    local unset no_tail
+    while getopts ":f-:" FLAG; do
       case $FLAG in
         f ) local _force=1 ;;
+        - ) 
+            case ${OPTARG} in
+                    "no-tail"*) no_tail=1
+                        ;;
+            esac
       esac
     done
     shift $((OPTIND-1))
 
+    log_args=()
+    (( no_tail != 1 )) && log_args+=( '-f' )
+
     if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
       docker-compose \
         --log-level ERROR logs \
-        -f "$@"
+         "${log_args[@]}" "$@"
+         
     fi
   )
 }
@@ -250,14 +261,14 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
-      tailLogs
+      logs
     ;;
   start-combined)
       initEnv "$@"
       docker-compose \
         --log-level ERROR up \
         -d webserver nodes
-      tailLogs
+      logs
     ;;
   start-web)
       initEnv "$@"
@@ -267,14 +278,14 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver
-      tailLogs webserver
+      logs webserver
     ;;
   synctest)
       initEnv "$@"
       docker-compose \
         --log-level ERROR up \
         -d synctest node1 node2 node3 node4
-      tailLogs -f synctest
+      logs -f synctest
     ;;
   cli)
       runCliCommand $@
@@ -284,7 +295,7 @@ case "${COMMAND}" in
     ;;
   logs)
       initEnv "$@"
-      tailLogs -f "$@"
+      logs -f "$@"
     ;;
   stop)
       initEnv "$@"
