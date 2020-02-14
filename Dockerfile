@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:node-1.9-4
+FROM bcgovimages/von-image:node-1.12-2
 
 ENV LOG_LEVEL ${LOG_LEVEL:-info}
 ENV RUST_LOG ${RUST_LOG:-warning}
