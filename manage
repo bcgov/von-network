@@ -139,6 +139,30 @@ function toLower() {
   echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
 }
 
+function initDockerBuildArgs() {
+  dockerBuildArgs=""
+
+  # HTTP proxy, prefer lower case
+  if [[ "${http_proxy}" ]]; then
+    dockerBuildArgs=" ${dockerBuildArgs} --build-arg http_proxy=${http_proxy}"
+  else
+    if [[ "${HTTP_PROXY}" ]]; then
+      dockerBuildArgs=" ${dockerBuildArgs} --build-arg http_proxy=${HTTP_PROXY}"
+    fi
+  fi
+
+  # HTTPS proxy, prefer lower case
+  if [[ "${https_proxy}" ]]; then
+    dockerBuildArgs=" ${dockerBuildArgs} --build-arg https_proxy=${https_proxy}"
+  else
+    if [[ "${HTTPS_PROXY}" ]]; then
+      dockerBuildArgs=" ${dockerBuildArgs} --build-arg https_proxy=${HTTPS_PROXY}"
+    fi
+  fi
+
+  echo ${dockerBuildArgs}
+}
+
 function initEnv() {
 
   if [ -f .env ]; then
@@ -282,10 +306,10 @@ case "${COMMAND}" in
         -v
     ;;
   build)
-      docker build -t von-network-base .
+      docker build $(initDockerBuildArgs) -t von-network-base .
     ;;
   rebuild)
-      docker build --no-cache -t von-network-base .
+      docker build --no-cache $(initDockerBuildArgs) -t von-network-base .
     ;;
   dockerhost)
       echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
