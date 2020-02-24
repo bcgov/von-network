@@ -26,12 +26,12 @@ usage () {
   build - Build the docker images for the project.
           You need to do this first.
 
-  up - Starts all containers
+  start | up - Starts all containers
        When using the '--logs' option, use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
         Examples:
         $0 start
+        $0 start --logs
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
-  start - Same as up
 
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
@@ -39,9 +39,11 @@ usage () {
 
   logs - To tail the logs of running containers (ctrl-c to exit).
          Use the '--no-tail' option to only print log without tailing.
+          Examples:
+          $0 logs
+          $0 logs --no-tail
 
-  down - Brings down the services and removes the volumes (storage) and containers.
-  rm - Same as down
+  down | rm - Brings down the services and removes the volumes (storage) and containers.
 
   stop - Stops the services.  This is a non-destructive process.  The volumes and containers
          are not deleted so they will be reused the next time you run start.
@@ -231,8 +233,8 @@ function logs() {
         f ) local _force=1 ;;
         - ) 
             case ${OPTARG} in
-                    "no-tail"*) no_tail=1
-                        ;;
+                "no-tail"*) no_tail=1
+              ;;
             esac
       esac
     done
@@ -240,12 +242,10 @@ function logs() {
 
     log_args=()
     (( no_tail != 1 )) && log_args+=( '-f' )
-
     if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
       docker-compose \
         --log-level ERROR logs \
          "${log_args[@]}" "$@"
-         
     fi
   )
 }
