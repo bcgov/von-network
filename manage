@@ -52,70 +52,62 @@ usage () {
 
   dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
 
-  indy-cli - Run indy-cli commands.
+  indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
+ 
+        $0 indy-cli -h
+          - Display specific help documentation.
 
-        - Refer to the cli-scripts directory for available scripts and their parameters.
-        - Refer to './docs/Writing Transactions to a Ledger for an Un-privileged Author.md' for
-          additional examples.
+  cli - Run a command in an Indy-Cli container.
         
-        $0 [options] indy-cli [command] [parameters]
+        $0 cli -h
+          - Display specific help documentation.
+EOF
+exit 1
+}
 
-        Options:
-          -v <FullyQualifiedPathToScripts/>
-            - Mount a script volume to the container.
-            - By default the 'cli-scripts' directory is mounted to the container.
+indyCliUsage () {
+  cat <<-EOF
 
-        Examples:
-        
-        $0 indy-cli
-          - Start an interactive indy-cli session in your Indy-Cli Container.
+  Usage: 
+    $0 [options] indy-cli [-h] [command] [parameters]
+    
+    Run Indy-Cli commands in a Indy-Cli container environment.
+      - Refer to the cli-scripts directory for available scripts and their parameters.
+      - Refer to './docs/Writing Transactions to a Ledger for an Un-privileged Author.md' for
+        additional examples.
+      
+    Options:
+      -v <FullyQualifiedPathToScripts/>
+        - Mount a script volume to the container.  By default the 'cli-scripts' directory is mounted to the container.
 
-        $0 \\
-          indy-cli create-wallet \\
-          walletName=myorg_issuer \\
-          storageType=default \\
-          storageConfig='{}' \\
-          storageCredentials='{}' \\
-          walletSeed=0000000000000000000000000MyAgent
+    Examples:
+    
+    $0 indy-cli
+      - Start an interactive indy-cli session in your Indy-Cli Container.
+EOF
+exit 1
+}
 
-          - Create and initialize a new wallet in your Indy-Cli Container.
+cliUsage () {
+  cat <<-EOF
 
-        $0 \\
-          cli \\
-          walletName=myorg_issuer \\
-          storageType=default \\
-          storageConfig='{}' \\
-          storageCredentials='{}' \\
-          walletDid=NFP8kaWvCupbDQHQhErwXb \\
-          walletSeed=0000000000000000000000000MyAgent \\
-          walletKey=key \\
-          python cli-scripts/set_did_metadata.py
+  Usage:
+    $0 [options] cli [-h] [command]
+    
+    Run a command in an Indy-Cli container.
 
-          - Set DID metadata on a wallet in your Indy-Cli Container.
+    Options:
+      -v <FullyQualifiedPathToScripts/>
+        - Mount a script volume to the container.  By default the 'cli-scripts' directory is mounted to the container.
+    
+    Examples:
+    
+    $0 cli reset
+      - Reset your Indy-CLI container's environment
 
-  cli - Run a command in an Indy-Cli Container.  By default 
-        
-        $0 [options] cli [command]
-
-        Options:
-          -v <FullyQualifiedPathToScripts/>
-            - Mount a script volume to the container.
-            - By default the 'cli-scripts' directory is mounted to the container.
-        
-        Examples:
-        
-        $0 cli bash
-          - Open a bash shell within your Indy-Cli Container
-
-        $0 -v /MyScripts cli bash
-          - Open a bash shell within your Indy-Cli Container.  Mount the `/MyScripts` directory to the container.
-
-        $0 cli reset
-          - Reset your Indy-CLI container's environment
-
-        $0 cli init-pool localpool http://192.168.65.3:9000/genesis
-        $0 cli init-pool MainNet https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
-          - Initialize the pool for your Indy-CLI container's environment.
+    $0 cli init-pool localpool http://192.168.65.3:9000/genesis
+    $0 cli init-pool MainNet https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
+      - Initialize the pool for your Indy-CLI container's environment.
 EOF
 exit 1
 }
@@ -185,10 +177,31 @@ function initEnv() {
 }
 
 function runCliCommand() {
-  initEnv "$@"
+  
+  unset displayCliUsage
+  for arg in "$@"; do
+    # Remove recognized arguments from the list after processing.
+    shift
+    case "$arg" in
+      -h)
+        displayCliUsage=1
+        ;;
+      *)
+        # If not recognized, save it for later procesing ...
+        set -- "$@" "$arg"
+        ;;
+    esac
+  done
 
+  initEnv "$@"
   cliCmd="${1}"
   shift || cliCmd=""
+
+  if [ ! -z "${displayCliUsage}" ] && [[ "${cliCmd}" == "indy-cli" ]]; then
+    indyCliUsage
+  elif [ ! -z "${displayCliUsage}" ] && [[ -z "${cliCmd}" ]]; then
+    cliUsage
+  fi
 
   cmd="${terminalEmu} docker-compose \
     --log-level ERROR run "
