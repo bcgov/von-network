@@ -19,28 +19,31 @@ fi
 usage () {
   cat <<-EOF
 
-  Usage: $0 [command] [options]
+  Usage: $0 [command] [--logs] [options]
 
   Commands:
 
   build - Build the docker images for the project.
           You need to do this first.
 
-  up - Starts all containers and docker-compose logs.
-       Use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
+  start | up - Starts all containers
+       When using the '--logs' option, use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
         Examples:
         $0 start
+        $0 start --logs
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
-  start - Same as up
 
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
         $0 start-web GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012
 
-  logs - Display the logs from the docker compose run (ctrl-c to exit).
+  logs - To tail the logs of running containers (ctrl-c to exit).
+         Use the '--no-tail' option to only print log without tailing.
+          Examples:
+          $0 logs
+          $0 logs --no-tail
 
-  down - Brings down the services and removes the volumes (storage) and containers.
-  rm - Same as down
+  down | rm - Brings down the services and removes the volumes (storage) and containers.
 
   stop - Stops the services.  This is a non-destructive process.  The volumes and containers
          are not deleted so they will be reused the next time you run start.
@@ -180,6 +183,9 @@ function initEnv() {
       *=*)
         export "${arg}"
         ;;
+      --logs)
+        TAIL_LOGS=1
+        ;;
       *)
         # If not recognized, save it for later procesing ...
         set -- "$@" "$arg"
@@ -240,6 +246,33 @@ function runCliCommand() {
 
   eval ${cmd}
 }
+
+function logs() {
+  (
+    local OPTIND
+    local unset _force
+    local unset no_tail
+    while getopts ":f-:" FLAG; do
+      case $FLAG in
+        f ) local _force=1 ;;
+        - ) 
+            case ${OPTARG} in
+                "no-tail"*) no_tail=1
+              ;;
+            esac
+      esac
+    done
+    shift $((OPTIND-1))
+
+    log_args=()
+    (( no_tail != 1 )) && log_args+=( '-f' )
+    if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
+      docker-compose \
+        --log-level ERROR logs \
+         "${log_args[@]}" "$@"
+    fi
+  )
+}
 # =================================================================================================================
 
 pushd ${SCRIPT_HOME} >/dev/null
@@ -252,18 +285,14 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      logs
     ;;
   start-combined)
       initEnv "$@"
       docker-compose \
         --log-level ERROR up \
         -d webserver nodes
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      logs
     ;;
   start-web)
       initEnv "$@"
@@ -273,14 +302,14 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver
-      docker-compose \
-        --log-level ERROR logs \
-        -f webserver
+      logs webserver
     ;;
   synctest)
       initEnv "$@"
-      docker-compose up -d synctest node1 node2 node3 node4
-      docker-compose logs -f synctest
+      docker-compose \
+        --log-level ERROR up \
+        -d synctest node1 node2 node3 node4
+      logs -f synctest
     ;;
   cli)
       runCliCommand $@
@@ -290,9 +319,7 @@ case "${COMMAND}" in
     ;;
   logs)
       initEnv "$@"
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      logs -f "$@"
     ;;
   stop)
       initEnv "$@"
