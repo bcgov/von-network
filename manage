@@ -299,6 +299,7 @@ case "${COMMAND}" in
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
       logs
+      echo 'Want to see the scrolling container logs? Run "./manage logs"'
     ;;
   start-combined)
       initEnv "$@"
