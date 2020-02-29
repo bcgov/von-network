@@ -23,6 +23,7 @@ Begin by getting to a `bash` command line and clone the `von-network `repo:
 ```
 github clone https://github.com/hyperledger/von-network
 cd von-network
+
 ```
 
 Once the repo has been cloned, we'll build docker images for the VON Network and then start your Indy network:
@@ -30,10 +31,11 @@ Once the repo has been cloned, we'll build docker images for the VON Network and
 
 ```
 ./manage build
-./manage start
+./manage start --logs
+
 ```
 
-As the nodes of the Indy network start up, monitor the logs for error messages.
+As the nodes of the Indy network start up, monitor the logs for error messages. Note the `--logs` entry on the start command. Once you get used to running a VON Network instance, you may want to leave that parameter off so you get right back to the command line for whatever else you are doing.
 
 The [`./manage`](../manage) bash script simplifies the process of running the VON Network, providing the common entry points that you need to use. It also provides a number of environment variables you can use to customize the running of the script.
 
@@ -43,12 +45,14 @@ To see what you can do with the script `./manage`, after your network is running
 
 ```
 ./manage
+
 ```
 
 If you want to get back to seeing the logging data from the nodes, run with the “logs” parameter:
 
 ```
 ./manage logs
+
 ```
 
 ## Browsing the Ledger
@@ -99,6 +103,7 @@ The VON Network provides a way to get to an Indy command line interface (CLI). T
 
 ```
 ./manage indy-cli
+
 ```
 
 Run the “help” command to see what you can do, and “exit” to get out of the CLI session.
@@ -111,6 +116,7 @@ To stop and delete a running VON Network, get to a command line prompt (using Ct
 
 ```
 ./manage down
+
 ```
 
 You would normally do that when you have done some development, completed your testing and want to start again fresh.
@@ -119,12 +125,14 @@ If you want to stop the network **WITHOUT** deleting the data on the ledger, use
 
 ```
 ./manage stop
+
 ```
 
 You can later restart the ledger by running the normal command for starting the network:
 
 ```
 ./manage start
+
 ```
 
 Make sure that you keep your agent storage and ledger in sync. If you delete/reset one, delete/reset the other.
