@@ -77,7 +77,7 @@ def print_log(value_color="", value_noncolor=""):
     ENDC = '\033[0m'
     print(HEADER + value_color + ENDC + str(value_noncolor))
 
-async def write_schema_and_cred_def():
+async def write_schema_and_cred_def(cred_def_primary_file="/tmp/primarykey.txt"):
     try:
         pool_ = {
             'name': pool_name
@@ -127,7 +127,10 @@ async def write_schema_and_cred_def():
         pprint.pprint(cred_def)
         print_log('\nCred def primary: ')
         cred_def_primary = cred_def['value']['primary']
-        print(json.dumps(cred_def_primary).translate({ord(c): None for c in string.whitespace}))
+        cred_def_primary_output = json.dumps(cred_def_primary).translate({ord(c): None for c in string.whitespace})
+        print(cred_def_primary_output)
+        with open(cred_def_primary_file, "w") as text_file:
+            text_file.write(cred_def_primary_output)
 
     except IndyError as e:
         print('Error occurred: %s' % e)
