@@ -47,9 +47,9 @@ Since there are two objects, we'll go through those steps twice. At the end of t
 
 ## The Production Writes Workshop
 
-To get started, open a bash shell on your local system that is capable of running git and docker. If you need more information about the prerequisites, you can [learn more here]. We'll be creating three repos, so we recommend that you start in an empty directory that will be easy to clean up after the process.
+To get started, open a bash shell on your local system that is capable of running git and docker. If you need more information about the prerequisites, you can [learn more here](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-docker-locally). We'll be cloning three repos, so we recommend that you start in an empty directory that will be easy to clean up after the process.
 
-If things go wrong, there are instructions at the bottom for resetting everything so you can start again.
+If things go wrong, there are instructions at the [end of this document](#resetting-the-environment) for resetting everything so you can start again.
 
 ### Clone the Repos and Build
 
@@ -250,7 +250,7 @@ Next, the endorser will execute the following command to read in the file with t
   outputFile=/tmp/ian-permit.ian-co_endorser_signed_schema.txn
 ```
 
-**Check**: The command runs withour an error and the transaction file is created. To review it, you can run:
+**Check**: The command runs without an error and the transaction file is created. To review it, you can run:
 
 ```bash
 cat tmp/ian-permit.ian-co_endorser_signed_schema.txn; echo ""
