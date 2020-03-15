@@ -21,7 +21,7 @@ We recommend going through this tutorial on your local docker instance or on [Pl
 Begin by getting to a `bash` command line and clone the `von-network `repo:
 
 ```
-github clone https://github.com/hyperledger/von-network
+github clone https://github.com/bcgov/von-network
 cd von-network
 
 ```
