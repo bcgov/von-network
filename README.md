@@ -40,12 +40,14 @@ The [tutorial about using VON Network](docs/UsingVONNetwork.md) has information 
 
 1. Run docker to start the ledger, and pass in GENESIS_URL and LEDGER_SEED parameters:
 
-For example to connect to the STN:
+For example to connect to the Sovrin Test Network:
 
 ```bash
-./manage start-web \
-   GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis
+./manage build
+GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis ./manage start-web
 ```
+
+Note that it takes some time to get the transactions and status from the network. Once the UI appears, try getting the `Genesis Transaction` that the server started up properly.
 
 ## Running the the web server on your local machine
 
