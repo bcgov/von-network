@@ -19,28 +19,31 @@ fi
 usage () {
   cat <<-EOF
 
-  Usage: $0 [command] [options]
+  Usage: $0 [command] [--logs] [options]
 
   Commands:
 
   build - Build the docker images for the project.
           You need to do this first.
 
-  up - Starts all containers and docker-compose logs.
-       Use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
+  start | up - Starts all containers
+       When using the '--logs' option, use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
         Examples:
         $0 start
+        $0 start --logs
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
-  start - Same as up
 
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
         $0 start-web GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012
 
-  logs - Display the logs from the docker compose run (ctrl-c to exit).
+  logs - To tail the logs of running containers (ctrl-c to exit).
+         Use the '--no-tail' option to only print log without tailing.
+          Examples:
+          $0 logs
+          $0 logs --no-tail
 
-  down - Brings down the services and removes the volumes (storage) and containers.
-  rm - Same as down
+  down | rm - Brings down the services and removes the volumes (storage) and containers.
 
   stop - Stops the services.  This is a non-destructive process.  The volumes and containers
          are not deleted so they will be reused the next time you run start.
@@ -49,70 +52,62 @@ usage () {
 
   dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
 
-  indy-cli - Run indy-cli commands.
+  indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
+ 
+        $0 indy-cli -h
+          - Display specific help documentation.
 
-        - Refer to the cli-scripts directory for available scripts and their parameters.
-        - Refer to './docs/Writing Transactions to a Ledger for an Un-privileged Author.md' for
-          additional examples.
+  cli - Run a command in an Indy-Cli container.
         
-        $0 [options] indy-cli [command] [parameters]
+        $0 cli -h
+          - Display specific help documentation.
+EOF
+exit 1
+}
 
-        Options:
-          -v <FullyQualifiedPathToScripts/>
-            - Mount a script volume to the container.
-            - By default the 'cli-scripts' directory is mounted to the container.
+indyCliUsage () {
+  cat <<-EOF
 
-        Examples:
-        
-        $0 indy-cli
-          - Start an interactive indy-cli session in your Indy-Cli Container.
+  Usage: 
+    $0 [options] indy-cli [-h] [command] [parameters]
+    
+    Run Indy-Cli commands in a Indy-Cli container environment.
+      - Refer to the cli-scripts directory for available scripts and their parameters.
+      - Refer to './docs/Writing Transactions to a Ledger for an Un-privileged Author.md' for
+        additional examples.
+      
+    Options:
+      -v <FullyQualifiedPathToScripts/>
+        - Mount a script volume to the container.  By default the 'cli-scripts' directory is mounted to the container.
 
-        $0 \\
-          indy-cli create-wallet \\
-          walletName=myorg_issuer \\
-          storageType=default \\
-          storageConfig='{}' \\
-          storageCredentials='{}' \\
-          walletSeed=0000000000000000000000000MyAgent
+    Examples:
+    
+    $0 indy-cli
+      - Start an interactive indy-cli session in your Indy-Cli Container.
+EOF
+exit 1
+}
 
-          - Create and initialize a new wallet in your Indy-Cli Container.
+cliUsage () {
+  cat <<-EOF
 
-        $0 \\
-          cli \\
-          walletName=myorg_issuer \\
-          storageType=default \\
-          storageConfig='{}' \\
-          storageCredentials='{}' \\
-          walletDid=NFP8kaWvCupbDQHQhErwXb \\
-          walletSeed=0000000000000000000000000MyAgent \\
-          walletKey=key \\
-          python cli-scripts/set_did_metadata.py
+  Usage:
+    $0 [options] cli [-h] [command]
+    
+    Run a command in an Indy-Cli container.
 
-          - Set DID metadata on a wallet in your Indy-Cli Container.
+    Options:
+      -v <FullyQualifiedPathToScripts/>
+        - Mount a script volume to the container.  By default the 'cli-scripts' directory is mounted to the container.
+    
+    Examples:
+    
+    $0 cli reset
+      - Reset your Indy-CLI container's environment
 
-  cli - Run a command in an Indy-Cli Container.  By default 
-        
-        $0 [options] cli [command]
-
-        Options:
-          -v <FullyQualifiedPathToScripts/>
-            - Mount a script volume to the container.
-            - By default the 'cli-scripts' directory is mounted to the container.
-        
-        Examples:
-        
-        $0 cli bash
-          - Open a bash shell within your Indy-Cli Container
-
-        $0 -v /MyScripts cli bash
-          - Open a bash shell within your Indy-Cli Container.  Mount the `/MyScripts` directory to the container.
-
-        $0 cli reset
-          - Reset your Indy-CLI container's environment
-
-        $0 cli init-pool localpool http://192.168.65.3:9000/genesis
-        $0 cli init-pool MainNet https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
-          - Initialize the pool for your Indy-CLI container's environment.
+    $0 cli init-pool localpool http://192.168.65.3:9000/genesis
+    $0 cli init-pool MainNet https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
+      - Initialize the pool for your Indy-CLI container's environment.
 EOF
 exit 1
 }
@@ -139,6 +134,30 @@ function toLower() {
   echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
 }
 
+function initDockerBuildArgs() {
+  dockerBuildArgs=""
+
+  # HTTP proxy, prefer lower case
+  if [[ "${http_proxy}" ]]; then
+    dockerBuildArgs=" ${dockerBuildArgs} --build-arg http_proxy=${http_proxy}"
+  else
+    if [[ "${HTTP_PROXY}" ]]; then
+      dockerBuildArgs=" ${dockerBuildArgs} --build-arg http_proxy=${HTTP_PROXY}"
+    fi
+  fi
+
+  # HTTPS proxy, prefer lower case
+  if [[ "${https_proxy}" ]]; then
+    dockerBuildArgs=" ${dockerBuildArgs} --build-arg https_proxy=${https_proxy}"
+  else
+    if [[ "${HTTPS_PROXY}" ]]; then
+      dockerBuildArgs=" ${dockerBuildArgs} --build-arg https_proxy=${HTTPS_PROXY}"
+    fi
+  fi
+
+  echo ${dockerBuildArgs}
+}
+
 function initEnv() {
 
   if [ -f .env ]; then
@@ -155,6 +174,9 @@ function initEnv() {
     case "$arg" in
       *=*)
         export "${arg}"
+        ;;
+      --logs)
+        TAIL_LOGS=1
         ;;
       *)
         # If not recognized, save it for later procesing ...
@@ -179,10 +201,31 @@ function initEnv() {
 }
 
 function runCliCommand() {
-  initEnv "$@"
+  
+  unset displayCliUsage
+  for arg in "$@"; do
+    # Remove recognized arguments from the list after processing.
+    shift
+    case "$arg" in
+      -h)
+        displayCliUsage=1
+        ;;
+      *)
+        # If not recognized, save it for later procesing ...
+        set -- "$@" "$arg"
+        ;;
+    esac
+  done
 
+  initEnv "$@"
   cliCmd="${1}"
   shift || cliCmd=""
+
+  if [ ! -z "${displayCliUsage}" ] && [[ "${cliCmd}" == "indy-cli" ]]; then
+    indyCliUsage
+  elif [ ! -z "${displayCliUsage}" ] && [[ -z "${cliCmd}" ]]; then
+    cliUsage
+  fi
 
   cmd="${terminalEmu} docker-compose \
     --log-level ERROR run "
@@ -216,6 +259,33 @@ function runCliCommand() {
 
   eval ${cmd}
 }
+
+function logs() {
+  (
+    local OPTIND
+    local unset _force
+    local unset no_tail
+    while getopts ":f-:" FLAG; do
+      case $FLAG in
+        f ) local _force=1 ;;
+        - ) 
+            case ${OPTARG} in
+                "no-tail"*) no_tail=1
+              ;;
+            esac
+      esac
+    done
+    shift $((OPTIND-1))
+
+    log_args=()
+    (( no_tail != 1 )) && log_args+=( '-f' )
+    if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
+      docker-compose \
+        --log-level ERROR logs \
+         "${log_args[@]}" "$@"
+    fi
+  )
+}
 # =================================================================================================================
 
 pushd ${SCRIPT_HOME} >/dev/null
@@ -228,18 +298,15 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      logs
+      echo 'Want to see the scrolling container logs? Run "./manage logs"'
     ;;
   start-combined)
       initEnv "$@"
       docker-compose \
         --log-level ERROR up \
         -d webserver nodes
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      logs
     ;;
   start-web)
       initEnv "$@"
@@ -249,14 +316,14 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver
-      docker-compose \
-        --log-level ERROR logs \
-        -f webserver
+      logs webserver
     ;;
   synctest)
       initEnv "$@"
-      docker-compose up -d synctest node1 node2 node3 node4
-      docker-compose logs -f synctest
+      docker-compose \
+        --log-level ERROR up \
+        -d synctest node1 node2 node3 node4
+      logs -f synctest
     ;;
   cli)
       runCliCommand $@
@@ -266,9 +333,7 @@ case "${COMMAND}" in
     ;;
   logs)
       initEnv "$@"
-      docker-compose \
-        --log-level ERROR logs \
-        -f
+      logs -f "$@"
     ;;
   stop)
       initEnv "$@"
@@ -282,10 +347,10 @@ case "${COMMAND}" in
         -v
     ;;
   build)
-      docker build -t von-network-base .
+      docker build $(initDockerBuildArgs) -t von-network-base .
     ;;
   rebuild)
-      docker build --no-cache -t von-network-base .
+      docker build --no-cache $(initDockerBuildArgs) -t von-network-base .
     ;;
   dockerhost)
       echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
