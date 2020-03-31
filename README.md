@@ -28,6 +28,11 @@ Want to see a full demo that includes applications and verifiable credentials be
 
 This repository includes a fully containerized Indy-Cli environment, allowing you to use the Indy-Cli without having to build or install the Indy-SDK or any of its dependencies on your machine.
 
+## Ledger Troubleshooting
+
+Refer to the [Troubleshooting](./docs/Troubleshooting.md) document for some tips and tools you can use to troubleshoot issues with a ledger.
+
+## VON Quick Start Guide
 The environment provides a set of batch script templates and a simple variable substitution layer that allows the scripts to be reused for a number of purposes.
 
 For examples of how to use this capability, refer to [Writing Transactions to a Ledger for an Un-privileged Author](./docs/Writing%20Transactions%20to%20a%20Ledger%20for%20an%20Un-privileged%20Author.md)
