@@ -157,6 +157,21 @@ GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/so
     ./manage start public_ip_address WEB_SERVER_HOST_PORT=80 "LEDGER_INSTANCE_NAME=My Ledger" &
     ```
 
+### AWS EC2 Security considerations
+
+If you are installing on an Amazon EC2 node you may find the Indy nodes are failing to connect to each other. The signature for this will be a repeating message every 60 seconds when you view the logs via "./manage log"
+
+```bash
+node2_1 | 2020-05-07 23:56:30,728|NOTIFICATION|primary_connection_monitor_service.py|Node2:0 primary has been disconnected for too long
+node2_1 | 2020-05-07 23:56:30,729|INFO|primary_connection_monitor_service.py|Node2:0 The node is not ready yet so view change will not be proposed now, but re-scheduled.
+node2_1 | 2020-05-07 23:56:30,730|INFO|primary_connection_monitor_service.py|Node2:0 scheduling primary connection check in 60 sec
+node2_1 | 2020-05-07 23:56:30,730|NOTIFICATION|primary_connection_monitor_service.py|Node2:0 primary has been disconnected for too long
+node2_1 | 2020-05-07 23:56:30,730|INFO|primary_connection_monitor_service.py|Node2:0 The node is not ready yet so view change will not be proposed now, but re-scheduled.
+```
+
+The Indy nodes are configured to talk to each other via their "public" address not the Virtual Private Cloud address of the EC2 node. It is common practice to tightly restrict traffic inbound to public IPs when first setting up a deployment in AWS.  You will need to adjust the Inbound and Outbound traffic rules on your Security Groups to allow traffic specifically from the public EC2 address.
+
+
 ## Connecting to the Network
 
 ### With the CLI
