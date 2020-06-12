@@ -12,7 +12,7 @@ usage () {
   cat <<-EOF
 
   Thin wrapper around cli operations.
-  
+
   Usage: $0 [command] [options]
 
   Commands:
@@ -20,7 +20,7 @@ usage () {
   start-client
     - Default command if no other command is specified.
 
-  reset 
+  reset
     - Delete all wallets and pools from the client container.
 
   init-pool <name/> <genesisUrl/>
@@ -73,11 +73,27 @@ function start-client () {
 function indy-cli() {
   indyCliArgs="${1}"
   shift || indyCliArgs=""
-  
+
   batchTemplate=$(find . -name "${indyCliArgs}")
   if [ ! -z "${batchTemplate}" ]; then
     batchfile="${batchTemplate}.run"
-    # Escape quotes so they don't get removed during the variable substitution ...
+
+    # ========================================================================
+    # Set default storageType if storgae configuration has not been specified.
+    # ------------------------------------------------------------------------
+    if [[ "${@}" != *"storageType"* ]]; then
+      set -- "$@" "storageType=default"
+    fi
+
+    if [[ "${@}" != *"storageConfig"* ]]; then
+      set -- "$@" "storageConfig={}"
+    fi
+
+    if [[ "${@}" != *"storageCredentials"* ]]; then
+      set -- "$@" "storageCredentials={}"
+    fi
+    # ========================================================================
+
     escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
     cmd="${escapedArgs} envsubst < ${batchTemplate} > ${batchfile}"
     eval ${cmd}
