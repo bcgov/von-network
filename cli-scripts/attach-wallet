@@ -19,5 +19,5 @@
 #   - Local Wallet Example; '{}'
 # ===================================================================================
 
-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 exit

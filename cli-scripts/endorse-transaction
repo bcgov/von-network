@@ -75,7 +75,7 @@ load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 
 pool connect ${poolName}
 
-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 did use ${endorserDid}
 ledger load-transaction file=${inputFile}

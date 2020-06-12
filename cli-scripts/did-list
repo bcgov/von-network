@@ -38,7 +38,7 @@
 
 load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 
-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 did list
 wallet close

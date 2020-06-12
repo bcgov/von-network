@@ -101,7 +101,7 @@ load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 # Nothing is actually being written or read from the ledger by this script.
 pool connect ${poolName}
 
-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 did use ${authorDid}
 ledger schema sign=true endorser=${endorserDid} name=${schemaName} version=${schemaVersion} attr_names=${schemaAttributes}
