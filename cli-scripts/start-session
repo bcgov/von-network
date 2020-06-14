@@ -1,28 +1,31 @@
 # ===================================================================================
-# Create wallet
+# Start an Indy-cli Session
 # -----------------------------------------------------------------------------------
-# Creates a wallet and initializes it with a DID.
-# The user will be prompted for the DID's seed during the process.
-# The seed should be a unique 32 character string.  It's best if it's randomly
-# generated.
+# Start an interactive indy-cli session with a connected pool, wallet, and did.
+#
+#   - The ledger pool MUST exist.
+#   - A wallet containing the DID MUST exist.
 #
 # Examples:
 # ./manage \
-#   indy-cli create-wallet \
-#   walletName=endorser_wallet
+#   indy-cli start-session \
+#   walletName=endorser_wallet \
+#   poolName=localpool \
+#   useDid=DFuDqCYpeDNXLuc3MKooX3
 #
 # ./manage \
-#   indy-cli create-wallet \
+#   indy-cli start-session \
 #   walletName=endorser_wallet \
 #   storageType=postgres_storage \
 #   storageConfig='{"url":"192.168.65.3:5435"}' \
-#   storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}'
+#   storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+#   poolName=localpool \
+#   useDid=DFuDqCYpeDNXLuc3MKooX3
 #
 # Params:
 # walletName:
-#   - The name of the wallet to be imported.
-#   - Example; endorser_wallet
-# 
+#   - The name of the wallet to be used for the operation.
+#
 # storageType:
 #   - Optional - The wallet storage type.  Defaults to 'default'.
 #   - Remote Wallet Example; postgres_storage
@@ -37,14 +40,19 @@
 #   - Optional - The wallet storage credentials.  Defaults to '{}'.
 #   - Remote Wallet Example; '{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}'
 #   - Local Wallet Example; '{}'
+#
+# poolName:
+#   - The name of the ledger pool to use during the operations.
+#   - Example; sandbox
+#
+# useDid:
+#   - The DID to use for the session.
 # ===================================================================================
 
 load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 
-wallet create ${walletName} key storage_type=${storageType} storage_config=${storageConfig} storage_credentials=${storageCredentials}
+pool connect ${poolName}
+
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 wallet open ${walletName} key storage_credentials=${storageCredentials}
-did new seed
-did list
-wallet close
-wallet detach ${walletName}
-exit
+did use ${useDid}

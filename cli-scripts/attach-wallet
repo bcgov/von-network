@@ -9,15 +9,15 @@
 #   - Example; myorg_issuer
 #
 # storageType:
-#   - The wallet storage type.
+#   - Optional - The wallet storage type.  Defaults to 'default'.
 #   - Remote Wallet Example; postgres_storage
 #   - Local Wallet Example; default
 #
 # storageConfig:
-#   - The wallet storage configuration.
+#   - Optional - The wallet storage configuration.  Defaults to '{}'.
 #   - Remote Wallet Example; '{"url":"192.168.65.3:5435"}'
 #   - Local Wallet Example; '{}'
 # ===================================================================================
 
-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
 exit

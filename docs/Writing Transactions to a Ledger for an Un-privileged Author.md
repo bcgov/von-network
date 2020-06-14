@@ -228,12 +228,9 @@ The next step is run by the endorser. First we'll create the endorser's wallet u
 ```bash
 ./manage \
   indy-cli create-wallet \
-  walletName=endorser_wallet \
-  storageType=default \
-  storageConfig='{}' \
-  storageCredentials='{}' \
-  walletSeed=ENDORSER123450000000000000000000
+  walletName=endorser_wallet
 ```
+When prompted for the `seed` enter `ENDORSER123450000000000000000000`.
 
 Next, the endorser will execute the following command to read in the file with the signed transaction from the author, sign it, and write out the doubly signed version of the transaction. The endorser can get the file from the author in whatever way is convenient&mdash;email, file transfer, etc.
 
@@ -241,9 +238,6 @@ Next, the endorser will execute the following command to read in the file with t
 ./manage \
   indy-cli endorse-transaction \
   walletName=endorser_wallet \
-  storageType=default \
-  storageConfig='{}' \
-  storageCredentials='{}' \
   poolName=localpool \
   endorserDid=DFuDqCYpeDNXLuc3MKooX3 \
   inputFile=/tmp/ian-permit.ian-co_author_signed_schema.txn \
@@ -351,9 +345,6 @@ The endorser will execute the following command to read in the file with the sig
 ./manage \
   indy-cli endorse-transaction \
   walletName=endorser_wallet \
-  storageType=default \
-  storageConfig='{}' \
-  storageCredentials='{}' \
   poolName=localpool \
   endorserDid=DFuDqCYpeDNXLuc3MKooX3 \
   inputFile=/tmp/ian-permit.ian-co_author_signed_cred_def.txn \

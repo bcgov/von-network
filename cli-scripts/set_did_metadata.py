@@ -18,7 +18,7 @@ wallet_config = json.dumps({"id": wallet_name, "storage_type": wallet_storage_ty
 wallet_credentials = json.dumps({"key": wallet_key, "storage_credentials": wallet_storage_credentials})
 
 wallet_did = os.getenv('walletDid', 'VePGZfzvcgmT3GTdYgpDiT')
-wallet_seed = os.getenv('walletSeed', '0000000000000000000000000MyAgent')
+did_seed = os.getenv('didSeed', '0000000000000000000000000MyAgent')
 
 metadata = json.loads(os.getenv('didMetadata', '{}'))
 
@@ -36,7 +36,7 @@ async def set_did_metadata():
         wallet_handle = await wallet.open_wallet(wallet_config, wallet_credentials)
 
         print_log('\nGenerating seed hash ...')
-        seed_hash = sha256(wallet_seed.encode()).hexdigest()
+        seed_hash = sha256(did_seed.encode()).hexdigest()
         did_metadata = {**(metadata or {}), 'public': True, 'seed_hash': seed_hash}
         
         print_log('\nWriting metadata for DID ...')
