@@ -229,7 +229,7 @@ The next step is run by the endorser. First we'll create the endorser's wallet u
 ./manage \
   indy-cli create-wallet \
   walletName=endorser_wallet \
-  walletSeed=ENDORSER123450000000000000000000
+  didSeed=ENDORSER123450000000000000000000
 ```
 
 Next, the endorser will execute the following command to read in the file with the signed transaction from the author, sign it, and write out the doubly signed version of the transaction. The endorser can get the file from the author in whatever way is convenient&mdash;email, file transfer, etc.

@@ -7,7 +7,7 @@
 # ./manage \
 #   indy-cli create-wallet \
 #   walletName=endorser_wallet \
-#   walletSeed=ENDORSER123450000000000000000000
+#   didSeed=ENDORSER123450000000000000000000
 #
 # ./manage \
 #   indy-cli create-wallet \
@@ -15,7 +15,7 @@
 #   storageType=postgres_storage \
 #   storageConfig='{"url":"192.168.65.3:5435"}' \
 #   storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
-#   walletSeed=ENDORSER123450000000000000000000
+#   didSeed=ENDORSER123450000000000000000000
 #
 # Params:
 # walletName:
@@ -37,7 +37,7 @@
 #   - Remote Wallet Example; '{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}'
 #   - Local Wallet Example; '{}'
 #
-# walletSeed:
+# didSeed:
 #   - The seed to use for initializing the wallet.
 #   - Example; ENDORSER123450000000000000000000
 # ===================================================================================
@@ -46,7 +46,7 @@ load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 
 wallet create ${walletName} key storage_type=${storageType} storage_config=${storageConfig} storage_credentials=${storageCredentials}
 wallet open ${walletName} key storage_credentials=${storageCredentials}
-did new seed=${walletSeed}
+did new seed=${didSeed}
 did list
 wallet close
 wallet detach ${walletName}
