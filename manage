@@ -52,6 +52,8 @@ usage () {
 
   dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
 
+  generateSecrets - Generate a random set of secrets using openssl; a Seed and a Key.
+
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
  
         $0 indy-cli -h
@@ -286,6 +288,31 @@ function logs() {
     fi
   )
 }
+
+function generateKey(){
+  (
+    _length=${1:-48}
+    # Format can be `-base64` or `-hex`
+    _format=${2:--base64}
+    echo $(openssl rand ${_format} ${_length})
+  )
+}
+
+function generateSeed(){
+  (
+    _prefix=${1}
+    _seed=$(echo "${_prefix}$(generateKey 32)" | fold -w 32 | head -n 1 )
+    _seed=$(echo -n "${_seed}")
+    echo ${_seed}
+  )
+}
+
+function generateSecrets() {
+  echo
+  echo "Seed: $(generateSeed)"
+  echo "Key: $(generateKey)"
+  echo
+}
 # =================================================================================================================
 
 pushd ${SCRIPT_HOME} >/dev/null
@@ -354,6 +381,9 @@ case "${COMMAND}" in
     ;;
   dockerhost)
       echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
+    ;;
+  generatesecrets)
+      generateSecrets
     ;;
   *)
       usage;;
