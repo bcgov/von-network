@@ -94,6 +94,18 @@ function indy-cli() {
     fi
     # ========================================================================
 
+    # ========================================================================
+    # Set default outputFile name if not specified.
+    # - Only for scripts that require an input file.
+    # ------------------------------------------------------------------------
+    if [[ "${@}" == *"inputFile"* ]] && [[ "${@}" != *"outputFile"* ]]; then
+      cmd="${@} eval echo '\${inputFile}' | envsubst"
+      inputPath=$(eval ${cmd})
+      outputPath="${inputPath%/*}/signed-${inputPath##*/}"
+      set -- "$@" "outputFile=${outputPath}"
+    fi
+    # ========================================================================
+
     escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
     cmd="${escapedArgs} envsubst < ${batchTemplate} > ${batchfile}"
     eval ${cmd}

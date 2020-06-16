@@ -67,8 +67,9 @@
 #   - Example; /tmp/dev_schema_author_signed.txt
 #
 # outputFile:
-#   - The full path to the file to write the transaction.
+#   - Optional - The full path to the file to write the transaction.
 #   - Example; /tmp/dev_schema_endorser_signed.txt
+#   - Defaults to <inputFilePath>/signed-<inputFileName>
 # ===================================================================================
 
 load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
