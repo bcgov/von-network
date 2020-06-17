@@ -9,3 +9,7 @@ RUN pip install --no-cache-dir -r server/requirements.txt
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
 ADD --chown=indy:indy . $HOME
+
+RUN mkdir -p \
+    $HOME/cli-scripts \
+    && chmod -R ug+rw $HOME/cli-scripts
