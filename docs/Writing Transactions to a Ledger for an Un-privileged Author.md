@@ -138,7 +138,7 @@ Now it's time to start the Issuer agent. This is the one step in the process tha
 
 ```bash
 pushd von-agent-template
-. init.sh <<-EOF
+./init.sh <<-EOF
 Ian Company
 ian-co
 ian-permit
