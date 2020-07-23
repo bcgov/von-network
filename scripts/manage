@@ -71,26 +71,44 @@ function start-client () {
 }
 
 function indy-cli() {
-  indyCliArgs="${1}"
-  shift || indyCliArgs=""
+  
+  for arg in "$@"; do
+    # Remove recognized arguments from the list after processing.
+    shift
+    case "${arg}" in
+      *=*)
+        batchFileArgs+=" ${arg}"
+        ;;
+      *)
+        # Detemine whether or not the arg is a recognized cli-script template.
+        batchTemplate=$(find ./cli-scripts -type f -name "${arg}" 2>/dev/null)
+        if [ -z "${batchTemplate}" ]; then
+          # If not recognized, save it for later procesing ...
+          set -- "$@" "${arg}"
+        fi
+        ;;
+    esac
+  done
 
-  batchTemplate=$(find . -name "${indyCliArgs}")
+  # ========================================================================
+  # Prepare the cli batch script when using a template.
+  # ------------------------------------------------------------------------
   if [ ! -z "${batchTemplate}" ]; then
     batchfile="${batchTemplate}.run"
 
     # ========================================================================
     # Set default storageType if storgae configuration has not been specified.
     # ------------------------------------------------------------------------
-    if [[ "${@}" != *"storageType"* ]]; then
-      set -- "$@" "storageType=default"
+    if [[ "${batchFileArgs}" != *"storageType"* ]]; then
+      batchFileArgs+=" storageType=default"
     fi
 
-    if [[ "${@}" != *"storageConfig"* ]]; then
-      set -- "$@" "storageConfig={}"
+    if [[ "${batchFileArgs}" != *"storageConfig"* ]]; then
+      batchFileArgs+=" storageConfig={}"
     fi
 
-    if [[ "${@}" != *"storageCredentials"* ]]; then
-      set -- "$@" "storageCredentials={}"
+    if [[ "${batchFileArgs}" != *"storageCredentials"* ]]; then
+      batchFileArgs+=" storageCredentials={}"
     fi
     # ========================================================================
 
@@ -98,22 +116,23 @@ function indy-cli() {
     # Set default outputFile name if not specified.
     # - Only for scripts that require an input file.
     # ------------------------------------------------------------------------
-    if [[ "${@}" == *"inputFile"* ]] && [[ "${@}" != *"outputFile"* ]]; then
-      cmd="${@} eval echo '\${inputFile}' | envsubst"
+    if [[ "${batchFileArgs}" == *"inputFile"* ]] && [[ "${batchFileArgs}" != *"outputFile"* ]]; then
+      cmd="${batchFileArgs} eval echo '\${inputFile}' | envsubst"
       inputPath=$(eval ${cmd})
       outputPath="${inputPath%/*}/signed-${inputPath##*/}"
-      set -- "$@" "outputFile=${outputPath}"
+      batchFileArgs+=" outputFile=${outputPath}"
     fi
     # ========================================================================
 
-    escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
+    escapedArgs=$(echo ${batchFileArgs} | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
     cmd="${escapedArgs} envsubst < ${batchTemplate} > ${batchfile}"
     eval ${cmd}
     indyCliArgs="${batchfile}"
   fi
+  # ========================================================================
 
-  eval ${INDY_CLI_EXE} ${indyCliArgs}
-
+  eval ${INDY_CLI_EXE} ${@} ${indyCliArgs}
+  
   # Clean up ...
   if [ -f "${batchfile}" ]; then
     rm -rf "${batchfile}"
