@@ -86,6 +86,9 @@ indyCliUsage () {
     
     $0 indy-cli
       - Start an interactive indy-cli session in your Indy-Cli Container.
+
+    $0 indy-cli --help
+      - Get usage information for the indy-cli.
 EOF
 exit 1
 }
