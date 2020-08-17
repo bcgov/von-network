@@ -243,7 +243,7 @@ class AnchorHandle:
 
         if aml_config and ("version" not in aml_config or "aml" not in aml_config):
             raise AnchorException("Invalid AML configuration")
-        if taa_config and ("version" not in taa_config or "text" not in taa_config):
+        if taa_config and ("version" not in taa_config or "text" not in taa_config or "ratification_ts" not in taa_config):
             raise AnchorException("Invalid TAA configuration")
 
         aml_methods = {}
@@ -284,7 +284,10 @@ class AnchorHandle:
         if taa_config:
             if not taa_found or taa_found["version"] != taa_config["version"]:
                 set_taa_req = await ledger.build_txn_author_agreement_request(
-                    self._did, taa_config["text"], taa_config["version"]
+                    self._did,
+                    taa_config["text"],
+                    taa_config["version"],
+                    taa_config["ratification_ts"]
                 )
                 await self.submit_request(set_taa_req, True)
                 LOGGER.info("Published TAA: %s", taa_config["version"])
