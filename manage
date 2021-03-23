@@ -54,6 +54,8 @@ usage () {
 
   generateSecrets - Generate a random set of secrets using openssl; a Seed and a Key.
 
+  truncateLogs - Truncate the conatiner logs.
+
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
  
         $0 indy-cli -h
@@ -316,6 +318,15 @@ function generateSecrets() {
   echo "Key: $(generateKey)"
   echo
 }
+
+function truncateLogs() {
+  containers="von_node1_1 von_node2_1 von_node3_1 von_node4_1 von_webserver_1"
+  for container in ${containers}; do
+    log=$(docker inspect -f '{{.LogPath}}' ${container} 2> /dev/null)
+    echo "Truncating log for ${container}: ${log}"
+    truncate -s 0 ${log}
+  done
+}
 # =================================================================================================================
 
 pushd "${SCRIPT_HOME}" >/dev/null
@@ -388,6 +399,9 @@ case "${COMMAND}" in
   generatesecrets)
       generateSecrets
     ;;
+  truncatelogs)
+    truncateLogs
+    ;;    
   *)
       usage;;
 esac
