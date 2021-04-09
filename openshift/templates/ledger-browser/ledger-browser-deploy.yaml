@@ -6,13 +6,35 @@ metadata:
     description: Deployment template for the von-network ledger browser.
     iconClass: icon-python
 objects:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: ${NAME}-allow-ingress
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    spec:
+      description: |
+        Allow traffic from routes into the ${ROLE} container(s).
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      podSelector:
+        matchLabels:
+          app: ${NAME}
+          env: ${TAG_NAME}
+      policyTypes:
+        - Ingress
+
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
       name: ${PERSISTENT_VOLUME_NAME}
       labels:
-        app: ${NAME}-persistent
-        template: ${NAME}-persistent-template
+        app: ${NAME}
         app-group: ${APP_GROUP}
     spec:
       storageClassName: ${PERSISTENT_VOLUME_CLASS}
@@ -21,6 +43,7 @@ objects:
       resources:
         requests:
           storage: ${PERSISTENT_VOLUME_SIZE}
+
   - kind: Secret
     apiVersion: v1
     metadata:
@@ -33,6 +56,7 @@ objects:
       seed: ${INDY_WALLET_SEED}
       did: ${INDY_WALLET_DID}
     type: Opaque
+
   - kind: Service
     apiVersion: v1
     metadata:
@@ -49,6 +73,7 @@ objects:
           targetPort: ${{PORT}}
       selector:
         name: ${NAME}
+
   - kind: Route
     apiVersion: v1
     metadata:
@@ -67,6 +92,7 @@ objects:
         kind: Service
         name: ${NAME}
         weight: 100
+
   - kind: DeploymentConfig
     apiVersion: v1
     metadata:
@@ -105,7 +131,7 @@ objects:
                 claimName: ${PERSISTENT_VOLUME_NAME}
           containers:
             - name: ${NAME}
-              image: ' '
+              image: " "
               command:
                 - ./scripts/start_webserver.sh
               ports:
@@ -161,6 +187,7 @@ objects:
               volumeMounts:
                 - name: ${NAME}
                   mountPath: ${VOLUME_MOUNT_PATH}
+
 parameters:
   - name: NAME
     displayName: Name
@@ -181,7 +208,7 @@ parameters:
     displayName: Image Namespace
     required: true
     description: The namespace of the OpenShift project containing the image stream for the application.
-    value: devex-von-tools
+    value: ca7f8f
   - name: APPLICATION_DOMAIN
     displayName: Application Hostname
     description: The exposed hostname that will route to the Django service, if left blank a value will be defaulted.
@@ -191,19 +218,19 @@ parameters:
     description: The encryption key to be used for the wallets.  Needs to be basee64 encoded.
     required: true
     generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
   - name: INDY_WALLET_SEED
     displayName: Indy Wallet Seed
     description: The Seed used for the indy wallet.  Needs to be basee64 encoded.
     required: true
     generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
   - name: INDY_WALLET_DID
     displayName: Indy Wallet DID
     description: The DID associated to the indy wallet.  Needs to be basee64 encoded.
     required: false
     generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
   - name: WALLET_CREDENTIAL_STORE_NAME
     displayName: Wallet Credential Store Name
     description: The name of the wallet credential store (aka The name of the secret that contains the wallet credentials).
@@ -276,9 +303,9 @@ parameters:
     value: 5Gi
   - name: PERSISTENT_VOLUME_CLASS
     displayName: Persistent Volume Class name
-    description: The class of the volume; gluster-file, gluster-block, gluster-file-db
+    description: The class of the volume
     required: false
-    value: gluster-file-db
+    value: netapp-block-standard
   - name: CPU_REQUEST
     displayName: Resources CPU Request
     description: The resources CPU request (in cores) for this build.
