@@ -7,6 +7,9 @@ SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-von}"
 export DEFAULT_CLI_SCRIPT_DIR='./cli-scripts'
 
+export LEDGER_TIMEOUT="${LEDGER_TIMEOUT:-60}"
+export LEDGER_URL_CONFIG="${LEDGER_URL_CONFIG}"
+
 # Running on Windows?
 if [[ "$OSTYPE" == "msys" ]]; then
   # Prefix interactive terminal commands ...
@@ -27,11 +30,13 @@ usage () {
           You need to do this first.
 
   start | up - Starts all containers
+       You can include a '--wait' parameter which will wait until the ledger is active
        When using the '--logs' option, use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
         Examples:
         $0 start
         $0 start --logs
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
+        $0 start --wait --logs
 
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
@@ -183,6 +188,9 @@ function initEnv() {
       --logs)
         TAIL_LOGS=1
         ;;
+      --wait)
+        WAIT_FOR_LEDGER=1
+        ;;
       *)
         # If not recognized, save it for later procesing ...
         set -- "$@" "$arg"
@@ -292,6 +300,43 @@ function logs() {
   )
 }
 
+pingLedger(){
+  ledger_url=${1}
+
+  # ping ledger web browser for genesis txns
+  local rtnCd=$(curl -s --write-out '%{http_code}' --output /dev/null ${ledger_url}/genesis)
+  if (( ${rtnCd} == 200 )); then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function wait_for_ledger() {
+  (
+    # if flag is set, wait for ledger to activate before continuing
+    local rtnCd=0
+    if [ ! -z "${WAIT_FOR_LEDGER}" ]; then
+      # Wait for ledger server to start ...
+      local startTime=${SECONDS}
+      # use global LEDGER_URL
+      local LEDGER_URL="${LEDGER_URL_CONFIG:-http://localhost:9000}"
+      printf "waiting for ledger to start"
+      while ! pingLedger "$LEDGER_URL"; do
+        printf "."
+        local duration=$(($SECONDS - $startTime))
+        if (( ${duration} >= ${LEDGER_TIMEOUT} )); then
+          echoRed "\nThe Indy Ledger failed to start within ${duration} seconds.\n"
+          rtnCd=1
+          break
+        fi
+        sleep 1
+      done
+    fi
+    return ${rtnCd}
+  )
+}
+
 function generateKey(){
   (
     _length=${1:-48}
@@ -328,6 +373,7 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
+      wait_for_ledger
       logs
       echo 'Want to see the scrolling container logs? Run "./manage logs"'
     ;;
@@ -336,6 +382,7 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver nodes
+      wait_for_ledger
       logs
     ;;
   start-web)
@@ -346,6 +393,7 @@ case "${COMMAND}" in
       docker-compose \
         --log-level ERROR up \
         -d webserver
+      wait_for_ledger
       logs webserver
     ;;
   synctest)
