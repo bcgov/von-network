@@ -25,6 +25,7 @@ objects:
       podSelector:
         matchLabels:
           app: ${NAME}
+          app-group: ${APP_GROUP}
           env: ${TAG_NAME}
       policyTypes:
         - Ingress
@@ -75,7 +76,9 @@ objects:
           port: 8080
           targetPort: ${{PORT}}
       selector:
-        name: ${NAME}
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
 
   - kind: Route
     apiVersion: v1
@@ -123,12 +126,16 @@ objects:
         - type: ConfigChange
       replicas: 1
       selector:
-        name: ${NAME}
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
       template:
         metadata:
           name: ${NAME}
           labels:
-            name: ${NAME}
+            app: ${NAME}
+            app-group: ${APP_GROUP}
+            env: ${TAG_NAME}
         spec:
           volumes:
             - name: ${NAME}
