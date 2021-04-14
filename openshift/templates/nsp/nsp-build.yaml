@@ -1,0 +1,47 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  name: global-nsp-build-template
+objects:
+
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: deny-by-default
+    spec:
+      description: |
+        Deny all traffic by default.
+      podSelector: {}
+      ingress: []
+
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: jenkins-allow-ingress
+      labels:
+        name: jenkins-allow-ingress
+    spec:
+      description: |
+        Allow traffic from routes into the jenkins container(s).
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      podSelector:
+        matchLabels:
+          name: jenkins
+      policyTypes:
+        - Ingress
+
+parameters:
+  - name: NAMESPACE_NAME
+    displayName: The target namespace for the resources.
+    required: true
+    value:
+  - name: TAG_NAME
+    displayName: Environment Name
+    description: Environment name.  For the build environment this will typically be 'tools'
+    required: true
+    value: tools

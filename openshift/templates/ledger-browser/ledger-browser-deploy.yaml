@@ -1,0 +1,340 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: ${NAME}-deployment-template
+  annotations:
+    description: Deployment template for the von-network ledger browser.
+    iconClass: icon-python
+objects:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: ${NAME}-allow-ingress
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    spec:
+      description: |
+        Allow traffic from routes into the ${ROLE} container(s).
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      podSelector:
+        matchLabels:
+          app: ${NAME}
+          app-group: ${APP_GROUP}
+          env: ${TAG_NAME}
+      policyTypes:
+        - Ingress
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: ${PERSISTENT_VOLUME_NAME}
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    spec:
+      storageClassName: ${PERSISTENT_VOLUME_CLASS}
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: ${PERSISTENT_VOLUME_SIZE}
+
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: ${WALLET_CREDENTIAL_STORE_NAME}
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    data:
+      key: ${WALLET_ENCRYPTION_KEY}
+      seed: ${INDY_WALLET_SEED}
+      did: ${INDY_WALLET_DID}
+    type: Opaque
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ${NAME}
+      annotations:
+        description: Exposes and load balances the application pods
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    spec:
+      ports:
+        - name: 8080-tcp
+          port: 8080
+          targetPort: ${{PORT}}
+      selector:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: ${NAME}
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    spec:
+      host: ${APPLICATION_DOMAIN}
+      port:
+        targetPort: 8080-tcp
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: ${NAME}
+        weight: 100
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: ${NAME}
+      annotations:
+        description: Defines how to deploy the application server
+      labels:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+    spec:
+      strategy:
+        type: Recreate
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - ${NAME}
+            from:
+              kind: ImageStreamTag
+              namespace: ${IMAGE_NAMESPACE}
+              name: ${SOURCE_IMAGE_NAME}:${TAG_NAME}
+        - type: ConfigChange
+      replicas: 1
+      selector:
+        app: ${NAME}
+        app-group: ${APP_GROUP}
+        env: ${TAG_NAME}
+      template:
+        metadata:
+          name: ${NAME}
+          labels:
+            app: ${NAME}
+            app-group: ${APP_GROUP}
+            env: ${TAG_NAME}
+        spec:
+          volumes:
+            - name: ${NAME}
+              persistentVolumeClaim:
+                claimName: ${PERSISTENT_VOLUME_NAME}
+          containers:
+            - name: ${NAME}
+              image: " "
+              command:
+                - ./scripts/start_webserver.sh
+              ports:
+                - containerPort: ${{PORT}}
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 5
+                periodSeconds: 30
+                initialDelaySeconds: 3
+                timeoutSeconds: 20
+                httpGet:
+                  path: /
+                  port: 8080
+              livenessProbe:
+                failureThreshold: 5
+                periodSeconds: 60
+                initialDelaySeconds: 30
+                timeoutSeconds: 20
+                httpGet:
+                  path: /
+                  port: 8080
+              env:
+                - name: GENESIS_URL
+                  value: ${GENESIS_URL}
+                - name: IP
+                  value: ${IP}
+                - name: PORT
+                  value: ${PORT}
+                - name: REGISTER_NEW_DIDS
+                  value: ${REGISTER_NEW_DIDS}
+                - name: LEDGER_INSTANCE_NAME
+                  value: ${LEDGER_INSTANCE_NAME}
+                - name: INFO_SITE_TEXT
+                  value: ${INFO_SITE_TEXT}
+                - name: INFO_SITE_URL
+                  value: ${INFO_SITE_URL}
+                - name: WEB_ANALYTICS_SCRIPT
+                  value: ${WEB_ANALYTICS_SCRIPT}
+                - name: LEDGER_CACHE_PATH
+                  value: ${LEDGER_CACHE_PATH}
+                - name: LEDGER_SEED
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${WALLET_CREDENTIAL_STORE_NAME}
+                      key: seed
+              resources:
+                requests:
+                  cpu: ${CPU_REQUEST}
+                  memory: ${MEMORY_REQUEST}
+                limits:
+                  cpu: ${CPU_LIMIT}
+                  memory: ${MEMORY_LIMIT}
+              volumeMounts:
+                - name: ${NAME}
+                  mountPath: ${VOLUME_MOUNT_PATH}
+
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to all of the OpenShift resources associated to the server instance.
+    required: true
+    value: ledger-browser
+  - name: APP_GROUP
+    displayName: App Group
+    description: The name assigned to all of the deployments in this project.
+    required: true
+    value: von-network
+  - name: SOURCE_IMAGE_NAME
+    displayName: Source Image Name
+    description: The name of the image to use for this resource.
+    required: true
+    value: von-network-base
+  - name: IMAGE_NAMESPACE
+    displayName: Image Namespace
+    required: true
+    description: The namespace of the OpenShift project containing the image stream for the application.
+    value: ca7f8f
+  - name: APPLICATION_DOMAIN
+    displayName: Application Hostname
+    description: The exposed hostname that will route to the Django service, if left blank a value will be defaulted.
+    value: sovrin-mainnet-browser.vonx.io
+  - name: WALLET_ENCRYPTION_KEY
+    displayName: Wallet Encryption Key
+    description: The encryption key to be used for the wallets.  Needs to be basee64 encoded.
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+  - name: INDY_WALLET_SEED
+    displayName: Indy Wallet Seed
+    description: The Seed used for the indy wallet.  Needs to be basee64 encoded.
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+  - name: INDY_WALLET_DID
+    displayName: Indy Wallet DID
+    description: The DID associated to the indy wallet.  Needs to be basee64 encoded.
+    required: false
+    generate: expression
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+  - name: WALLET_CREDENTIAL_STORE_NAME
+    displayName: Wallet Credential Store Name
+    description: The name of the wallet credential store (aka The name of the secret that contains the wallet credentials).
+    required: true
+    value: wallet-credentials
+  - name: TAG_NAME
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    value: prod
+    required: true
+  - name: GENESIS_URL
+    displayName: Genesis Url
+    description: URL for downloading a copy of the genesis file defining the ledger connection for the environment.
+    required: false
+    value: https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
+  - name: IP
+    displayName: Host IP
+    description: The IP on which the server should listen.
+    required: false
+    value: 0.0.0.0
+  - name: PORT
+    displayName: Host PORT
+    description: The port on which the server should listen.
+    required: false
+    value: "8080"
+  - name: REGISTER_NEW_DIDS
+    displayName: Register New Dids
+    description: If set to `True`, it will enable the user interface allowing new identity owners to write a DID to the ledger. It defaults to `False`.
+    required: false
+    value: "False"
+  - name: LEDGER_INSTANCE_NAME
+    displayName: Register New Dids
+    description: The name of the ledger instance the Ledger Brwoser is connected to. Defaults to `Ledger Browser`.
+    required: false
+    value: Sovrin Main Net
+  - name: INFO_SITE_TEXT
+    displayName: Site Info Text
+    description: The display text used for the `INFO_SITE_URL`. If not specified, it will default to the value set for `INFO_SITE_URL`.
+    required: false
+    value: Verifiable Organizations Network
+  - name: INFO_SITE_URL
+    displayName: Site Info URL
+    description: A URL that will be displayed in the header, and can be used to reference another external website containing details/resources on the current ledger browser instance.
+    required: false
+    value: https://vonx.io/
+  - name: WEB_ANALYTICS_SCRIPT
+    displayName: Web Analytics Script
+    description: The JavaScript code used by web analytics servers. Populate this environment variable if you want to track the usage of your site with Matomo, Google Analytics or any other JavaScript based trackers. Include the whole tag, ensuring quotes are escaped properly.
+    required: false
+    value: <!-- Matomo --><script type="text/javascript">var _paq = window._paq || [];/* tracker methods like "setCustomDimension" should be called before "trackPageView" */_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function() {var u="//matomo.vonx.io/";_paq.push(['setTrackerUrl', u+'matomo.php']);_paq.push(['setSiteId', '3']);var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);})();</script><!-- End Matomo Code -->
+  - name: LEDGER_CACHE_PATH
+    displayName: Ledger Cache Path
+    description: The path to the ledger cache database.
+    required: false
+    value: /home/indy/.indy_client/ledger-cache/ledger-cache-db
+  - name: VOLUME_MOUNT_PATH
+    displayName: Volume Mount Path
+    description: Volume mount path
+    required: true
+    value: /home/indy/.indy_client/ledger-cache
+  - name: PERSISTENT_VOLUME_NAME
+    displayName: Persistent Volume Name
+    description: The name of the persistent volume associated with the deployment.
+    required: true
+    value: ledger-browser-pvc
+  - name: PERSISTENT_VOLUME_SIZE
+    displayName: Persistent Volume Size
+    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 5Gi
+  - name: PERSISTENT_VOLUME_CLASS
+    displayName: Persistent Volume Class name
+    description: The class of the volume
+    required: false
+    value: netapp-block-standard
+  - name: CPU_REQUEST
+    displayName: Resources CPU Request
+    description: The resources CPU request (in cores) for this build.
+    required: true
+    value: 0m
+  - name: CPU_LIMIT
+    displayName: Resources CPU Limit
+    description: The resources CPU limit (in cores) for this build.
+    required: true
+    value: 1000m
+  - name: MEMORY_REQUEST
+    displayName: Resources Memory Request
+    description: The resources Memory request (in Mi, Gi, etc) for this build.
+    required: true
+    value: 0Mi
+  - name: MEMORY_LIMIT
+    displayName: Resources Memory Limit
+    description: The resources Memory limit (in Mi, Gi, etc) for this build.
+    required: true
+    value: 4000Mi

@@ -6,12 +6,12 @@
 NAME=ledger-browser
 APP_GROUP=von-network
 SOURCE_IMAGE_NAME=von-network-base
-IMAGE_NAMESPACE=devex-von-tools
+IMAGE_NAMESPACE=ca7f8f-tools
 APPLICATION_DOMAIN=sovrin-mainnet-browser.vonx.io
-WALLET_ENCRYPTION_KEY=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
-INDY_WALLET_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
-INDY_WALLET_DID=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
-WALLET_CREDENTIAL_STORE_NAME=wallet-credentials
+# WALLET_ENCRYPTION_KEY=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# INDY_WALLET_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# INDY_WALLET_DID=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+WALLET_CREDENTIAL_STORE_NAME=ledger-browser-wallet-credentials
 TAG_NAME=prod
 GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
 IP=0.0.0.0
@@ -25,7 +25,7 @@ LEDGER_CACHE_PATH=/home/indy/.indy_client/ledger-cache/ledger-cache-db
 VOLUME_MOUNT_PATH=/home/indy/.indy_client/ledger-cache
 PERSISTENT_VOLUME_NAME=ledger-browser-pvc
 PERSISTENT_VOLUME_SIZE=5Gi
-PERSISTENT_VOLUME_CLASS=gluster-file-db
+PERSISTENT_VOLUME_CLASS=netapp-block-standard
 CPU_REQUEST=0m
 CPU_LIMIT=1000m
 MEMORY_REQUEST=0Mi

@@ -1,0 +1,7 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/nsp/nsp-deploy.yaml
+#=========================================================
+# NAMESPACE_NAME=ca7f8f
+TAG_NAME=test
