@@ -5,7 +5,7 @@ ENV RUST_LOG ${RUST_LOG:-warning}
 
 ADD config ./config
 ADD server/requirements.txt server/
-RUN pip install --upgrade pip
+#RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r server/requirements.txt
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
