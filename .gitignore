@@ -145,3 +145,6 @@ Pipfile
 # Custom TAA
 config/aml.json
 config/taa.json
+
+# Visual Studio Code
+.history
