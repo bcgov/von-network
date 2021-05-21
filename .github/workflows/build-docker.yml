@@ -10,10 +10,16 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
 
+      - name: Lowercase repo owner
+        id: lowercase_repo_owner
+        uses: ASzc/change-string-case-action@v1
+        with:
+          string: ${{ github.repository_owner }}
+
       - name: Prepare labels and tags
         id: prep
         run: |
-          DOCKER_IMAGE=ghcr.io/idunion/von-network
+          DOCKER_IMAGE=ghcr.io/${{ steps.lowercase_repo_owner.outputs.lowercase }}/von-network
           VERSION=edge
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
