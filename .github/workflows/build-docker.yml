@@ -6,8 +6,16 @@ on:
       - main
       - master # will be renaming soon.
 
+# Ensure only the most recent workflow runs.
+concurrency:
+  group: von-network
+  cancel-in-progress: true
+
 jobs:
   push_to_registry:
+    # Ensure this only runs on the main repository so we're not publishing images to other repositories.
+    if: ${{ github.event.repository.full_name == 'bcgov/von-network' }}
+
     name: Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
     steps:
@@ -62,4 +70,3 @@ jobs:
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
             org.opencontainers.image.revision=${{ github.sha }}
-
