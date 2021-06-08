@@ -1,6 +1,10 @@
 name: Build and Push Docker Image
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - master # will be renaming soon.
 
 jobs:
   push_to_registry:
