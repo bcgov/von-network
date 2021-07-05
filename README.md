@@ -54,7 +54,7 @@ GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/so
 
 Note that it takes some time to get the transactions and status from the network. Once the UI appears, try getting the `Genesis Transaction` that the server started up properly.
 
-## Running the the web server on your local machine
+## Running the web server on your local machine
 
 You can run the web server/ledger browser on its own, and point to another Indy/Sovrin network.
 
