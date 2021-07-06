@@ -31,12 +31,16 @@ usage () {
 
   start | up - Starts all containers
        You can include a '--wait' parameter which will wait until the ledger is active
+       You can include a '--taa-sample' parameter which will install the sample Transaction Authorisation Agreement
+        files into the ledger. Alternatively you can create your own config/aml.json and config/taa.json files which
+        will get installed into the ledger at start (see config/sample_aml.json and config/sample_taa.json for format)
        When using the '--logs' option, use ctrl-c to exit logging. Use "down" or "stop" to stop the run.
         Examples:
         $0 start
         $0 start --logs
         $0 start <ip_proxy_1>,<ip_proxy_2>,<ip_proxy_3>,<ip_proxy_4> &
         $0 start --wait --logs
+        $0 start --taa-sample
 
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
@@ -191,6 +195,9 @@ function initEnv() {
       --wait)
         WAIT_FOR_LEDGER=1
         ;;
+      --taa-sample)
+        USE_SAMPLE_TAA=1
+        ;;
       *)
         # If not recognized, save it for later procesing ...
         set -- "$@" "$arg"
@@ -337,6 +344,30 @@ function wait_for_ledger() {
   )
 }
 
+function install_taa() {
+  (
+    # if flag is set, copy the sample config/sample_aml.json and config/sample_taa.json
+    # to config/aml.json and config/taa.json. Also create a marker file so that we 
+    # clean up on shutdown and still support backward compatibility where people previously
+    # their own custom versions and don't want them removed.
+    local rtnCd=0
+    if [ ! -z "${USE_SAMPLE_TAA}" ]; then
+      rtnCd=$(cp -f ./config/sample_aml.json ./config/aml.json) && $(cp -f ./config/sample_taa.json ./config/taa.json)
+      touch ./config/.samples.used
+    fi
+    return ${rtnCd}
+  )
+}
+
+function remove_taa() {
+  (
+    # if the marker exists indicating we created the aml and taa files, make sure we remove them to clean up. 
+    if [ -f "./config/.samples.used" ]; then
+      rm -f ./config/aml.json ./config/taa.json ./config/.samples.used
+    fi
+  )
+}
+
 function generateKey(){
   (
     _length=${1:-48}
@@ -370,6 +401,7 @@ shift || COMMAND=usage
 case "${COMMAND}" in
   start|up)
       initEnv "$@"
+      install_taa
       docker-compose \
         --log-level ERROR up \
         -d webserver node1 node2 node3 node4
@@ -379,6 +411,7 @@ case "${COMMAND}" in
     ;;
   start-combined)
       initEnv "$@"
+      install_taa
       docker-compose \
         --log-level ERROR up \
         -d webserver nodes
@@ -417,12 +450,14 @@ case "${COMMAND}" in
       initEnv "$@"
       docker-compose \
         --log-level ERROR stop
+      remove_taa
     ;;
   down|rm)
       initEnv "$@"
       docker-compose \
         --log-level ERROR down \
         -v
+      remove_taa
     ;;
   build)
       docker build $(initDockerBuildArgs) -t von-network-base .
