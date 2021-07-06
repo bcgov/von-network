@@ -58,7 +58,6 @@ usage () {
          are not deleted so they will be reused the next time you run start.
 
   rebuild - Rebuild the docker images.
-            You can include a '--taa' parameter which will install the sample Transaction Authorisation Agreement into the ledger
 
   dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
 
