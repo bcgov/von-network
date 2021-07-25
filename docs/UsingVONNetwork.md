@@ -57,7 +57,9 @@ If you want to get back to seeing the logging data from the nodes, run with the 
 
 ## Browsing the Ledger
 
-Once the ledger is running, you can see the ledger by going to the web server running on port 9000. On localhost, that means going to [http://localhost:9000](http://localhost:9000). If you don't see the VON Network web server, or there are error messages, check the logs in your terminal session.
+Once the ledger is running, you can see the ledger by going to the web server running on port 9000. On localhost, that means going to [http://localhost:9000](http://localhost:9000).
+If you are using Play with Docker, click on the "9000" link in the header of the page--that will open up the page on which the web server is running.
+If you don't see the VON Network web server, or there are error messages, check the logs in your terminal session.
 
 From VON Network web server you can:
 
