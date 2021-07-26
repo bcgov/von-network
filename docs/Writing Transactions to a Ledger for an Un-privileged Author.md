@@ -4,7 +4,7 @@
 
 In this document, we mimic an entity writing Indy objects (schema and credential definition) to a production ledger where that entity (the transaction author) does not have full write permission to the ledger. To be permitted to execute the writes, the transaction author must create the transactions, sign them and get an endorser (who has write permissions) to sign the transactions before the transactions can be submitted to the ledger.
 
-The process uses a fully containerized Indy-CLI environment so there is no need to have the Indy-CLI or any of it's dependencies installed on your machine. You can generalize the procedure to write transactions to any ledger by initializing the containerized Indy-CLI environment with the genesis file from the desired pool and tweaking the commands presented below.
+The process uses a fully containerized Indy-CLI environment so there is no need to have the Indy-CLI or any of its dependencies installed on your machine. You can generalize the procedure to write transactions to any ledger by initializing the containerized Indy-CLI environment with the genesis file from the desired pool and tweaking the commands presented below.
 
 ## Things We Don't Cover
 
@@ -12,7 +12,7 @@ There are a few things we don't cover in this workshop.
 
 On the Sovrin MainNet production network, the transaction author and endorser must agree to legal documents based on their role (author or endorser), and a payment is required for the writes. The Transaction Author Agreement (TAA) must be agreed to online, while the Transaction Endorser Agreement is a more formal agreement that is physically signed by the parties involved. We don't cover those parts of the process.
 
-How the DIDs for the author and endorser formally get created on a production ledger is not covered. In the workshop, we use the VON Network's "Register DID" capability to create the DIDs. Further, we don't cover how an author gets connected with an endorser. In this example, we assume that both are together on the same system. We'll point out where text files would be transferred between the participants to complete the process. Note that there is no private information (no private keys) in the shared text files, so there is no need for special handling requirements for the files. The the files contain the same data that will be written to the ledger, plus some cryptographic signatures.
+How the DIDs for the author and endorser formally get created on a production ledger is not covered. In the workshop, we use the VON Network's "Register DID" capability to create the DIDs. Further, we don't cover how an author gets connected with an endorser. In this example, we assume that both are together on the same system. We'll point out where text files would be transferred between the participants to complete the process. Note that there is no private information (no private keys) in the shared text files, so there is no need for special handling requirements for the files. The files contain the same data that will be written to the ledger, plus some cryptographic signatures.
 
 ## Process Automation
 
@@ -45,6 +45,8 @@ For each object (the schema and credential definition) to be written to the ledg
 
 Since there are two objects, we'll go through those steps twice. At the end of the process, we'll restart the issuer agent, verify that it can start and issue a credential.
 
+**Note:** *In this example the `DHOST` variable is set with the DockerHost IP address.  This (correctly) assumes the wallet to which you are connecting is hosted in docker.  If you are, instead, post forwarding the wallet database, review the **Pro Tips** section at the end of this document for additional details.*
+
 ## The Production Writes Workshop
 
 To get started, open a bash shell on your local system that is capable of running git and docker. If you need more information about the prerequisites, you can [learn more here](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-docker-locally). We'll be cloning three repos, so we recommend that you start in an empty directory that will be easy to clean up after the process.
@@ -61,8 +63,7 @@ pushd von-network
 ./manage build
 mkdir tmp
 chmod a+rws tmp cli-scripts
-export DHOST=$(./manage dockerhost)
-export DHOST=$(echo $DHOST | sed "s/DockerHost: //" )
+export DHOST=$(./manage dockerhost | sed '/^$/d;s~DockerHost:[[:space:]]~~') && echo "DHOST set to ${DHOST}"
 export key=key
 popd
 git clone https://github.com/bcgov/TheOrgBook
@@ -437,4 +438,34 @@ pushd von-agent-template/docker
 ./manage rm
 popd
 
+```
+
+# Pro Tips
+
+## Connecting to a Wallet Hosted on OpenShift
+
+### Port forward your agent's wallet database to your local machine.
+
+For example:
+```
+oc -n devex-von-bc-registries-agent-dev port-forward wallet-db-3-xcp56 5444:5432
+```
+
+*This will port forward wallet-db-3-xcp56:5432 to localhost:5444.*
+
+### Example - Exporting the Agent's wallet
+
+*When a database is port-forwared from OpenShift, `host.docker.internal` is used to access `localhost` on your local machine from within the Indy-Cli container.  The `host.docker.internal` feature is only available on Windows and MAC at the moment.  If you are running on Linux you can work with the VON team to find an alternative, for some reason using the DockerHost IP address does not work when connecting to port-forwared databases.*
+
+*If importing (the opposite of this example) the database, make sure you use the same name and credentials used by the Agent.  If you don't the Agent will not be able to connect to the database.*
+
+For example:
+```bash
+./manage \
+  indy-cli export-wallet \
+  walletName=agent_buybc_wallet \
+  storageType=postgres_storage \
+  storageConfig='{"url":"host.docker.internal:5444","max_connections":5}' \
+  storageCredentials='{"account":"<User_Name>","password":"<Password>","admin_account":"postgres","admin_password":"<Admin_Password>"}' \
+  exportPath=/tmp/buybc_issuer_wallet_initialized_with_did.export
 ```
