@@ -628,12 +628,16 @@ class AnchorHandle:
 
         ret = []
         for node in node_aliases:
-            reply = json.loads(node_data[node])
-            if "result" not in reply:
+            try:
+                reply = json.loads(node_data[node])
+                if "result" not in reply:
+                    continue
+                data = reply["result"].get("data")
+                data["Node_info"]["Name"] = node
+                ret.append(data)
+            # Some of the nodes a not reachable.
+            except json.decoder.JSONDecodeError:
                 continue
-            data = reply["result"].get("data")
-            data["Node_info"]["Name"] = node
-            ret.append(data)
         return ret
 
     @property
