@@ -10,6 +10,7 @@ export LEDGER_TIMEOUT="${LEDGER_TIMEOUT:-60}"
 export LEDGER_URL_CONFIG="${LEDGER_URL_CONFIG}"
 
 export ROOT_BACKUP_DIR=backup
+export SHELL_CMD='bash'
 
 # Running on Windows?
 if [[ "$OSTYPE" == "msys" ]]; then
@@ -93,6 +94,25 @@ usage () {
             - Restore the backup set containing the von_client-data_2021-08-23_08-21-08.tar archive.
           $0 restore 2021-08-23
             - Restore the most recent backup set from 2021-08-23.
+
+  restoreArchive <archive> <volume> [tarOptions]- Restore a tar.gz archive to a named volume.
+          Useful for restoring an archive for inspection and debugging purposes.
+          Examples:
+          $0 restoreArchive ./backup/Node3-ledger-backup.tar.gz node3-bcovrin-tes
+          $0 restoreArchive ./backup/Node3-ledger-backup.tar.gz node3-bcovrin-test --strip=1
+            - Restore the archive to the named volume, stripping the first level directory from the archive.
+            - Useful in the scenario where the archive contains additional directory levels that aren’t needed in the restored copy.
+
+  debugVolume <volume> [volumeMountFolder] - Mount a named volume into a 'debug' instance of the `von-network-base` image with an interactive shell.
+          Provides a containerized environment to perform analysis on the ledger databases and files.
+          The image conatins the RocksDB sst_dump tool an be used to verify and inspect the RocksDB database files; `*.sst` files.
+          For eaxmple the command 'find /debug_volume/ -name "*.sst" | xargs -I {} sst_dump --file={} --command=verify' can be used to do a quick
+          verification on all the database files once the container starts.
+          Usage information for sst_dump can be found here; https://github.com/facebook/rocksdb/wiki/Administration-and-Data-Access-Tool
+          Examples:
+          $0 debugVolume node3-bcovrin-test
+          $0 debugVolume node1-bcovrin-test /home/indy/ledger
+            - Mount the named volume to '/home/indy/ledger'
 EOF
 exit 1
 }
@@ -417,7 +437,6 @@ function generateSecrets() {
 function backup() {
   (
     _msg=$@
-
     volumes=$(docker -l ERROR compose config --volumes)
     timeStamp=`date +\%Y-\%m-\%d_%H-%M-%S`
     datePart=${timeStamp%%_*}
@@ -450,34 +469,89 @@ function restore() {
     _fileName=${1}
     archivePath=$(findBackup ${1})
     archiveDirectory=${archivePath%/*}
-
     datePart=$(echo ${archivePath} | awk -F_ '{print $3}')
     timePart=$(echo ${archivePath} | awk -F_ '{print $4}')
     archiveSuffix="${datePart}_${timePart}"
-    timePart=${timePart%%.*}
-    backupVolumeMount=$(getVolumeMount ./${ROOT_BACKUP_DIR})/
 
     if promptForConfirmation "You are about to restore from the '${archiveDirectory}' backup set.\nYour existing data will be lost if not backed up first."; then
-
-      deleteVolumes
       volumes=$(docker -l ERROR compose config --volumes)
       for volume in ${volumes}; do
         targetVolume=${COMPOSE_PROJECT_NAME}_${volume}
         archiveName=${targetVolume}_${archiveSuffix}
-        archivePath="/${archiveDirectory}/${archiveName}"
+        archivePath="${archiveDirectory}/${archiveName}"
 
-        echoYellow \\n"Restoring ${targetVolume} from ${archivePath} ..."
-        docker run \
-          --rm \
-          --name von-network-restore \
-          --user root \
-          -v ${backupVolumeMount}:/${ROOT_BACKUP_DIR} \
-          -v ${targetVolume}:/target_volume von-network-base \
-          tar --same-owner -xzvpf ${archivePath} -C /target_volume/
+        restoreArchive -q "${archivePath}" "${targetVolume}"
       done
     else
       echo -e \\n"Restore aborted."
     fi
+  )
+}
+
+function restoreArchive()
+{
+  (
+    local OPTIND
+    local quiet
+    unset quiet
+    while getopts q FLAG; do
+      case $FLAG in
+        q ) quiet=1 ;;
+      esac
+    done
+    shift $((OPTIND-1))
+
+    archive=${1}
+    volume=${2}
+    tarOptions=${3} # Example "--strip=1", to remove the first directory level.
+    if [ -z ${archive} ] || [ -z ${volume} ]; then
+      echoYellow "You must supply the path to the archive and the name of the volume to which the archive will be restored."
+      exit 1
+    fi
+
+    archiveFolder=${archive%/*}
+    archiveName=${archive##*/}
+    archiveToRestore=/${ROOT_BACKUP_DIR}/${archiveName}
+    archiveVolumeMount=$(getVolumeMount ${archiveFolder})
+
+    if [ ! -z "${quiet}" ] || promptForConfirmation "You are about to restore '${archive}' to ${volume}.\nYour existing data will be lost if not backed up first." ; then
+      deleteVolume ${volume}
+      echoYellow \\n"Restoring ${volume} from ${archive} ..."
+      docker run \
+        --rm \
+        --name von-network-restore \
+        --user root \
+        -v ${archiveVolumeMount}:/${ROOT_BACKUP_DIR} \
+        -v ${volume}:/target_volume von-network-base \
+        tar --same-owner -xzvpf ${archiveToRestore} -C /target_volume/ ${tarOptions}
+    else
+      echo -e \\n"Restore aborted."
+    fi
+  )
+}
+
+function debugVolume()
+{
+  (
+    volume=${1}
+    volumeMountFolder=${2:-/debug_volume}
+    if [ -z ${volume} ]; then
+      echoYellow "You must supply the name of the volume to attach to the debug session."
+      exit 1
+    fi
+
+    backupVolumeMount=$(getVolumeMount ./${ROOT_BACKUP_DIR})/
+
+    echo -e "\nOpening a debug session with the followig volume mounts:\n  - '${volume}':'${volumeMountFolder}'\n  - '${backupVolumeMount}':'/${ROOT_BACKUP_DIR}'\n"
+    docker run \
+      --rm \
+      -it \
+      --network="host" \
+      --user root \
+      -v ${backupVolumeMount}:/${ROOT_BACKUP_DIR} \
+      -v ${volume}:${volumeMountFolder} \
+      --entrypoint ${SHELL_CMD} \
+      von-network-base
   )
 }
 
@@ -515,6 +589,21 @@ function promptForConfirmation(){
       return 0
     else
       return 1
+    fi
+  )
+}
+
+function deleteVolume() {
+  (
+    volume=${1}
+
+    echoYellow \\n"Deleting volume '${volume}' ..."
+    containerId=$(docker volume rm ${volume} 2>&1 >/dev/null | sed -e 's~.*\[\(.*\)\]~\1~' | grep -v ${volume})
+    if [ ! -z "${containerId}" ]; then
+      # The volume is in use by a container.  Remove the container before deleting the volume.
+      docker stop ${containerId} > /dev/null 2>&1
+      docker rm ${containerId} > /dev/null 2>&1
+      docker volume rm ${volume} > /dev/null 2>&1
     fi
   )
 }
@@ -628,6 +717,17 @@ case "${COMMAND}" in
     ;;
   restore)
       restore $@
+    ;;
+  restorearchive)
+      archive=${1}
+      volume=${2}
+      tarOptions=${3}
+      restoreArchive ${archive} ${volume} ${tarOptions}
+    ;;
+  debugvolume)
+      volume=${1}
+      volumeMountFolder=${2}
+      debugVolume ${volume} ${volumeMountFolder}
     ;;
   *)
       usage;;
