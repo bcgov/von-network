@@ -10,9 +10,6 @@ RUN pip install --no-cache-dir -r server/requirements.txt
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
 ADD --chown=indy:indy . $HOME
-RUN tar -xzf ./bin/sst_dump.tar.gz -C ./bin \
-    && rm ./bin/sst_dump.tar.gz \
-    && chmod +x ./bin/sst_dump
 
 RUN mkdir -p \
     $HOME/cli-scripts \
