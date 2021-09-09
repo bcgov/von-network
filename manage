@@ -288,8 +288,8 @@ function runCliCommand() {
     cliUsage
   fi
 
-  cmd="${terminalEmu} docker-compose \
-    --log-level ERROR run "
+  cmd="${terminalEmu} docker --log-level error \
+    compose run "
 
   if [ -z "${VOLUMES}" ] && [ -d "${DEFAULT_CLI_SCRIPT_DIR}" ] ; then
     VOLUMES=$(realpath ${DEFAULT_CLI_SCRIPT_DIR})
@@ -305,14 +305,14 @@ function runCliCommand() {
         # When running on Windows, you need to prefix the path with an extra '/'
         path="/${path}"
       fi
-      cmd+=" --volume='${path}:/home/indy/${mountPoint}:Z'"
+      cmd+=" -v='${path}:/home/indy/${mountPoint}:Z'"
     done
   fi
 
   # Need to escape quotes and commas so they don't get removed along the way ...
   escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
 
-  # Quote the escaped args so docker-compose does not try to perform any processing on them ...
+  # Quote the escaped args so docker compose does not try to perform any processing on them ...
   # Separate the command and the args so they don't get treated as one argument by the scripts in the container ...
   cmd+="
     --rm client \
@@ -341,9 +341,9 @@ function logs() {
     log_args=()
     (( no_tail != 1 )) && log_args+=( '-f' )
     if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
-      docker-compose \
-        --log-level ERROR logs \
-         "${log_args[@]}" "$@"
+      docker --log-level error \
+        compose logs \
+        "${log_args[@]}" "$@"
     fi
   )
 }
@@ -644,8 +644,8 @@ case "${COMMAND}" in
   start|up)
       initEnv "$@"
       install_taa
-      docker-compose \
-        --log-level ERROR up \
+      docker --log-level error \
+        compose up \
         -d webserver node1 node2 node3 node4
       wait_for_ledger
       logs
@@ -654,8 +654,8 @@ case "${COMMAND}" in
   start-combined)
       initEnv "$@"
       install_taa
-      docker-compose \
-        --log-level ERROR up \
+      docker --log-level error \
+        compose up \
         -d webserver nodes
       wait_for_ledger
       logs
@@ -665,16 +665,16 @@ case "${COMMAND}" in
       if [ -z "$LEDGER_SEED" ]; then
         export ANONYMOUS=1
       fi
-      docker-compose \
-        --log-level ERROR up \
+      docker --log-level error \
+        compose up \
         -d webserver
       wait_for_ledger
       logs webserver
     ;;
   synctest)
       initEnv "$@"
-      docker-compose \
-        --log-level ERROR up \
+      docker --log-level error \
+        compose up \
         -d synctest node1 node2 node3 node4
       logs -f synctest
     ;;
@@ -690,8 +690,8 @@ case "${COMMAND}" in
     ;;
   stop)
       initEnv "$@"
-      docker-compose \
-        --log-level ERROR stop
+      docker --log-level error \
+        compose stop
       remove_taa
     ;;
   down|rm)
