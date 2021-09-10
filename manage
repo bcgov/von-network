@@ -18,6 +18,19 @@ if [[ "$OSTYPE" == "msys" ]]; then
   terminalEmu="winpty"
 fi
 
+# ========================================================================================================
+# Dynamically detect the version of docker compose and adjust the '--log-level' syntax appropriately.
+# --------------------------------------------------------------------------------------------------------
+# Default to using the existing syntax
+dockerCompose="docker-compose --log-level ERROR"
+dockerComposeVersion=$(docker-compose version --short | sed 's~v~~;s~-.*~~')
+dockerComposeVersion=${dockerComposeVersion%.*}
+if [[ $(awk "BEGIN {print (${dockerComposeVersion} >= 2.0) ? \"true\" : \"false\" }") == "true" ]]; then
+  # Use the new syntax when version 2.0.0 or greater is detected.
+  dockerCompose="docker --log-level error compose"
+fi
+# ========================================================================================================
+
 # =================================================================================================================
 # Usage:
 # -----------------------------------------------------------------------------------------------------------------
@@ -288,8 +301,8 @@ function runCliCommand() {
     cliUsage
   fi
 
-  cmd="${terminalEmu} docker --log-level error \
-    compose run "
+  cmd="${terminalEmu} ${dockerCompose} \
+    run "
 
   if [ -z "${VOLUMES}" ] && [ -d "${DEFAULT_CLI_SCRIPT_DIR}" ] ; then
     VOLUMES=$(realpath ${DEFAULT_CLI_SCRIPT_DIR})
@@ -305,7 +318,7 @@ function runCliCommand() {
         # When running on Windows, you need to prefix the path with an extra '/'
         path="/${path}"
       fi
-      cmd+=" -v='${path}:/home/indy/${mountPoint}:Z'"
+      cmd+=" -v '${path}:/home/indy/${mountPoint}:Z'"
     done
   fi
 
@@ -341,8 +354,8 @@ function logs() {
     log_args=()
     (( no_tail != 1 )) && log_args+=( '-f' )
     if [ ! -z "${TAIL_LOGS}" ] || [ ! -z "${_force}" ]; then
-      docker --log-level error \
-        compose logs \
+      ${dockerCompose} \
+        logs \
         "${log_args[@]}" "$@"
     fi
   )
@@ -644,8 +657,8 @@ case "${COMMAND}" in
   start|up)
       initEnv "$@"
       install_taa
-      docker --log-level error \
-        compose up \
+      ${dockerCompose} \
+        up \
         -d webserver node1 node2 node3 node4
       wait_for_ledger
       logs
@@ -654,8 +667,8 @@ case "${COMMAND}" in
   start-combined)
       initEnv "$@"
       install_taa
-      docker --log-level error \
-        compose up \
+      ${dockerCompose} \
+        up \
         -d webserver nodes
       wait_for_ledger
       logs
@@ -665,16 +678,16 @@ case "${COMMAND}" in
       if [ -z "$LEDGER_SEED" ]; then
         export ANONYMOUS=1
       fi
-      docker --log-level error \
-        compose up \
+      ${dockerCompose} \
+        up \
         -d webserver
       wait_for_ledger
       logs webserver
     ;;
   synctest)
       initEnv "$@"
-      docker --log-level error \
-        compose up \
+      ${dockerCompose} \
+        up \
         -d synctest node1 node2 node3 node4
       logs -f synctest
     ;;
@@ -690,8 +703,8 @@ case "${COMMAND}" in
     ;;
   stop)
       initEnv "$@"
-      docker --log-level error \
-        compose stop
+      ${dockerCompose} \
+        stop
       remove_taa
     ;;
   down|rm)
