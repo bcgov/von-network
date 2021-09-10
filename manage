@@ -450,7 +450,7 @@ function generateSecrets() {
 function backup() {
   (
     _msg=$@
-    volumes=$(docker -l ERROR compose config --volumes)
+    volumes=$(${dockerCompose} config --volumes)
     timeStamp=`date +\%Y-\%m-\%d_%H-%M-%S`
     datePart=${timeStamp%%_*}
     timePart=${timeStamp#*_}
@@ -462,6 +462,7 @@ function backup() {
     fi
 
     for volume in ${volumes}; do
+      volume=$(echo ${volume} |sed 's~\r$~~')
       sourceVolume=${COMPOSE_PROJECT_NAME}_${volume}
       archiveName=${sourceVolume}_${timeStamp}.tar.gz
       archivePath="/${backupDir}/${archiveName}"
@@ -487,8 +488,9 @@ function restore() {
     archiveSuffix="${datePart}_${timePart}"
 
     if promptForConfirmation "You are about to restore from the '${archiveDirectory}' backup set.\nYour existing data will be lost if not backed up first."; then
-      volumes=$(docker -l ERROR compose config --volumes)
+      volumes=$(${dockerCompose} config --volumes)
       for volume in ${volumes}; do
+        volume=$(echo ${volume} |sed 's~\r$~~')
         targetVolume=${COMPOSE_PROJECT_NAME}_${volume}
         archiveName=${targetVolume}_${archiveSuffix}
         archivePath="${archiveDirectory}/${archiveName}"
@@ -626,7 +628,7 @@ function deleteVolumes() {
     _projectName=${COMPOSE_PROJECT_NAME:-docker}
 
     echoYellow \\n"Stopping and removing any running containers ..."
-    docker -l ERROR compose down -v
+    ${dockerCompose} down -v
 
     _pattern="^${_projectName}_\|^docker_"
     _volumes=$(docker volume ls -q | grep ${_pattern})
