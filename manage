@@ -115,10 +115,10 @@ usage () {
             - Restore the archive to the named volume, stripping the first level directory from the archive.
             - Useful in the scenario where the archive contains additional directory levels that aren’t needed in the restored copy.
 
-  debugVolume <volume> [volumeMountFolder] - Mount a named volume into a 'debug' instance of the `von-network-base` image with an interactive shell.
+  debugVolume <volume> [volumeMountFolder] - Mount a named volume into a 'debug' instance of the 'von-network-base' image with an interactive shell.
           Provides a containerized environment to perform analysis on the ledger databases and files.
           Starting with 'bcgovimages/von-image:node-1.12-4' the base image for von-network conatins the RocksDB sst_dump tool that can be used to verify
-          and inspect the RocksDB database files; `*.sst` files.
+          and inspect the RocksDB database files; '*.sst' files.
           For example the command 'find /debug_volume/ -name "*.sst" | xargs -I {} sst_dump --file={} --command=verify' can be used to do a quick
           verification on all the database files once the container starts.
           Usage information for sst_dump can be found here; https://github.com/facebook/rocksdb/wiki/Administration-and-Data-Access-Tool
