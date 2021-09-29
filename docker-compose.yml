@@ -166,6 +166,23 @@ services:
     volumes:
       - node4-data:/home/indy/ledger
 
+  node5:
+    image: von-network-base
+    command: 'bash -c ''./scripts/start_node.sh 5'''
+    networks:
+      - von
+    ports:
+      - 9709:9709
+      - 9710:9710
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - RUST_LOG=${RUST_LOG}
+    volumes:
+      - node5-data:/home/indy/ledger
+
 networks:
   von:
 
@@ -177,4 +194,5 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
+  node5-data:
   nodes-data:
