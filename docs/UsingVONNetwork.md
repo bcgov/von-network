@@ -101,16 +101,17 @@ Another thing to notice about the ledger file is the IP addresses for the ledger
 
 ## Using the CLI
 
-The VON Network provides a way to get to an Indy command line interface (CLI). To get to the Indy CLI for the network, get to the command prompt (using Ctrl-C if necessary) and run the command:
+`von-network` provides a way to get to an Indy command line interface (CLI). To get to the Indy CLI for the network, get to the command prompt (using Ctrl-C if necessary) and run the command:
 
 ```
 ./manage indy-cli
-
 ```
 
 Run the “help” command to see what you can do, and “exit” to get out of the CLI session.
 
 We won’t go into the Indy CLI here, but it has powerful capability that you can use to create scripts for configuring an Indy network and adding objects to the ledger. If you find any Indy CLI tutorials on other sites, you can run them using this mechanism, without any of the bother of getting everything running before you start the CLI.
+
+For more information refer to [Using the containerized `indy-cli`](./Indy-CLI.md)
 
 ## Stopping and Removing a VON Network
 

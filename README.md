@@ -28,6 +28,8 @@ Want to see a full demo that includes applications and verifiable credentials be
 
 This repository includes a fully containerized Indy-Cli environment, allowing you to use the Indy-Cli without having to build or install the Indy-SDK or any of its dependencies on your machine.
 
+For more information refer to [Using the containerized `indy-cli`](./docs/Indy-CLI.md)
+
 ## Ledger Troubleshooting
 
 Refer to the [Troubleshooting](./docs/Troubleshooting.md) document for some tips and tools you can use to troubleshoot issues with a ledger.
