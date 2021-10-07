@@ -2,7 +2,7 @@
 
 This repository includes a fully containerized `indy-cli` environment, allowing you to use the `indy-cli` without ever having to build or install the `indy-sdk` or any of its dependencies on your machine.
 
-The following `indy-cli` examples are performed using a local instance of `von-network`, however the `indy-cli` environment can be connected to any number of `indy` ledgers.  In order to use some `indy-cli` commands you'll need to have a DID already registered on that network.  The process of stating the `indy-cli` and generating a local wallet will generate the DID and Verkey you could then have registered on that network.
+The following `indy-cli` examples are performed using a local instance of `von-network`, however the `indy-cli` environment can be connected to any number of `indy` ledgers.  In order to use some `indy-cli` commands you'll need to have a DID already registered on that network.  The process of starting the `indy-cli` and generating a local wallet will generate the DID and Verkey you could then have registered on that network.
 
 ## Example Prerequisites
 
