@@ -14,7 +14,11 @@ The following `indy-cli` examples are performed using a local instance of `von-n
 
 ### Generate a set of Secrets
 
-The first thing you'll need is a set of secrets, a seed: used to generate your DID, and a key: used as the encryption key for your wallet.  The `./manage` script makes this easy, just run:
+The first thing you'll need is a set of secrets, a `seed`: used to generate your DID, and a `key`: used as the encryption key for your wallet.
+
+These two values are very sensitive.  Make sure you store them in a safe place such as a secure password manager application.  If someone gets hold of your `seed`, they can regenerate your `DID` and `Verkey` and impersonate you.  If someone gains access to your wallet and your wallet `key`, they can impersonate you AND have control over all of the credentials in your wallet.  So, make sure you keep your `seed` and wallet `key` a secret.
+
+The `./manage` script makes this easy to generate these values randomly, just run:
 
 ```
 ./manage generateSecrets
