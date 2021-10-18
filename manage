@@ -60,6 +60,7 @@ usage () {
   start-web - Start the web server to monitor an existing ledger, requires GENESIS_URL and LEDGER_SEED params
         Example:
         $0 start-web GENESIS_URL=http://foo.bar/genesis.txt LEDGER_SEED=00000000000000000000000000000012
+        $0 start-web GENESIS_URL=file:///tmp/genesis.txt LEDGER_SEED=00000000000000000000000000000012
 
   logs - To tail the logs of running containers (ctrl-c to exit).
          Use the '--no-tail' option to only print log without tailing.
