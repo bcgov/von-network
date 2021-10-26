@@ -58,7 +58,7 @@ genesisFilePath=${genesisFilePath:-${genesisFileDir}/${genesisFileName}}
 nodeArg=""
 if [ ! -z "$nodeNum" ]; then
     # Only run this for nodes:
-    # nodeArg="--nodeNum $nodeNum"
+    nodeArg="--nodeNum $nodeNum"
 
     # echo -e \\n\\n"================================================================================================"
     # echo -e "Initializing Node $nodeNum:"
