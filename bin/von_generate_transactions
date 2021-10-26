@@ -58,14 +58,14 @@ genesisFilePath=${genesisFilePath:-${genesisFileDir}/${genesisFileName}}
 nodeArg=""
 if [ ! -z "$nodeNum" ]; then
     # Only run this for nodes:
-    nodeArg="--nodeNum $nodeNum"
+    # nodeArg="--nodeNum $nodeNum"
 
-    echo -e \\n\\n"================================================================================================"
-    echo -e "Initializing Node $nodeNum:"
-    echo -e init_indy_keys --name "Node$nodeNum"
-    echo -e "------------------------------------------------------------------------------------------------"
-    init_indy_keys --name "Node$nodeNum"
-    echo -e "================================================================================================"
+    # echo -e \\n\\n"================================================================================================"
+    # echo -e "Initializing Node $nodeNum:"
+    # echo -e init_indy_keys --name "Node$nodeNum"
+    # echo -e "------------------------------------------------------------------------------------------------"
+    # init_indy_keys --name "Node$nodeNum"
+    # echo -e "================================================================================================"
 fi
 
 if [ ! -z $ipAddresses ]; then
