@@ -677,7 +677,7 @@ case "${COMMAND}" in
       ${dockerCompose} \
         up \
         -d node${NODE_NUM}
-      # wait_for_ledger
+      wait_for_ledger
       logs
       echo "runnig with node$NODE_NUM"
     ;;
