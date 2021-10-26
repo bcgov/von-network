@@ -27,5 +27,5 @@ fi
 
 # create indy_pool first
 
-# echo start_indy_node "Node""$NODE_NUM" $HOST $NODE_PORT $HOST $(( NODE_PORT + 1 ))
-# start_indy_node "Node""$NODE_NUM" $HOST $NODE_PORT $HOST $(( NODE_PORT + 1 ))
+echo start_indy_node "Node""$NODE_NUM" $HOST $NODE_PORT $HOST $(( NODE_PORT + 1 ))
+start_indy_node "Node""$NODE_NUM" $HOST $NODE_PORT $HOST $(( NODE_PORT + 1 ))
