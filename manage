@@ -676,10 +676,10 @@ case "${COMMAND}" in
       install_taa
       ${dockerCompose} \
         up \
-        -d node
+        -d node${NODE_NUM}
       # wait_for_ledger
       logs
-      echo 'Want to see the scrolling container logs? Run "./manage logs"'
+      echo "runnig with node$NODE_NUM"
     ;;
   start-combined)
       initEnv "$@"
