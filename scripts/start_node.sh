@@ -11,12 +11,15 @@ if [ ! -d "/home/indy/ledger/sandbox/keys" ]; then
     echo "Ledger does not exist - Creating..."
 
     if [ ! -z "$IPS" ]; then
+        echo "[start_node]: found IPS $IPS"
         echo von_generate_transactions -s "$IPS" -n "$NODE_NUM"
         von_generate_transactions -s "$IPS" -n "$NODE_NUM"
     elif [ ! -z "$IP" ]; then
+        echo "[start_node]: found IP $IP"
         echo von_generate_transactions -i "$IP" -n "$NODE_NUM"
         von_generate_transactions -i "$IP" -n "$NODE_NUM"
     else
+        echo "[start_node]: use localhost"
         echo von_generate_transactions -n "$NODE_NUM"
         von_generate_transactions -n "$NODE_NUM"
     fi
