@@ -661,8 +661,18 @@ case "${COMMAND}" in
       install_taa
       ${dockerCompose} \
         up \
-        -d webserver node1 node2 node3 node4 node5
+        -d webserver node1 node2 node3
       wait_for_ledger
+      logs
+      echo 'Want to see the scrolling container logs? Run "./manage logs"'
+    ;;
+  single)
+      initEnv "$@"
+      install_taa
+      ${dockerCompose} \
+        up \
+        -d node
+      # wait_for_ledger
       logs
       echo 'Want to see the scrolling container logs? Run "./manage logs"'
     ;;
