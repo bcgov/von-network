@@ -78,6 +78,10 @@ usage () {
 
   generateSecrets - Generate a random set of secrets using openssl; a Seed and a Key.
 
+  generateDid - Generates a DID and Verkey from a Seed.
+        $0 generateDid [seed]
+          - Optional [seed]; if one is not provided a random one will be generated using openssl.
+
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
 
         $0 indy-cli -h
@@ -447,6 +451,14 @@ function generateSecrets() {
   echo
 }
 
+function generateDid() {
+  seed=${1}
+  if [ -z ${seed} ]; then
+    seed=$(generateSeed)
+  fi
+  runCliCommand python cli-scripts/generate_did.py --seed ${seed}
+}
+
 function backup() {
   (
     _msg=$@
@@ -725,6 +737,9 @@ case "${COMMAND}" in
     ;;
   generatesecrets)
       generateSecrets
+    ;;
+  generatedid)
+      generateDid $@
     ;;
 
   backup)
