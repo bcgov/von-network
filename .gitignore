@@ -11,6 +11,9 @@ backup/
 *_BuildConfig.json
 tmp/
 
+# External scripts
+genesis_from_files.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
