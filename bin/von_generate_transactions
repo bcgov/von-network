@@ -84,14 +84,14 @@ echo -e "genesisFilePath: ${genesisFilePath}"
 echo -e "------------------------------------------------------------------------------------------------"
 # Use supplied IP address
 echo -e generate_indy_pool_transactions \
-    --nodes 3 \
+    --nodes 4 \
     --clients 0 \
     $nodeArg \
     --ips "$ipsArg" \
     \\n
 
 generate_indy_pool_transactions \
-    --nodes 3 \
+    --nodes 4 \
     --clients 0 \
     $nodeArg \
     --ips "$ipsArg"
