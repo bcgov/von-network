@@ -228,14 +228,6 @@ function initDockerBuildArgs() {
 
 function initEnv() {
 
-  if [ -f .env ]; then
-    while read line; do
-      if [[ ! "$line" =~ ^\# ]] && [[ "$line" =~ .*= ]]; then
-        export ${line//[$'\r\n']}
-      fi
-    done <.env
-  fi
-
   for arg in "$@"; do
     # Remove recognized arguments from the list after processing.
     shift
@@ -269,6 +261,16 @@ function initEnv() {
     fi
   fi
   export IP="$IP" IPS="$IPS"
+
+
+  if [ -f .env ]; then
+    while read line; do
+      if [[ ! "$line" =~ ^\# ]] && [[ "$line" =~ .*= ]]; then
+        export ${line//[$'\r\n']}
+      fi
+    done <.env
+  fi
+
 
   export LOG_LEVEL=${LOG_LEVEL:-info}
   export RUST_LOG=${RUST_LOG:-warning}
@@ -661,10 +663,33 @@ case "${COMMAND}" in
       install_taa
       ${dockerCompose} \
         up \
-        -d webserver node1 node2 node3 node4 node5
+        -d webserver node1 node2 node3 node4
       wait_for_ledger
       logs
       echo 'Want to see the scrolling container logs? Run "./manage logs"'
+    ;;
+  env)
+      initEnv "$@"
+    ;;
+  primary)
+      initEnv "$@"
+      install_taa
+      ${dockerCompose} \
+        up \
+        -d webserver node${NODE_NUM}
+      wait_for_ledger
+      logs
+      echo "runnig with node$NODE_NUM"
+    ;;
+  single)
+      initEnv "$@"
+      install_taa
+      ${dockerCompose} \
+        up \
+        -d node${NODE_NUM}
+      wait_for_ledger
+      logs
+      echo "runnig with node$NODE_NUM"
     ;;
   start-combined)
       initEnv "$@"
