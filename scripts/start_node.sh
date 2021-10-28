@@ -28,7 +28,7 @@ fi
 # create indy_pool first
 
 echo "waiting for other nodes for 1 minutes..."
-sleep 10000
+sleep 1m
 echo "now trying to start node"
 
 echo start_indy_node "Node""$NODE_NUM" $HOST $NODE_PORT $HOST $(( NODE_PORT + 1 ))
