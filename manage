@@ -671,6 +671,16 @@ case "${COMMAND}" in
   env)
       initEnv "$@"
     ;;
+  primary)
+      initEnv "$@"
+      install_taa
+      ${dockerCompose} \
+        up \
+        -d webserver node${NODE_NUM}
+      wait_for_ledger
+      logs
+      echo "runnig with node$NODE_NUM"
+    ;;
   single)
       initEnv "$@"
       install_taa
