@@ -117,7 +117,7 @@ services:
 
   node1:
     image: von-network-base
-    command: 'bash -c ''./scripts/init_node.sh 1'''
+    command: 'bash -c ''./scripts/start_node.sh 1'''
     networks:
       - von
     ports:
@@ -134,7 +134,7 @@ services:
 
   node2:
     image: von-network-base
-    command: 'bash -c ''./scripts/init_node.sh 2'''
+    command: 'bash -c ''./scripts/start_node.sh 2'''
     networks:
       - von
     ports:
@@ -151,7 +151,7 @@ services:
 
   node3:
     image: von-network-base
-    command: 'bash -c ''./scripts/init_node.sh 3'''
+    command: 'bash -c ''./scripts/start_node.sh 3'''
     networks:
       - von
     ports:
@@ -168,7 +168,7 @@ services:
 
   node4:
     image: von-network-base
-    command: 'bash -c ''./scripts/init_node.sh 4'''
+    command: 'bash -c ''./scripts/start_node.sh 4'''
     networks:
       - von
     ports:
