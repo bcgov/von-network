@@ -1,6 +1,21 @@
 #!/bin/bash
 export MSYS_NO_PATHCONV=1
-export DOCKERHOST=${APPLICATION_URL-$(docker run --rm --net=host eclipse/che-ip)}
+# ====================================================================
+# Set the DOCKERHOST address depending on host system
+# --------------------------------------------------------------------
+function getDockerHost() {
+  (
+    unset dockerHostAddress
+    if [[ $(uname) == "Linux" ]] ; then
+      dockerHostAddress=$(docker run --rm --net=host eclipse/che-ip)
+    else
+      dockerHostAddress=host.docker.internal
+    fi
+    echo ${DOCKERHOST:-${APPLICATION_URL:-${dockerHostAddress}}}
+  )
+}
+export DOCKERHOST=$(getDockerHost)
+# ====================================================================
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-von}"
@@ -29,6 +44,10 @@ if [[ $(awk "BEGIN {print (${dockerComposeVersion} >= 2.0) ? \"true\" : \"false\
   # Use the new syntax when version 2.0.0 or greater is detected.
   dockerCompose="docker --log-level error compose"
 fi
+
+echo
+echo "Using: ${dockerCompose}"
+echo
 # ========================================================================================================
 
 # =================================================================================================================
@@ -787,7 +806,7 @@ case "${COMMAND}" in
       docker build $(initDockerBuildArgs) -t von-network-base .
     ;;
   rebuild)
-      docker build --no-cache $(initDockerBuildArgs) -t von-network-base .
+      docker build --no-cache --progress plain $(initDockerBuildArgs) -t von-network-base .
     ;;
   dockerhost)
       echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
