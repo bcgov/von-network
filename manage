@@ -1,21 +1,8 @@
 #!/bin/bash
 export MSYS_NO_PATHCONV=1
-# ====================================================================
-# Set the DOCKERHOST address depending on host system
-# --------------------------------------------------------------------
-function getDockerHost() {
-  (
-    unset dockerHostAddress
-    if [[ $(uname) == "Linux" ]] ; then
-      dockerHostAddress=$(docker run --rm --net=host eclipse/che-ip)
-    else
-      dockerHostAddress=host.docker.internal
-    fi
-    echo ${DOCKERHOST:-${APPLICATION_URL:-${dockerHostAddress}}}
-  )
-}
+# getDockerHost; for details refer to https://github.com/bcgov/DITP-DevOps/tree/main/code/snippets#getdockerhost
+. /dev/stdin <<<"$(cat <(curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost))" 
 export DOCKERHOST=$(getDockerHost)
-# ====================================================================
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-von}"
