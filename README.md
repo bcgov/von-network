@@ -138,9 +138,9 @@ GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/so
 3. Download this repository:
 
     ```bash
-    curl -L https://github.com/bcgov/von-network/archive/master.zip > bcovrin.zip && \
+    curl -L https://github.com/bcgov/von-network/archive/main.zip > bcovrin.zip && \
         unzip bcovrin.zip && \
-        cd von-network-master && \
+        cd von-network-main && \
         chmod a+w ./server/
     ```
 
