@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master # will be renaming soon.
 
 # Ensure only the most recent workflow runs.
 concurrency:
