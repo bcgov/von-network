@@ -1,6 +1,8 @@
 #!/bin/bash
 export MSYS_NO_PATHCONV=1
-export DOCKERHOST=${APPLICATION_URL-$(docker run --rm --net=host eclipse/che-ip)}
+# getDockerHost; for details refer to https://github.com/bcgov/DITP-DevOps/tree/main/code/snippets#getdockerhost
+. /dev/stdin <<<"$(cat <(curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost))" 
+export DOCKERHOST=$(getDockerHost)
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-von}"
@@ -29,6 +31,10 @@ if [[ $(awk "BEGIN {print (${dockerComposeVersion} >= 2.0) ? \"true\" : \"false\
   # Use the new syntax when version 2.0.0 or greater is detected.
   dockerCompose="docker --log-level error compose"
 fi
+
+echo
+echo "Using: ${dockerCompose}"
+echo
 # ========================================================================================================
 
 # =================================================================================================================
@@ -78,6 +84,29 @@ usage () {
   dockerhost - Print the ip address of the Docker Host Adapter as it is seen by containers running in docker.
 
   generateSecrets - Generate a random set of secrets using openssl; a Seed and a Key.
+
+  generateDid - Generates a DID and Verkey from a Seed.
+        $0 generateDid [seed]
+          - Optional [seed]; if one is not provided a random one will be generated using openssl.
+
+  generateGenesisFiles - Generates pool and domain genesis files from data input via csv files.
+        $0 generategenesisfiles <trustees_csv_file> <stewards_csv_file>
+        
+        This is a convenience command wrapped around the Steward Tools script for generating genesis files found here;
+        https://github.com/sovrin-foundation/steward-tools/tree/master/create_genesis
+
+        The script is downloaded and hosted in a running container which has the required packages installed.
+
+        Examples of the csv files can be downloaded from here; 
+        https://docs.google.com/spreadsheets/d/1LDduIeZp7pansd9deXeVSqGgdf0VdAHNMc7xYli3QAY/edit#gid=0
+        Download each sheet separately in csv format and fill them out with the data specific to your network.
+
+        The input csv files must be placed into the ./tmp/ folder.
+        The resulting output 'pool_transactions_genesis' and 'domain_transactions_genesis' files will be placed
+        in the ./tmp/ folder.
+
+        Example:
+        $0 generategenesisfiles "./tmp/CANdy Beta Genesis File Node info - Trustees.csv" "./tmp/CANdy Beta Genesis File Node info - Stewards.csv"
 
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
 
@@ -448,6 +477,52 @@ function generateSecrets() {
   echo
 }
 
+function generateDid() {
+  seed=${1}
+  if [ -z ${seed} ]; then
+    seed=$(generateSeed)
+  fi
+  runCliCommand python cli-scripts/generate_did.py --seed ${seed}
+}
+
+function generateGenesisFiles() {
+  trustee_csv="${1}"
+  steward_csv="${2}"
+  genesis_from_files_filename="genesis_from_files.py"
+  genesis_from_files_url="https://raw.githubusercontent.com/sovrin-foundation/steward-tools/master/create_genesis/genesis_from_files.py"
+
+  if [ -z "${trustee_csv}" ] || [ -z "${steward_csv}" ]; then
+    echoYellow "You must supply both the trustee and steward csv files."
+    exit 1
+  fi
+
+  if [[ "${trustee_csv}" != ./tmp/* ]]; then
+    trustee_csv="./tmp/${trustee_csv}"
+  fi
+
+  if [ ! -f "${trustee_csv}" ]; then
+    echoYellow "${trustee_csv} not found, please make sure you placed ${trustee_csv} in the ./tmp folder."
+    exit 1
+  fi
+
+  if [[ "${steward_csv}" != ./tmp/* ]]; then
+    steward_csv="./tmp/${steward_csv}"
+  fi
+
+  if [ ! -f "${steward_csv}" ]; then
+    echoYellow "${steward_csv} not found, please make sure you placed ${steward_csv} in the ./tmp folder."
+    exit 1
+  fi
+
+  echo "Downloading the latest version of ${genesis_from_files_filename} from ${genesis_from_files_url} ..."
+  curl -s -L -o ./cli-scripts/${genesis_from_files_filename} ${genesis_from_files_url}
+
+  # Escape spaces in path ...
+  trustee_csv_esc=$(echo ${trustee_csv##*/} | sed 's/ /\\ /g')
+  steward_csv_esc=$(echo ${steward_csv##*/} | sed 's/ /\\ /g')
+  runCliCommand cli-scripts/${genesis_from_files_filename} --pool /tmp/pool_transactions --domain /tmp/domain_transactions --trustees /tmp/${trustee_csv_esc} --stewards /tmp/${steward_csv_esc}
+}
+
 function backup() {
   (
     _msg=$@
@@ -719,13 +794,21 @@ case "${COMMAND}" in
       docker build $(initDockerBuildArgs) -t von-network-base .
     ;;
   rebuild)
-      docker build --no-cache $(initDockerBuildArgs) -t von-network-base .
+      docker build --no-cache --progress plain $(initDockerBuildArgs) -t von-network-base .
     ;;
   dockerhost)
       echo -e \\n"DockerHost: ${DOCKERHOST}"\\n
     ;;
   generatesecrets)
       generateSecrets
+    ;;
+  generatedid)
+      generateDid $@
+    ;;
+  generategenesisfiles)
+    trustee_csv="${1}"
+    steward_csv="${2}"
+    generateGenesisFiles "${trustee_csv}" "${steward_csv}"
     ;;
 
   backup)
