@@ -30,6 +30,19 @@ Key: b+StO9VtqyvdEeUsUQknR6uB+UoXK09kHzskSjIYIZ0GQmG4O0bLULc7NlY42/Bh
 
 For the remainder of the examples we'll use the seed and key from above for consistency.
 
+### Generate your DID
+
+The `generateDid` command can be used with or without a seed to generate a DID.  When used without a seed it will generate a random seed and use that to generate a DID and Verkey.
+
+```
+./manage generateDid 2yMTRs+zBBPF75OE5i1WCY5uDcQYUdt4
+```
+```
+Seed: 2yMTRs+zBBPF75OE5i1WCY5uDcQYUdt4
+DID: 5DHNJswc1LjkCWPYYrzYVX
+Verkey: 3J9F2QpresMoukCSJTbvM2YmaovfqveVDgg1P1azMsJP
+```
+
 ### Start an instance of `von-network`
 
 ```
@@ -54,7 +67,7 @@ _Now on to working with the `indy-cli` ..._
 
 ## Register the network (ledger) with the `indy-cli` environment
 
-This command downloads and registeres the network's genisis file with the `indy-cli`.
+This command downloads and registers the network's genesis file with the `indy-cli`.
 
 Note we're using the internal docker host IP address to access the locally running network since it's also running in docker.  This IP can be obtained by running `./manage dockerhost`.
 
@@ -336,4 +349,30 @@ Goodbye...
 **Use with caution.  This deletes everything in your `indy-cli` environment.  Make sure you have things backed up if needed.**
 ```
 ./manage cli reset
+```
+
+## Other Commands
+
+### Generate Genesis Files
+
+This command generates pool and domain genesis files from data input via csv files.
+
+```
+./manage generategenesisfiles <trustees_csv_file> <stewards_csv_file>
+```        
+It is a convenience command wrapped around the Steward Tools script for generating genesis files found here; https://github.com/sovrin-foundation/steward-tools/tree/master/create_genesis
+
+The script is downloaded and hosted in a running container which has the required packages installed.
+
+Examples of the csv files can be downloaded from here; https://docs.google.com/spreadsheets/d/1LDduIeZp7pansd9deXeVSqGgdf0VdAHNMc7xYli3QAY/edit#gid=0
+
+Download each sheet separately in csv format and fill them out with the data specific to your network.
+
+The input csv files must be placed into the `./tmp/` folder.
+The resulting output `pool_transactions_genesis` and `domain_transactions_genesis` files will be placed
+in the `./tmp/` folder.
+
+Example:
+```
+./manage generategenesisfiles "./tmp/CANdy Beta Genesis File Node info - Trustees.csv" "./tmp/CANdy Beta Genesis File Node info - Stewards.csv"
 ```
