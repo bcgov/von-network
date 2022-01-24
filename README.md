@@ -25,6 +25,10 @@ In the `Domain` Ledger screen ([example](http://greenlight.bcovrin.vonx.io/brows
 
 New to VON Network?  We have a [tutorial about using VON Network](docs/UsingVONNetwork.md) to get you started.
 
+Note that in order to use Docker Desktop (> version 3.4.0), make sure you uncheck the "Use Docker Compose V2" in Docker Desktop > Preferences > General.  Refer to this issue for additional details; [#170](https://github.com/bcgov/von-network/issues/170#issuecomment-972898014)
+
+
+
 Want to see a full demo that includes applications and verifiable credentials being issued? The [VON Quick Start Guide](https://github.com/bcgov/greenlight/blob/master/docker/VONQuickStartGuide.md) provides the instructions for running a local instance of a full demo of the components, including an Indy Network, an instance of [TheOrgBook](https://github.com/bcgov/TheOrgBook) and [GreenLight](https://github.com/bcgov/greenlight). This is a great way to see the **VON Network** in action.
 
 ## Indy-Cli Container Environment
@@ -47,6 +51,7 @@ For examples of how to use this capability, refer to [Writing Transactions to a 
 The [tutorial about using VON Network](docs/UsingVONNetwork.md) has information on starting (and stopping) the network locally.
 
 ## Running the web server in Docker against another ledger
+
 
 1. Run docker to start the ledger, and pass in GENESIS_URL and LEDGER_SEED parameters:
 
