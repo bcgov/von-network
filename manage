@@ -661,11 +661,12 @@ function findBackup(){
   )
 }
 
+# OSX ships with an old version of Bash that does not support the \e escape character.
 function echoYellow (){
   (
   _msg=${1}
-  _yellow='\e[33m'
-  _nc='\e[0m' # No Color
+  _yellow='\x1B[33m'
+  _nc='\x1B[0m' # No Color
   echo -e "${_yellow}${_msg}${_nc}" >&2
   )
 }
@@ -674,7 +675,7 @@ function promptForConfirmation(){
   (
     _msg=${@}
     echoYellow "\n${_msg}"
-    read -n1 -s -r -p $'\e[33mWould you like to continue?\e[0m  Press \'Y\' to continue, or any other key to exit ...\n' key
+    read -n1 -s -r -p $'\x1B[33mWould you like to continue?\x1B[0m  Press \'Y\' to continue, or any other key to exit ...\n' key
     if [[ $(toLower ${key}) == 'y' ]]; then
       return 0
     else
