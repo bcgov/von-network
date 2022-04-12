@@ -14,12 +14,6 @@ export LEDGER_URL_CONFIG="${LEDGER_URL_CONFIG}"
 export ROOT_BACKUP_DIR=backup
 export SHELL_CMD='bash'
 
-# Running on Windows?
-if [[ "$OSTYPE" == "msys" ]]; then
-  # Prefix interactive terminal commands ...
-  terminalEmu="winpty"
-fi
-
 # ========================================================================================================
 # Dynamically detect the version of docker compose and adjust the '--log-level' syntax appropriately.
 # --------------------------------------------------------------------------------------------------------
@@ -330,7 +324,7 @@ function runCliCommand() {
     cliUsage
   fi
 
-  cmd="${terminalEmu} ${dockerCompose} \
+  cmd="${dockerCompose} \
     run "
 
   if [ -z "${VOLUMES}" ] && [ -d "${DEFAULT_CLI_SCRIPT_DIR}" ] ; then
