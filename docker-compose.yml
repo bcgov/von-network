@@ -5,7 +5,7 @@ services:
   #
   client:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_client.sh'''
+    command: ./scripts/start_client.sh
     environment:
       - IP=${IP}
       - IPS=${IPS}
@@ -22,7 +22,7 @@ services:
   #
   webserver:
     image: von-network-base
-    command: 'bash -c ''sleep 10; ./scripts/start_webserver.sh;'''
+    command: bash -c 'sleep 10 && ./scripts/start_webserver.sh'
     environment:
       - IP=${IP}
       - IPS=${IPS}
@@ -55,7 +55,7 @@ services:
   #
   synctest:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_synctest.sh'''
+    command: ./scripts/start_synctest.sh
     environment:
       - IP=${IP}
       - IPS=${IPS}
@@ -77,7 +77,7 @@ services:
   #
   nodes:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_nodes.sh'''
+    command: ./scripts/start_nodes.sh
     networks:
       - von
     ports:
@@ -100,7 +100,7 @@ services:
 
   node1:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_node.sh 1'''
+    command: ./scripts/start_node.sh 1
     networks:
       - von
     ports:
@@ -117,7 +117,7 @@ services:
 
   node2:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_node.sh 2'''
+    command: ./scripts/start_node.sh 2
     networks:
       - von
     ports:
@@ -134,7 +134,7 @@ services:
 
   node3:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_node.sh 3'''
+    command: ./scripts/start_node.sh 3
     networks:
       - von
     ports:
@@ -151,7 +151,7 @@ services:
 
   node4:
     image: von-network-base
-    command: 'bash -c ''./scripts/start_node.sh 4'''
+    command: ./scripts/start_node.sh 4
     networks:
       - von
     ports:
