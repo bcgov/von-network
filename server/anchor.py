@@ -908,6 +908,9 @@ class LedgerCache:
             upd = "INSERT INTO terms ({}) VALUES ({})".format(
                 ", ".join(term_names), ", ".join("?" for _ in term_names)
             )
+            for k in term_names:
+                if isinstance(terms[k], dict):
+                    terms[k] = json.dumps(terms[k])
             terms_id = await self.insert(upd, tuple(terms[k] for k in term_names))
         await self.insert(
             "INSERT INTO transactions "
