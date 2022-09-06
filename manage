@@ -126,6 +126,15 @@ usage () {
                 - The vesion of the TAA
               taaRatificationTime
                 - The date and time of TAA ratification by network government.
+                - On Linux and Windows (Git Bash):
+                  - The date format is "%Y-%m-%dT%H:%M:%S%Z", where `%Z` is a numeric time zone offset, or an alphabetic time zone abbreviation.
+                  - Examples: 
+                    - "2022-08-09T11:05:00-0700"
+                    - "2022-08-09T11:05:00PDT"
+                - On Mac:
+                  - The date format is "%Y-%m-%dT%H:%M:%S%Z", where `%Z` is an alphabetic time zone abbreviation.
+                  - Example:
+                    - "2022-08-09T11:05:00PDT"
 
         Example:
         $0 apply-taa \
@@ -136,7 +145,7 @@ usage () {
                 amlVersion=0.1 \
                 taaUrl='https://raw.githubusercontent.com/wiki/bcgov/bc-vcpedia/(Layer-1)-CANdy-Transaction-Author-Agreement.md' \
                 taaVersion=0.1 \
-                taaRatificationTime="2022-08-09T11:05:00-0700"
+                taaRatificationTime="2022-08-09T11:05:00PDT"
 
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
 
@@ -572,7 +581,12 @@ function apply-taa() {
 
         if [[ "${arg}" == *"taaRatificationTime"* ]]; then
           taaRatificationTime=${arg#*=}
-          taaRatificationTimestamp=$(date --date="${taaRatificationTime}" +"%s")
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # Mac OSX
+            taaRatificationTimestamp=$(date -jf "%Y-%m-%dT%H:%M:%S%Z" "${taaRatificationTime}" +%s)
+          else
+            taaRatificationTimestamp=$(date --date="${taaRatificationTime}" +"%s")
+          fi
           continue
         fi
 
@@ -589,8 +603,8 @@ function apply-taa() {
   curl -s -o ${amlPath} "${amlUrl}"
   curl -s -o ${taaPath} "${taaUrl}"
 
-  # Parse the AML content from the file;the bit inside the '{}'s
-  amlContent="{$(sed -n '/{/,/}/{/{/!{/}/!p}}' ${amlPath} | sed 's/^ *//g')}"
+  # Parse the AML content from the file; the bit inside the '{}'s
+  amlContent="{$(sed -n '/{/,/}/{/{/!{/}/!p;};}' ${amlPath} | sed 's/^ *//g')}"
   echo ${amlContent} > ${amlPath}
 
   # Generate the required apply-taa batch script parameters
