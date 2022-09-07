@@ -124,7 +124,7 @@ function indy-cli() {
     fi
     # ========================================================================
 
-    escapedArgs=$(echo ${batchFileArgs} | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
+    escapedArgs=$(echo ${batchFileArgs} | sed "s~'~\\\'~g" | sed 's~\"~\\"~g' | sed 's~(~\\(~g' | sed 's~)~\\)~g')
     cmd="${escapedArgs} envsubst < ${batchTemplate} > ${batchfile}"
     eval ${cmd}
     indyCliArgs="${batchfile}"
