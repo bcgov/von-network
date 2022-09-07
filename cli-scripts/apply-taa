@@ -1,0 +1,113 @@
+# ===================================================================================
+# Start an Indy-cli Session and Update the AML and TAA for the network.
+# -----------------------------------------------------------------------------------
+# Start an interactive indy-cli session with a connected pool, wallet, and did,
+# and apply an AML and TAA.
+#
+#  - The ledger pool MUST exist.
+#  - A wallet containing the DID MUST exist.
+#
+# This batch script is designed to be used with von-network.  To use it place the
+# script in the cli-scripts folder of your working copy of von-network and follow
+# the examples below to run it.
+#
+# The von-network "./manage apply-taa" command provides a convent wrapper around this
+# script that greatly simplifies the inputs and further automates the process.
+# For details refer to the "apply-taa" help output from "./manage -h".
+#
+# Examples of running the script directly:
+# ./manage \
+#  indy-cli apply-taa \
+#  walletName=endorser_wallet \
+#  poolName=localpool \
+#  useDid=DFuDqCYpeDNXLuc3MKooX3 \
+#  amlFile=/tmp/aml-1661551668.txt \
+#  amlVersion=0.1 \
+#  amlContext=https://raw.githubusercontent.com/wiki/bcgov/bc-vcpedia/(Layer-1)-CANdy-Acceptance-Mechanism-List-(AML).md \
+#  taaFile=/tmp/att-1661551668.txt \
+#  taaVersion=0.1 \
+#  taaRatificationTimestamp=1660068300
+#
+# ./manage \
+#  indy-cli apply-taa \
+#  walletName=endorser_wallet \
+#  storageType=postgres_storage \
+#  storageConfig='{"url":"192.168.65.3:5435"}' \
+#  storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+#  poolName=localpool \
+#  useDid=DFuDqCYpeDNXLuc3MKooX3 \
+#  amlFile=/tmp/aml-1661551668.txt \
+#  amlVersion=0.1 \
+#  amlContext=https://raw.githubusercontent.com/wiki/bcgov/bc-vcpedia/(Layer-1)-CANdy-Acceptance-Mechanism-List-(AML).md \
+#  taaFile=/tmp/att-1661551668.txt \
+#  taaVersion=0.1 \
+#  taaRatificationTimestamp=1660068300
+#
+# Params:
+# walletName:
+#  - The name of the wallet to be used for the operation.
+#
+# storageType:
+#  - Optional - The wallet storage type. Defaults to 'default'.
+#  - Remote Wallet Example; postgres_storage
+#  - Local Wallet Example; default
+#
+# storageConfig:
+#  - Optional - The wallet storage configuration. Defaults to '{}'.
+#  - Remote Wallet Example; '{"url":"192.168.65.3:5435"}'
+#  - Local Wallet Example; '{}'
+#
+# storageCredentials:
+#  - Optional - The wallet storage credentials. Defaults to '{}'.
+#  - Remote Wallet Example; '{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}'
+#  - Local Wallet Example; '{}'
+#
+# poolName:
+#  - The name of the ledger pool to use during the operations.
+#  - Example; sandbox
+#
+# useDid:
+#  - The DID to use for the session.
+#
+# amlFile
+#   - The path to the file containing the content for the AML.
+#
+# amlVersion
+#   - The AML vesion.
+#
+# amlContext
+#   - The context for the AML, for example the URL to the file containing and describing the AML.
+#
+# taaFile
+#   - The path to the file containing the content for the TAA.
+#
+# taaVersion
+#   - The TAA version.
+#
+# taaRatificationTimestamp:
+#   - The date (timestamp) of TAA ratification by network government.
+# ===================================================================================
+
+load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
+
+pool connect ${poolName}
+
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+wallet open ${walletName} key storage_credentials=${storageCredentials}
+did use ${useDid}
+
+# =================================================================================================================================================================
+# AML
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+-ledger txn-acceptance-mechanisms file=${amlFile} version=${amlVersion} context=${amlContext}
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# TAA
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+-ledger txn-author-agreement file=${taaFile} version=${taaVersion} ratification-timestamp=${taaRatificationTimestamp}
+# =================================================================================================================================================================
+
+wallet close
+wallet detach ${walletName}
+exit

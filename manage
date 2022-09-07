@@ -101,6 +101,52 @@ usage () {
         Example:
         $0 generategenesisfiles "./tmp/CANdy Beta Genesis File Node info - Trustees.csv" "./tmp/CANdy Beta Genesis File Node info - Stewards.csv"
 
+  apply-taa - Registers an AML and TAA on a given network.
+              This is a convent wrapper around the cli-scripts/apply-taa batch script,
+              which simplifies and automates the process of registering an AML and TAA.
+
+              The following parameters are simply the standard inputs for the indy-cli batch script.
+              Refer to the cli-scripts/apply-taa documentation for details;
+              - walletName          - Required
+              - storageType         - Optional
+              - storageConfig       - Optional
+              - storageCredentials  - Optional
+              - poolName            - Required
+              - useDid              - Required
+
+              The following parameters are required:
+              amlUrl
+                - The URL to the raw content of the AML.  Provided the link contains the AML expected content in json format 
+                  (contained in {}s) it will be parsed from the link's text.
+              amlVersion
+                - The version of the AML.
+              taaUrl
+                - The URL to the raw content of the TAA in markdown format.
+              taaVersion
+                - The vesion of the TAA
+              taaRatificationTime
+                - The date and time of TAA ratification by network government.
+                - On Linux and Windows (Git Bash):
+                  - The date format is "%Y-%m-%dT%H:%M:%S%Z", where `%Z` is a numeric time zone offset, or an alphabetic time zone abbreviation.
+                  - Examples: 
+                    - "2022-08-09T11:05:00-0700"
+                    - "2022-08-09T11:05:00PDT"
+                - On Mac:
+                  - The date format is "%Y-%m-%dT%H:%M:%S%Z", where `%Z` is an alphabetic time zone abbreviation.
+                  - Example:
+                    - "2022-08-09T11:05:00PDT"
+
+        Example:
+        $0 apply-taa \
+                walletName=local_net_trustee_wallet \
+                poolName=local_net \
+                useDid=V4SGRU86Z58d6TV7PBUe6f \
+                amlUrl='https://raw.githubusercontent.com/wiki/bcgov/bc-vcpedia/(Layer-1)-CANdy-Acceptance-Mechanism-List-(AML).md' \
+                amlVersion=0.1 \
+                taaUrl='https://raw.githubusercontent.com/wiki/bcgov/bc-vcpedia/(Layer-1)-CANdy-Transaction-Author-Agreement.md' \
+                taaVersion=0.1 \
+                taaRatificationTime="2022-08-09T11:05:00PDT"
+
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
 
         $0 indy-cli -h
@@ -346,7 +392,7 @@ function runCliCommand() {
   fi
 
   # Need to escape quotes and commas so they don't get removed along the way ...
-  escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g')
+  escapedArgs=$(echo $@ | sed "s~'~\\\'~g" | sed 's~\"~\\"~g' | sed 's~(~\\(~g' | sed 's~)~\\)~g')
 
   # Quote the escaped args so docker compose does not try to perform any processing on them ...
   # Separate the command and the args so they don't get treated as one argument by the scripts in the container ...
@@ -514,6 +560,65 @@ function generateGenesisFiles() {
   trustee_csv_esc=$(echo ${trustee_csv##*/} | sed 's/ /\\ /g')
   steward_csv_esc=$(echo ${steward_csv##*/} | sed 's/ /\\ /g')
   runCliCommand cli-scripts/${genesis_from_files_filename} --pool /tmp/pool_transactions --domain /tmp/domain_transactions --trustees /tmp/${trustee_csv_esc} --stewards /tmp/${steward_csv_esc}
+}
+
+function apply-taa() {
+  # Parse Args
+  for arg in "$@"; do
+    # Remove recognized arguments from the list after processing.
+    shift
+    case "${arg}" in
+      *=*)
+        if [[ "${arg}" == *"amlUrl"* ]]; then
+          amlUrl=${arg#*=}
+          continue
+        fi
+
+        if [[ "${arg}" == *"taaUrl"* ]]; then
+          taaUrl=${arg#*=}
+          continue
+        fi
+
+        if [[ "${arg}" == *"taaRatificationTime"* ]]; then
+          taaRatificationTime=${arg#*=}
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # Mac OSX
+            taaRatificationTimestamp=$(date -jf "%Y-%m-%dT%H:%M:%S%Z" "${taaRatificationTime}" +%s)
+          else
+            taaRatificationTimestamp=$(date --date="${taaRatificationTime}" +"%s")
+          fi
+          continue
+        fi
+
+        batchFileArgs+=" ${arg}"
+        ;;
+    esac
+  done
+
+  # Create temp files for the AML and ATT
+  amlPath="./tmp/aml-$(date +"%s").txt"
+  taaPath="./tmp/att-$(date +"%s").txt"
+
+  # Download the AML and ATT files
+  curl -s -o ${amlPath} "${amlUrl}"
+  curl -s -o ${taaPath} "${taaUrl}"
+
+  # Parse the AML content from the file; the bit inside the '{}'s
+  amlContent="{$(sed -n '/{/,/}/{/{/!{/}/!p;};}' ${amlPath} | sed 's/^ *//g')}"
+  echo ${amlContent} > ${amlPath}
+
+  # Generate the required apply-taa batch script parameters
+  batchFileArgs+=" amlFile=/tmp/${amlPath##*/}"
+  batchFileArgs+=" amlContext=${amlUrl}"
+  batchFileArgs+=" taaFile=/tmp/${taaPath##*/}"
+  batchFileArgs+=" taaRatificationTimestamp=${taaRatificationTimestamp}"
+  
+  # Run the apply-taa batch script
+  runCliCommand indy-cli --config /tmp/cliconfig.json apply-taa \
+                ${batchFileArgs}
+
+  # Remove the temp files
+  rm "${amlPath}" "${taaPath}"
 }
 
 function backup() {
@@ -803,6 +908,9 @@ case "${COMMAND}" in
     trustee_csv="${1}"
     steward_csv="${2}"
     generateGenesisFiles "${trustee_csv}" "${steward_csv}"
+    ;;
+  apply-taa)
+      apply-taa $@
     ;;
 
   backup)
