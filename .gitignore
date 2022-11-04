@@ -155,3 +155,6 @@ config/.samples.used
 
 # Visual Studio Code
 .history
+
+# Eclipse
+.project
