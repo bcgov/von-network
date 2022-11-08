@@ -15,21 +15,17 @@ export ROOT_BACKUP_DIR=backup
 export SHELL_CMD='bash'
 
 # ========================================================================================================
-# Dynamically detect the version of docker compose and adjust the '--log-level' syntax appropriately.
+# Check Docker Compose
 # --------------------------------------------------------------------------------------------------------
-# Default to using the existing syntax
+
+# Default to deprecated V1 'docker-compose'.
 dockerCompose="docker-compose --log-level ERROR"
-dockerComposeVersion=$(docker-compose version --short | sed 's~v~~;s~-.*~~')
-dockerComposeVersion=${dockerComposeVersion%.*}
-if [[ $(awk "BEGIN {print (${dockerComposeVersion} >= 2.0) ? \"true\" : \"false\" }") == "true" ]]; then
-  # Use the new syntax when version 2.0.0 or greater is detected.
+
+# Prefer 'docker compose' V2 if available
+if [[ $(docker compose version 2> /dev/null) == 'Docker Compose'* ]]; then
   dockerCompose="docker --log-level error compose"
 fi
-
-echo
 echo "Using: ${dockerCompose}"
-echo
-# ========================================================================================================
 
 # =================================================================================================================
 # Usage:
