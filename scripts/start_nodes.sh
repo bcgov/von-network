@@ -4,7 +4,7 @@ set -e
 
 HOST="${HOST:-0.0.0.0}"
 START_PORT="9700"
-NODE_NUM="1 2 3 4"
+NODE_NUM="1 2 3 4 5"
 
 if [ ! -d "/home/indy/ledger/sandbox/keys" ]; then
     echo "Ledger does not exist - Creating..."
@@ -59,6 +59,12 @@ stderr_logfile=/tmp/node3.log
 
 [program:node4]
 command=start_indy_node Node4 $HOST 9707 $HOST 9708
+directory=/home/indy
+stdout_logfile=/tmp/node4.log
+stderr_logfile=/tmp/node4.log
+
+[program:node5]
+command=start_indy_node Node4 $HOST 9709 $HOST 9710
 directory=/home/indy
 stdout_logfile=/tmp/node4.log
 stderr_logfile=/tmp/node4.log

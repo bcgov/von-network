@@ -71,9 +71,9 @@ fi
 if [ ! -z $ipAddresses ]; then
     ipsArg="$ipAddresses"
 elif [ ! -z $ipAddress ]; then
-    ipsArg="$ipAddress","$ipAddress","$ipAddress"
+    ipsArg="$ipAddress","$ipAddress","$ipAddress","$ipAddress","$ipAddress"
 else
-    ipsArg="$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
+    ipsArg="$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
 fi
 
 echo -e \\n\\n"================================================================================================"
@@ -84,14 +84,14 @@ echo -e "genesisFilePath: ${genesisFilePath}"
 echo -e "------------------------------------------------------------------------------------------------"
 # Use supplied IP address
 echo -e generate_indy_pool_transactions \
-    --nodes 4 \
+    --nodes 5 \
     --clients 0 \
     $nodeArg \
     --ips "$ipsArg" \
     \\n
 
 generate_indy_pool_transactions \
-    --nodes 4 \
+    --nodes 5 \
     --clients 0 \
     $nodeArg \
     --ips "$ipsArg"

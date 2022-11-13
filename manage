@@ -663,7 +663,7 @@ case "${COMMAND}" in
       install_taa
       ${dockerCompose} \
         up \
-        -d webserver node1 node2 node3 node4
+        -d webserver node1 node2 node3 node4 node5
       wait_for_ledger
       logs
       echo 'Want to see the scrolling container logs? Run "./manage logs"'
