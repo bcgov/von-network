@@ -88,6 +88,7 @@ objects:
         app: ${NAME}
         app-group: ${APP_GROUP}
         env: ${TAG_NAME}
+        certbot-managed: ${CERTBOT_MANAGED_ROUTE}
     spec:
       host: ${APPLICATION_DOMAIN}
       port:
@@ -225,6 +226,11 @@ parameters:
     displayName: Application Hostname
     description: The exposed hostname that will route to the Django service, if left blank a value will be defaulted.
     value: sovrin-mainnet-browser.vonx.io
+  - name: CERTBOT_MANAGED_ROUTE
+    displayName: Certbot Managed Route
+    description: Flag indicating whether the routes certificates are managed by CertBot.
+    required: true
+    value: 'false'
   - name: WALLET_ENCRYPTION_KEY
     displayName: Wallet Encryption Key
     description: The encryption key to be used for the wallets.  Needs to be basee64 encoded.
