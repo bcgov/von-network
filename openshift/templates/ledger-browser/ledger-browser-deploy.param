@@ -8,6 +8,7 @@ APP_GROUP=von-network
 SOURCE_IMAGE_NAME=von-network-base
 IMAGE_NAMESPACE=ca7f8f-tools
 APPLICATION_DOMAIN=sovrin-mainnet-browser.vonx.io
+CERTBOT_MANAGED_ROUTE=true
 # WALLET_ENCRYPTION_KEY=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
 # INDY_WALLET_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
 # INDY_WALLET_DID=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
