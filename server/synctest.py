@@ -4,8 +4,8 @@ import logging
 import os
 import sys
 
-from indy.error import ErrorCode, IndyError
-from indy import did, ledger, pool, wallet
+# from indy.error import ErrorCode, IndyError
+# from indy import did, ledger, pool, wallet
 
 LOGGER = logging.getLogger(__name__)
 

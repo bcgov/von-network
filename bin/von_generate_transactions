@@ -72,8 +72,11 @@ if [ ! -z $ipAddresses ]; then
     ipsArg="$ipAddresses"
 elif [ ! -z $ipAddress ]; then
     ipsArg="$ipAddress","$ipAddress","$ipAddress","$ipAddress"
-else
+elif [ ! -z "$DOCKERHOST" ]; then
     ipsArg="$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"
+else
+    echo "Error: no IP, IPS, or DOCKERHOST argument provided."
+    exit 1
 fi
 
 echo -e \\n\\n"================================================================================================"

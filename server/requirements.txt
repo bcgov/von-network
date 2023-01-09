@@ -4,9 +4,8 @@ aiohttp~=3.5.0
 aiohttp-jinja2~=1.1.2
 aiosqlite~=0.10.0
 base58~=1.0.0
+indy_vdr~=0.3.4
 cchardet~=2.1.0
 rlp~=0.6.0
 supervisor~=4.0.4
-#indy-anoncreds-dev==1.0.46
-#indy-node==1.9.0
-#indy-plenum==1.9.0
+pynacl~=1.5.0
