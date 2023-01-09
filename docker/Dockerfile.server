@@ -1,0 +1,12 @@
+FROM indy-vdr-test-python
+
+ENV LOG_LEVEL ${LOG_LEVEL:-info}
+ENV RUST_LOG ${RUST_LOG:-warning}
+
+ADD server/requirements.txt server/
+RUN pip3 install --no-cache-dir -r server/requirements.txt
+
+ADD --chown=indy:indy config ./config
+ADD --chown=indy:indy server ./server
+
+CMD python3 -m server.server

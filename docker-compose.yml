@@ -21,11 +21,10 @@ services:
   # Webserver
   #
   webserver:
-    image: von-network-base
-    command: bash -c 'sleep 10 && ./scripts/start_webserver.sh'
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
     environment:
-      - IP=${IP}
-      - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
@@ -47,8 +46,6 @@ services:
     volumes:
       - ./config:/home/indy/config
       - ./server:/home/indy/server
-      - webserver-cli:/home/indy/.indy-cli
-      - webserver-ledger:/home/indy/ledger
 
   #
   # Synchronization test
@@ -171,8 +168,6 @@ networks:
 
 volumes:
   client-data:
-  webserver-cli:
-  webserver-ledger:
   node1-data:
   node2-data:
   node3-data:
