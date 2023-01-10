@@ -29,7 +29,6 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
       - GENESIS_URL=${GENESIS_URL}
-      - ANONYMOUS=${ANONYMOUS}
       - LEDGER_SEED=${LEDGER_SEED}
       - LEDGER_CACHE_PATH=${LEDGER_CACHE_PATH}
       - MAX_FETCH=${MAX_FETCH:-50000}
@@ -44,30 +43,30 @@ services:
     ports:
       - ${WEB_SERVER_HOST_PORT:-9000}:8000
     volumes:
-      - ./config:/home/indy/config
-      - ./server:/home/indy/server
+      - ./config:/home/indy/config:ro
+      - ./server:/home/indy/server:ro
 
   #
   # Synchronization test
   #
-  synctest:
-    image: von-network-base
-    command: ./scripts/start_synctest.sh
-    environment:
-      - IP=${IP}
-      - IPS=${IPS}
-      - DOCKERHOST=${DOCKERHOST}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - RUST_LOG=${RUST_LOG}
-    networks:
-      - von
-    ports:
-      - ${WEB_SERVER_HOST_PORT:-9000}:8000
-    volumes:
-      - ./config:/home/indy/config
-      - ./server:/home/indy/server
-      - webserver-cli:/home/indy/.indy-cli
-      - webserver-ledger:/home/indy/ledger
+#  synctest:
+#    image: von-network-base
+#    command: ./scripts/start_synctest.sh
+#    environment:
+#      - IP=${IP}
+#      - IPS=${IPS}
+#      - DOCKERHOST=${DOCKERHOST}
+#      - LOG_LEVEL=${LOG_LEVEL}
+#      - RUST_LOG=${RUST_LOG}
+#    networks:
+#      - von
+#    ports:
+#      - ${WEB_SERVER_HOST_PORT:-9000}:8000
+#    volumes:
+#      - ./config:/home/indy/config
+#      - ./server:/home/indy/server
+#      - webserver-cli:/home/indy/.indy-cli
+#      - webserver-ledger:/home/indy/ledger
 
   #
   # Nodes

@@ -31,7 +31,7 @@ usage () {
     - Any command and options that can be executed by the container's shell.
 
   help
-    - Print this usage documantation.
+    - Print this usage documentation.
 
 EOF
 exit 1
