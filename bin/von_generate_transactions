@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 rm -rf /var/lib/indy/*
 
 usage () {
@@ -68,9 +70,9 @@ if [ ! -z "$nodeNum" ]; then
     #echo -e "================================================================================================"
 fi
 
-if [ ! -z $ipAddresses ]; then
+if [ ! -z "$ipAddresses" ]; then
     ipsArg="$ipAddresses"
-elif [ ! -z $ipAddress ]; then
+elif [ ! -z "$ipAddress" ]; then
     ipsArg="$ipAddress","$ipAddress","$ipAddress","$ipAddress"
 elif [ ! -z "$DOCKERHOST" ]; then
     ipsArg="$DOCKERHOST","$DOCKERHOST","$DOCKERHOST","$DOCKERHOST"

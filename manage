@@ -119,7 +119,7 @@ usage () {
               taaUrl
                 - The URL to the raw content of the TAA in markdown format.
               taaVersion
-                - The vesion of the TAA
+                - The version of the TAA
               taaRatificationTime
                 - The date and time of TAA ratification by network government.
                 - On Linux and Windows (Git Bash):
@@ -182,7 +182,7 @@ usage () {
 
   debugVolume <volume> [volumeMountFolder] - Mount a named volume into a 'debug' instance of the 'von-network-base' image with an interactive shell.
           Provides a containerized environment to perform analysis on the ledger databases and files.
-          Starting with 'bcgovimages/von-image:node-1.12-4' the base image for von-network conatins the RocksDB sst_dump tool that can be used to verify
+          Starting with 'bcgovimages/von-image:node-1.12-4' the base image for von-network contains the RocksDB sst_dump tool that can be used to verify
           and inspect the RocksDB database files; '*.sst' files.
           For example the command 'find /debug_volume/ -name "*.sst" | xargs -I {} sst_dump --file={} --command=verify' can be used to do a quick
           verification on all the database files once the container starts.
@@ -318,7 +318,7 @@ function initEnv() {
         USE_SAMPLE_TAA=1
         ;;
       *)
-        # If not recognized, save it for later procesing ...
+        # If not recognized, save it for later processing ...
         set -- "$@" "$arg"
         ;;
     esac
@@ -335,6 +335,8 @@ function initEnv() {
   fi
   export IP="$IP" IPS="$IPS"
 
+  export LEDGER_SEED=${LEDGER_SEED}
+
   export LOG_LEVEL=${LOG_LEVEL:-info}
   export RUST_LOG=${RUST_LOG:-warning}
 }
@@ -350,7 +352,7 @@ function runCliCommand() {
         displayCliUsage=1
         ;;
       *)
-        # If not recognized, save it for later procesing ...
+        # If not recognized, save it for later processing ...
         set -- "$@" "$arg"
         ;;
     esac
@@ -727,7 +729,7 @@ function debugVolume()
 
     backupVolumeMount=$(getVolumeMount ./${ROOT_BACKUP_DIR})/
 
-    echo -e "\nOpening a debug session with the followig volume mounts:\n  - '${volume}':'${volumeMountFolder}'\n  - '${backupVolumeMount}':'/${ROOT_BACKUP_DIR}'\n"
+    echo -e "\nOpening a debug session with the following volume mounts:\n  - '${volume}':'${volumeMountFolder}'\n  - '${backupVolumeMount}':'/${ROOT_BACKUP_DIR}'\n"
     docker run \
       --rm \
       -it \
@@ -829,6 +831,13 @@ shift || COMMAND=usage
 case "${COMMAND}" in
   start|up)
       initEnv "$@"
+      export LEDGER_SEED=${LEDGER_SEED:-000000000000000000000000Trustee1}
+      if [ ! -f config/genesis.txn ]; then
+        echo "Genesis transaction file not found, creating..."
+        docker run --rm -e "DOCKERHOST=${DOCKERHOST}" -e "IP=${IP}" -e "IPS=${IPS}" \
+          -v /$(pwd)/config:/home/indy/config \
+          von-network-base scripts/init_genesis.sh
+      fi
       install_taa
       ${dockerCompose} \
         up \
@@ -848,9 +857,6 @@ case "${COMMAND}" in
     ;;
   start-web)
       initEnv "$@"
-      if [ -z "$LEDGER_SEED" ]; then
-        export ANONYMOUS=1
-      fi
       ${dockerCompose} \
         up \
         -d webserver
@@ -886,9 +892,11 @@ case "${COMMAND}" in
       remove_taa
     ;;
   build)
+      docker-compose build webserver
       docker build $(initDockerBuildArgs) -t von-network-base . -f docker/Dockerfile.node
     ;;
   rebuild)
+      docker-compose build webserver
       docker build $(initDockerBuildArgs) --no-cache --progress plain  -t von-network-base . -f docker/Dockerfile.node
     ;;
   dockerhost)

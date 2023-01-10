@@ -5,7 +5,10 @@ ENV RUST_LOG ${RUST_LOG:-warning}
 
 
 ADD --chown=indy:indy indy_config.py /etc/indy/
-ADD --chown=indy:indy . $HOME
+
+WORKDIR $HOME
+ADD --chown=indy:indy bin bin
+ADD --chown=indy:indy scripts scripts
 
 RUN mkdir -p \
     $HOME/cli-scripts \
