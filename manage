@@ -823,7 +823,7 @@ function getVolumeMount() {
   echo ${path}
 }
 
-function ensureGenesisTxnFile() {
+function ensureGenesisTxnFileExists() {
   if [ ! -f config/genesis.txn ]; then
         echo "Genesis transaction file not found, creating..."
         docker run --rm -e "DOCKERHOST=${DOCKERHOST}" -e "IP=${IP}" -e "IPS=${IPS}" \
@@ -842,7 +842,7 @@ case "${COMMAND}" in
   start|up)
       initEnv "$@"
       export LEDGER_SEED=${LEDGER_SEED:-000000000000000000000000Trustee1}
-      ensureGenesisTxnFile
+      ensureGenesisTxnFileExists
       install_taa
       ${dockerCompose} \
         up \
@@ -853,7 +853,7 @@ case "${COMMAND}" in
     ;;
   start-combined)
       initEnv "$@"
-      ensureGenesisTxnFile
+      ensureGenesisTxnFileExists
       install_taa
       ${dockerCompose} \
         up \

@@ -25,6 +25,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.server
     environment:
+      - IP=${IP}
+      - IPS=${IPS}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
