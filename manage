@@ -822,6 +822,16 @@ function getVolumeMount() {
   fi
   echo ${path}
 }
+
+function ensureGenesisTransactionsFile() {
+  if [ ! -f config/genesis.txn ]; then
+        echo "Genesis transaction file not found, creating..."
+        docker run --rm -e "DOCKERHOST=${DOCKERHOST}" -e "IP=${IP}" -e "IPS=${IPS}" \
+          -v /$(pwd)/config:/home/indy/config \
+          von-network-base scripts/init_genesis.sh
+  fi
+}
+
 # =================================================================================================================
 
 pushd "${SCRIPT_HOME}" >/dev/null
@@ -832,12 +842,7 @@ case "${COMMAND}" in
   start|up)
       initEnv "$@"
       export LEDGER_SEED=${LEDGER_SEED:-000000000000000000000000Trustee1}
-      if [ ! -f config/genesis.txn ]; then
-        echo "Genesis transaction file not found, creating..."
-        docker run --rm -e "DOCKERHOST=${DOCKERHOST}" -e "IP=${IP}" -e "IPS=${IPS}" \
-          -v /$(pwd)/config:/home/indy/config \
-          von-network-base scripts/init_genesis.sh
-      fi
+      ensureGenesisTransactionsFile
       install_taa
       ${dockerCompose} \
         up \

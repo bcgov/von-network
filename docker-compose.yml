@@ -49,24 +49,22 @@ services:
   #
   # Synchronization test
   #
-#  synctest:
-#    image: von-network-base
-#    command: ./scripts/start_synctest.sh
-#    environment:
-#      - IP=${IP}
-#      - IPS=${IPS}
-#      - DOCKERHOST=${DOCKERHOST}
-#      - LOG_LEVEL=${LOG_LEVEL}
-#      - RUST_LOG=${RUST_LOG}
-#    networks:
-#      - von
-#    ports:
-#      - ${WEB_SERVER_HOST_PORT:-9000}:8000
-#    volumes:
-#      - ./config:/home/indy/config
-#      - ./server:/home/indy/server
-#      - webserver-cli:/home/indy/.indy-cli
-#      - webserver-ledger:/home/indy/ledger
+  synctest:
+    image: von-network-base
+    command: ./scripts/start_synctest.sh
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - RUST_LOG=${RUST_LOG}
+    networks:
+      - von
+    ports:
+      - ${WEB_SERVER_HOST_PORT:-9000}:8000
+    volumes:
+      - ./config:/home/indy/config
+      - ./server:/home/indy/server
 
   #
   # Nodes

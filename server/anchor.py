@@ -16,6 +16,8 @@ import nacl.signing
 import indy_vdr
 from indy_vdr import ledger, open_pool, LedgerType, VdrError, VdrErrorCode
 
+from .utils import env_bool, is_int, run_thread
+
 LOGGER = logging.getLogger(__name__)
 
 INDY_TXN_TYPES = {
@@ -50,10 +52,6 @@ INDY_TXN_TYPES = {
     "121": "GET_AUTH_RULE",
     "122": "AUTH_RULES",
 }
-
-def env_bool(param: str, defval=None) -> bool:
-    val = os.getenv(param, defval)
-    return bool(val and val != "0" and val.lower() != "false")
 
 INDY_ROLE_TYPES = {"0": "TRUSTEE", "2": "STEWARD", "100": "TGB", "101": "ENDORSER"}
 
@@ -99,24 +97,12 @@ def format_validator_info(node_data):
     return ret
 
 
-async def run_thread(fn, *args):
-    return await asyncio.get_event_loop().run_in_executor(None, fn, *args)
-
-
 def nacl_seed_to_did(seed):
     seed = seed_as_bytes(seed)
     vk = bytes(nacl.signing.SigningKey(seed).verify_key)
     did = base58.b58encode(vk[:16]).decode("ascii")
     verkey = base58.b58encode(vk).decode("ascii")
     return did, verkey
-
-
-def is_int(val):
-    if isinstance(val, int):
-        return True
-    if isinstance(val, str) and val.isdigit():
-        return True
-    return False
 
 
 async def _fetch_url(the_url):
