@@ -148,7 +148,7 @@ Temporary Items
 
 Pipfile
 
-# Custom TAA
+# Config files (custom TAA, genesis)
 config/aml.json
 config/taa.json
 config/.samples.used
