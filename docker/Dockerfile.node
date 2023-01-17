@@ -9,6 +9,8 @@ WORKDIR $HOME
 ADD --chown=indy:indy bin bin
 ADD --chown=indy:indy scripts scripts
 
+RUN chmod +x scripts/init_genesis.sh
+
 RUN mkdir -p \
     $HOME/cli-scripts \
     && chmod -R ug+rw $HOME/cli-scripts
