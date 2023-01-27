@@ -63,7 +63,7 @@ if [ ! -z "$nodeNum" ]; then
     nodeArg="--nodeNum $nodeNum"
 
     #echo -e \\n\\n"================================================================================================"
-    echo -e "Initializing Node $nodeNum:"
+    #echo -e "Initializing Node $nodeNum:"
     #echo -e init_indy_keys --name "Node$nodeNum"
     #echo -e "------------------------------------------------------------------------------------------------"
     #init_indy_keys --name "Node$nodeNum"
