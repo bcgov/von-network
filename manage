@@ -823,15 +823,6 @@ function getVolumeMount() {
   echo ${path}
 }
 
-function ensureGenesisTxnFileExists() {
-  if [ ! -f config/genesis.txn ]; then
-        echo "Genesis transaction file not found, creating..."
-        docker run --rm -e "DOCKERHOST=${DOCKERHOST}" -e "IP=${IP}" -e "IPS=${IPS}" \
-          -v /$(pwd)/config:/home/indy/config \
-          von-network-base scripts/init_genesis.sh
-  fi
-}
-
 # =================================================================================================================
 
 pushd "${SCRIPT_HOME}" >/dev/null
@@ -842,7 +833,6 @@ case "${COMMAND}" in
   start|up)
       initEnv "$@"
       export LEDGER_SEED=${LEDGER_SEED:-000000000000000000000000Trustee1}
-      ensureGenesisTxnFileExists
       install_taa
       ${dockerCompose} \
         up \
@@ -853,7 +843,6 @@ case "${COMMAND}" in
     ;;
   start-combined)
       initEnv "$@"
-      ensureGenesisTxnFileExists
       install_taa
       ${dockerCompose} \
         up \
@@ -898,12 +887,10 @@ case "${COMMAND}" in
       remove_taa
     ;;
   build)
-      docker-compose build webserver
-      docker build $(initDockerBuildArgs) -t von-network-base . -f docker/Dockerfile.node
+      docker build $(initDockerBuildArgs) -t von-network-base .
     ;;
   rebuild)
-      docker-compose build webserver
-      docker build $(initDockerBuildArgs) --no-cache --progress plain  -t von-network-base . -f docker/Dockerfile.node
+      docker build --no-cache --progress plain $(initDockerBuildArgs) -t von-network-base .
     ;;
   dockerhost)
       echo -e \\n"DockerHost: ${DOCKERHOST}"\\n

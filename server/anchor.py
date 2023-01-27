@@ -63,7 +63,7 @@ MAX_FETCH = int(os.getenv("MAX_FETCH", "50000"))
 # Sets the time between transaction fetches (updates); in seconds.
 RESYNC_TIME = int(os.getenv("RESYNC_TIME", "120"))
 
-GENESIS_FILE = os.getenv("GENESIS_FILE") or "/home/indy/config/genesis.txn"
+GENESIS_FILE = os.getenv("GENESIS_FILE") or "/home/indy/ledger/sandbox/pool_transactions_genesis"
 GENESIS_URL = os.getenv("GENESIS_URL")
 GENESIS_VERIFIED = False
 
