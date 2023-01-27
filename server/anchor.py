@@ -63,6 +63,12 @@ MAX_FETCH = int(os.getenv("MAX_FETCH", "50000"))
 # Sets the time between transaction fetches (updates); in seconds.
 RESYNC_TIME = int(os.getenv("RESYNC_TIME", "120"))
 
+# Sets the number of pool connection attempts on pool timeout.
+POOL_CONNECTION_ATTEMPTS = int(os.getenv("POOL_CONNECTION_ATTEMPTS", "5"))
+
+# Sets the delay between pool connection attempts; in seconds
+POOL_CONNECTION_DELAY = int(os.getenv("POOL_CONNECTION_DELAY", "10"))
+
 GENESIS_FILE = os.getenv("GENESIS_FILE") or "/home/indy/ledger/sandbox/pool_transactions_genesis"
 GENESIS_URL = os.getenv("GENESIS_URL")
 GENESIS_VERIFIED = False
@@ -203,10 +209,10 @@ class AnchorHandle:
 
                 LOGGER.info("Finished pool refresh: %s", self._pool.last_status)
             except VdrError as e:
-                if e.code == VdrErrorCode.POOL_TIMEOUT and attempts < 5:
-                    LOGGER.info("Pool timeout occurred, waiting to retry")
+                if e.code == VdrErrorCode.POOL_TIMEOUT and attempts < POOL_CONNECTION_ATTEMPTS:
+                    LOGGER.info("Pool timeout occurred, waiting %s seconds to retry", POOL_CONNECTION_DELAY)
                     attempts += 1
-                    await asyncio.sleep(10)
+                    await asyncio.sleep(POOL_CONNECTION_DELAY)
                     continue
                 else:
                     raise AnchorException("Error opening pool ledger connection") from e
