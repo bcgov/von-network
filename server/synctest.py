@@ -8,7 +8,7 @@ from indy_vdr import ledger, open_pool
 
 LOGGER = logging.getLogger(__name__)
 
-GENESIS_FILE = os.getenv("GENESIS_FILE") or "/home/indy/config/genesis.txn"
+GENESIS_FILE = os.getenv("GENESIS_FILE") or "/home/indy/ledger/sandbox/pool_transactions_genesis"
 
 POOL = 0
 DOMAIN = 1

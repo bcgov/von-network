@@ -148,11 +148,10 @@ Temporary Items
 
 Pipfile
 
-# Config files (custom TAA, genesis)
+# Custom TAA
 config/aml.json
 config/taa.json
 config/.samples.used
-config/genesis.txn
 
 # Visual Studio Code
 .history
