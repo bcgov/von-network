@@ -17,7 +17,6 @@ from .anchor import (
     INDY_ROLE_TYPES,
     INDY_TXN_TYPES,
     REGISTER_NEW_DIDS,
-    get_genesis_file,
 )
 
 logging.basicConfig(level=(os.getenv("LOG_LEVEL", "").upper() or logging.INFO))
@@ -88,7 +87,7 @@ def json_response(data, status=200, **kwargs):
     return web.Response(status=status, **kwargs)
 
 
-def not_ready():
+def not_ready_json():
     return web.json_response(data={"detail": "Not ready"}, status=503)
 
 
@@ -99,7 +98,7 @@ async def status(request):
         try:
             status["validators"] = await TRUST_ANCHOR.validator_info()
         except NotReadyException:
-            return not_ready()
+            return not_ready_json()
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -113,7 +112,7 @@ async def status_text(request):
     try:
         response = await TRUST_ANCHOR.validator_info()
     except NotReadyException:
-        return not_ready()
+        return not_ready_json()
 
     text = []
     for node in response:
@@ -129,7 +128,7 @@ async def status_text(request):
 @ROUTES.get("/ledger/{ledger_name}")
 async def ledger_json(request):
     if not TRUST_ANCHOR.ready:
-        return not_ready()
+        return not_ready_json()
 
     page = int(request.query.get("page", 1))
     page_size = int(request.query.get("page_size", 100))
@@ -180,7 +179,7 @@ async def ledger_json(request):
 @ROUTES.get("/ledger/{ledger_name}/text")
 async def ledger_text(request):
     if not TRUST_ANCHOR.ready:
-        return not_ready()
+        return not_ready_json()
 
     response = web.StreamResponse()
     response.content_type = "text/plain"
@@ -265,15 +264,16 @@ async def ledger_seq(request):
         if not data:
             return web.Response(status=404)
     except NotReadyException:
-        return not_ready()
+        return not_ready_json()
     return json_response(json.loads(data[3]))
 
 
 # Expose genesis transaction for easy connection.
 @ROUTES.get("/genesis")
 async def genesis(request):
-    with open(get_genesis_file(), "r") as content_file:
-        genesis = content_file.read()
+    if not TRUST_ANCHOR.ready:
+        return not_ready_json()
+    genesis = await TRUST_ANCHOR.get_genesis()
     return web.Response(text=genesis)
 
 
@@ -281,7 +281,7 @@ async def genesis(request):
 @ROUTES.post("/register")
 async def register(request):
     if not TRUST_ANCHOR.ready:
-        return not_ready()
+        return not_ready_json()
 
     body = await request.json()
     if not body:
@@ -323,7 +323,7 @@ async def register(request):
     try:
         await TRUST_ANCHOR.register_did(did, verkey, alias, role)
     except NotReadyException:
-        return not_ready()
+        return not_ready_json()
 
     return json_response({"seed": seed, "did": did, "verkey": verkey})
 
@@ -337,7 +337,6 @@ async def boot(app):
 
 
 if __name__ == "__main__":
-    logging.getLogger("indy.libindy").setLevel(logging.WARNING)
     APP.add_routes(ROUTES)
     APP.on_startup.append(boot)
     LOGGER.info("Running webserver...")

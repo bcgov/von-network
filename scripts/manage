@@ -31,7 +31,7 @@ usage () {
     - Any command and options that can be executed by the container's shell.
 
   help
-    - Print this usage documantation.
+    - Print this usage documentation.
 
 EOF
 exit 1
@@ -71,7 +71,7 @@ function start-client () {
 }
 
 function indy-cli() {
-  
+
   for arg in "$@"; do
     # Remove recognized arguments from the list after processing.
     shift
@@ -132,7 +132,7 @@ function indy-cli() {
   # ========================================================================
 
   eval ${INDY_CLI_EXE} ${@} ${indyCliArgs}
-  
+
   # Clean up ...
   if [ -f "${batchfile}" ]; then
     rm -rf "${batchfile}"

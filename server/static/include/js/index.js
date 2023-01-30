@@ -58,8 +58,15 @@ var app = new Vue({
       if (!formatted.err) {
         for (var idx = 0; idx < status.length; idx++) {
           var node = status[idx],
-            info = node.Node_info,
-            result = {};
+            info = node.Node_info;
+
+          // Skip nodes with error condition
+          if(node.error) {
+            console.error(`Received error status for validator node ${info.Name}:`, node.error);
+            continue;
+          }
+
+          var result = {};
 
           result.name = info.Name;
           result.did = info.did;
