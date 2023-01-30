@@ -90,16 +90,16 @@ def format_validator_info(node_data):
         try:
             reply = json.loads(node_data[node])
         except json.JSONDecodeError:
-            data = {"name": node, "error": node_data[node]}  # likely 'timeout'
+            data = {"Node_info": {"Name": node}, "error": node_data[node]}  # likely 'timeout'
         else:
             if "result" in reply:
                 data = reply["result"]["data"]
-                data["Node_info"]["Name"] = node
             elif "reason" in reply:
-                data = {"name": node, "error": reply["reason"]}
+                data = {"Node_info": {"Name": node}, "error": reply["reason"]}
             else:
-                data = {"name": node, "error": "unknown error"}
+                data = {"Node_info": {"Name": node}, "error": "unknown error"}
         ret.append(data)
+    
     return ret
 
 
