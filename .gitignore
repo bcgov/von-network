@@ -158,3 +158,6 @@ config/.samples.used
 
 # Eclipse
 .project
+
+# PyCharm
+.idea/

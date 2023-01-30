@@ -1,9 +1,7 @@
 import asyncio
 import base64
-from datetime import date, datetime
-from enum import IntEnum
+from datetime import datetime
 import json
-from hashlib import sha256
 import logging
 import os
 from pathlib import Path
@@ -13,11 +11,12 @@ import tempfile
 import aiohttp
 import aiosqlite
 import base58
+import nacl.signing
 
-from indy import ledger, pool
-from indy.error import IndyError
-from plenum.common.signer_simple import SimpleSigner
-from stp_core.crypto.nacl_wrappers import SigningKey
+import indy_vdr
+from indy_vdr import ledger, open_pool, LedgerType, VdrError, VdrErrorCode
+
+from .utils import env_bool, is_int, run_thread
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ INDY_TXN_TYPES = {
     "5": "TXN_AUTHOR_AGREEMENT_AML",
     "6": "GET_TXN_AUTHOR_AGREEMENT",
     "7": "GET_TXN_AUTHOR_AGREEMENT_AML",
+    "8": "DISABLE_ALL_TXN_AUTHR_AGRMTS",
     "100": "ATTRIB",
     "101": "SCHEMA",
     "102": "CRED_DEF",
@@ -63,35 +63,52 @@ MAX_FETCH = int(os.getenv("MAX_FETCH", "50000"))
 # Sets the time between transaction fetches (updates); in seconds.
 RESYNC_TIME = int(os.getenv("RESYNC_TIME", "120"))
 
-GENESIS_FILE = (
-    os.getenv("GENESIS_FILE") or "/home/indy/ledger/sandbox/pool_transactions_genesis"
-)
+# Sets the number of pool connection attempts on pool timeout.
+POOL_CONNECTION_ATTEMPTS = int(os.getenv("POOL_CONNECTION_ATTEMPTS", "5"))
+
+# Sets the delay between pool connection attempts; in seconds
+POOL_CONNECTION_DELAY = int(os.getenv("POOL_CONNECTION_DELAY", "10"))
+
+GENESIS_FILE = os.getenv("GENESIS_FILE") or "/home/indy/ledger/sandbox/pool_transactions_genesis"
 GENESIS_URL = os.getenv("GENESIS_URL")
 GENESIS_VERIFIED = False
 
-ANONYMOUS = os.getenv("ANONYMOUS")
-ANONYMOUS = bool(ANONYMOUS and ANONYMOUS != "0" and ANONYMOUS.lower() != "false")
 LEDGER_SEED = os.getenv("LEDGER_SEED")
-if not LEDGER_SEED and not ANONYMOUS:
-    LEDGER_SEED = "000000000000000000000000Trustee1"
 
-REGISTER_NEW_DIDS = os.getenv("REGISTER_NEW_DIDS", False)
-REGISTER_NEW_DIDS = bool(
-    REGISTER_NEW_DIDS
-    and REGISTER_NEW_DIDS != "0"
-    and REGISTER_NEW_DIDS.lower() != "false"
-)
+REGISTER_NEW_DIDS = env_bool("REGISTER_NEW_DIDS", False)
 
 AML_CONFIG = os.getenv("AML_CONFIG_FILE", "/home/indy/config/aml.json")
 TAA_CONFIG = os.getenv("TAA_CONFIG_FILE", "/home/indy/config/taa.json")
 
 
-def is_int(val):
-    if isinstance(val, int):
-        return True
-    if isinstance(val, str) and val.isdigit():
-        return True
-    return False
+def format_validator_info(node_data):
+    node_aliases = list(node_data.keys())
+    node_aliases.sort()
+
+    ret = []
+    for node in node_aliases:
+        try:
+            reply = json.loads(node_data[node])
+        except json.JSONDecodeError:
+            data = {"Node_info": {"Name": node}, "error": node_data[node]}  # likely 'timeout'
+        else:
+            if "result" in reply:
+                data = reply["result"]["data"]
+            elif "reason" in reply:
+                data = {"Node_info": {"Name": node}, "error": reply["reason"]}
+            else:
+                data = {"Node_info": {"Name": node}, "error": "unknown error"}
+        ret.append(data)
+    
+    return ret
+
+
+def nacl_seed_to_did(seed):
+    seed = seed_as_bytes(seed)
+    vk = bytes(nacl.signing.SigningKey(seed).verify_key)
+    did = base58.b58encode(vk[:16]).decode("ascii")
+    verkey = base58.b58encode(vk).decode("ascii")
+    return did, verkey
 
 
 async def _fetch_url(the_url):
@@ -123,7 +140,7 @@ async def resolve_genesis_file():
 
     if not GENESIS_VERIFIED:
         if not GENESIS_URL and GENESIS_FILE and Path(GENESIS_FILE).exists():
-            LOGGER.info("Genesis file already exists: %s", GENESIS_FILE)
+            LOGGER.info("Genesis file found: %s", GENESIS_FILE)
         elif GENESIS_URL:
             f = tempfile.NamedTemporaryFile(mode="w+b", delete=False)
             GENESIS_FILE = f.name
@@ -150,21 +167,6 @@ def seed_as_bytes(seed):
     return seed.encode("ascii")
 
 
-class LedgerType(IntEnum):
-    POOL = 0
-    DOMAIN = 1
-    CONFIG = 2
-
-    @staticmethod
-    def for_value(value):
-        if isinstance(value, str):
-            if value in "012":
-                value = int(value)
-            else:
-                return LedgerType[value.upper()]
-        return LedgerType(value)
-
-
 class AnchorException(Exception):
     pass
 
@@ -175,52 +177,46 @@ class NotReadyException(AnchorException):
 
 class AnchorHandle:
     def __init__(self, protocol: str = None):
-        self._anonymous = ANONYMOUS
-        self._cache = None
-        self._aml_config_path = AML_CONFIG
-        self._did = None
-        self._init_error = None
-        self._pool = None
+        self._anonymous = not LEDGER_SEED
+        self._cache: LedgerCache = None
+        self._aml_config_path: str = AML_CONFIG
+        self._did: str = None
+        self._init_error: str = None
+        self._pool: indy_vdr.Pool = None
         self._protocol = protocol or DEFAULT_PROTOCOL
         self._ready = False
-        self._ledger_lock = None
-        self._register_dids = REGISTER_NEW_DIDS and not ANONYMOUS
-        self._seed = seed_as_bytes(LEDGER_SEED)
-        self._sync_lock = None
+        self._ledger_lock: asyncio.Lock = None
+        self._register_dids = bool(REGISTER_NEW_DIDS and LEDGER_SEED)
+        self._seed = seed_as_bytes(LEDGER_SEED) if LEDGER_SEED else None
+        self._sync_lock: asyncio.Lock = None
         self._syncing = False
-        self._taa_accept = None
+        self._taa_accept: str = None
         self._taa_config_path = TAA_CONFIG
-        self._verkey = None
+        self._verkey: str = None
 
     async def _open_pool(self):
-        pool_name = "nodepool"
-        pool_cfg = {}
         self._pool = None
+        attempts = 0
 
-        try:
-            await pool.set_protocol_version(self._protocol)
-        except IndyError as e:
-            raise AnchorException("Error setting pool protocol version") from e
+        while True:
+            try:
+                genesis = await resolve_genesis_file()
 
-        # remove existing pool config by the same name in ledger browser mode
-        try:
-            pool_names = {cfg["pool"] for cfg in await pool.list_pools()}
-            if pool_name in pool_names:
-                await pool.delete_pool_ledger_config(pool_name)
-        except IndyError as e:
-            raise AnchorException("Error deleting existing pool configuration") from e
+                LOGGER.info("Connecting to ledger pool")
 
-        try:
-            await pool.create_pool_ledger_config(
-                pool_name, json.dumps({"genesis_txn": await resolve_genesis_file()})
-            )
-        except IndyError as e:
-            raise AnchorException("Error creating pool configuration") from e
+                indy_vdr.set_protocol_version(self._protocol)
+                self._pool = await open_pool(transactions_path=genesis)
 
-        try:
-            self._pool = await pool.open_pool_ledger(pool_name, json.dumps(pool_cfg))
-        except IndyError as e:
-            raise AnchorException("Error opening pool ledger connection") from e
+                LOGGER.info("Finished pool refresh: %s", self._pool.last_status)
+            except VdrError as e:
+                if e.code == VdrErrorCode.POOL_TIMEOUT and attempts < POOL_CONNECTION_ATTEMPTS:
+                    LOGGER.info("Pool timeout occurred, waiting %s seconds to retry", POOL_CONNECTION_DELAY)
+                    attempts += 1
+                    await asyncio.sleep(POOL_CONNECTION_DELAY)
+                    continue
+                else:
+                    raise AnchorException("Error opening pool ledger connection") from e
+            break
 
     async def _register_txn_agreement(self):
         aml_config = None
@@ -243,21 +239,26 @@ class AnchorHandle:
 
         if aml_config and ("version" not in aml_config or "aml" not in aml_config):
             raise AnchorException("Invalid AML configuration")
-        if taa_config and ("version" not in taa_config or "text" not in taa_config or "ratification_ts" not in taa_config):
+        if taa_config and (
+            "version" not in taa_config
+            or "text" not in taa_config
+            or "ratification_ts" not in taa_config
+        ):
             raise AnchorException("Invalid TAA configuration")
 
         aml_methods = {}
-        get_aml_req = await ledger.build_get_acceptance_mechanisms_request(
+        get_aml_req = ledger.build_get_acceptance_mechanisms_request(
             self._did, None, None
         )
         response = await self.submit_request(get_aml_req, True)
-        aml_found = response["result"]["data"]
+        aml_found = response["data"]
         aml_methods = aml_found and aml_found["aml"]
 
         if aml_config:
             if not aml_found or aml_found["version"] != aml_config["version"]:
+                LOGGER.info("AML not found or version mismatch, publishing")
                 aml_body = json.dumps(aml_config["aml"])
-                set_aml_req = await ledger.build_acceptance_mechanisms_request(
+                set_aml_req = ledger.build_acceptance_mechanisms_request(
                     self._did,
                     aml_body,
                     aml_config["version"],
@@ -269,43 +270,29 @@ class AnchorHandle:
             else:
                 LOGGER.info("AML already published: %s", aml_config["version"])
 
-        taa_plaintext = None
-        get_taa_req = await ledger.build_get_txn_author_agreement_request(
-            self._did, None
-        )
+        get_taa_req = ledger.build_get_txn_author_agreement_request(self._did, None)
         response = await self.submit_request(get_taa_req, True)
-        taa_found = response["result"]["data"]
-        taa_plaintext = (
-            taa_found
-            and taa_found["text"]
-            and (taa_found["version"] + taa_found["text"])
-        )
+        taa_found = response["data"]
 
         if taa_config:
             if not taa_found or taa_found["version"] != taa_config["version"]:
-                set_taa_req = await ledger.build_txn_author_agreement_request(
-                    self._did,
-                    taa_config["text"],
-                    taa_config["version"],
-                    taa_config["ratification_ts"]
+                LOGGER.info("TAA not found on ledger or version mismatch, publishing")
+                taa_extra = {}
+                if "ratification_ts" in taa_config:
+                    taa_extra["ratification_ts"] = taa_config["ratification_ts"]
+                    taa_extra["retirement_ts"] = taa_config.get("retirement_ts")
+                set_taa_req = ledger.build_txn_author_agreement_request(
+                    self._did, taa_config["text"], taa_config["version"], **taa_extra
                 )
                 await self.submit_request(set_taa_req, True)
                 LOGGER.info("Published TAA: %s", taa_config["version"])
-                taa_plaintext = taa_config["text"] and (
-                    taa_config["version"] + taa_config["text"]
-                )
             else:
                 LOGGER.info("TAA already published: %s", taa_config["version"])
 
-        if aml_methods and taa_plaintext:
-            rough_time = int(
-                datetime.combine(date.today(), datetime.min.time()).timestamp()
+        if aml_methods and taa_config:
+            self._taa_accept = ledger.prepare_txn_author_agreement_acceptance(
+                taa_config["text"], taa_config["version"], None, next(iter(aml_methods))
             )
-            self._taa_accept = {
-                "taaDigest": sha256(taa_plaintext.encode("utf-8")).digest().hex(),
-                "mechanism": next(iter(aml_methods)),
-                "time": rough_time,
-            }
 
     async def open(self):
         try:
@@ -337,9 +324,7 @@ class AnchorHandle:
 
     async def close(self):
         self._ready = False
-        if self._pool:
-            await pool.close_pool_ledger(self._pool)
-            self._pool = None
+        self._pool = None
         await self._cache.close()
 
     @property
@@ -366,39 +351,44 @@ class AnchorHandle:
                 return
             return await self.get_txn(ledger_type, latest, True, True)
 
+    async def get_genesis(self) -> str:
+        if not self.ready:
+            raise NotReadyException()
+        txns = await self._pool.get_transactions()
+        return txns
+
     async def get_latest_seqno(self, ledger_type):
-        ledger_type = LedgerType.for_value(ledger_type)
+        ledger_type = LedgerType.from_value(ledger_type)
         return await self._cache.get_latest_seqno(ledger_type)
 
     async def get_max_seqno(self, ledger_type):
-        ledger_type = LedgerType.for_value(ledger_type)
+        ledger_type = LedgerType.from_value(ledger_type)
         return await self._cache.get_max_seqno(ledger_type)
 
     async def submit_request(
-        self, req_json: str, signed: bool = False, apply_taa=False
+        self, req: ledger.Request, signed: bool = False, apply_taa=False, as_action: bool = False
     ):
         try:
-            if signed:
-                if not self._did:
-                    raise AnchorException("Cannot sign request: no DID")
-                req = json.loads(req_json)
-                if apply_taa and self._taa_accept:
-                    req["taaAcceptance"] = self._taa_accept
-                signer = SimpleSigner(self._did, self._seed)
-                req["signature"] = signer.sign(req)
-                req_json = json.dumps(req)
-            rv_json = await ledger.submit_request(self._pool, req_json)
-            await asyncio.sleep(0)
-        except IndyError as e:
+            if signed or (as_action and self.did):
+                await run_thread(self.sign_request, req, apply_taa)
+            if as_action:
+                resp = await self._pool.submit_action(req)
+            else:
+                resp = await self._pool.submit_request(req)
+        except VdrError as e:
             raise AnchorException("Error submitting ledger transaction request") from e
 
-        resp = json.loads(rv_json)
-        if resp.get("op", "") in ("REQNACK", "REJECT"):
-            raise AnchorException(
-                "Ledger rejected transaction request: {}".format(resp["reason"])
-            )
-
         return resp
+
+    def sign_request(self, req: ledger.Request, apply_taa: bool = True):
+        if not self._did:
+            raise AnchorException("Cannot sign request: no DID")
+        if apply_taa and self._taa_accept:
+            req.set_txn_author_agreement_acceptance(self._taa_accept)
+        key = nacl.signing.SigningKey(self._seed)
+        signed = key.sign(req.signature_input)
+        req.set_signature(signed.signature)
+        return req
 
     async def get_nym(self, did: str):
         """
@@ -407,23 +397,23 @@ class AnchorHandle:
         if not self.ready:
             raise NotReadyException()
 
-        get_nym_req = await ledger.build_get_nym_request(self._did, did)
+        get_nym_req = ledger.build_get_nym_request(self._did, did)
         response = await self.submit_request(get_nym_req, True)
         rv = {}
 
-        data_json = response["result"]["data"]  # it's double-encoded on the ledger
+        data_json = response["data"]  # it's double-encoded on the ledger
         if data_json:
             rv = json.loads(data_json)
         return rv
 
     def _txn2data(self, txn: dict):
-        return json.dumps((txn["result"].get("data", {}) or {}).get("txn", {}))
+        return json.dumps((txn.get("data", {}) or {}).get("txn", {}))
 
     async def get_txn(self, ledger_type, ident, cache=True, latest=False):
         """
     Fetch a transaction by sequence number or transaction ID
     """
-        ledger_type = LedgerType.for_value(ledger_type)
+        ledger_type = LedgerType.from_value(ledger_type)
         if not self.ready:
             raise NotReadyException()
         if not ident:
@@ -439,18 +429,18 @@ class AnchorHandle:
             return None
 
         LOGGER.debug("Fetch %s %s", ledger_type, ident)
-        req_json = await ledger.build_get_txn_request(
+        request = ledger.build_get_txn_request(
             self.did, ledger_type.name, int(ident)
         )
         try:
-            txn = await self.submit_request(req_json, False)
+            txn = await self.submit_request(request, False)
         except AnchorException as e:
             raise AnchorException(
                 "Exception when fetching transaction {}/{}".format(
                     ledger_type.name, ident
                 )
             ) from e
-        txn_data = txn["result"].get("data", {}) or {}
+        txn_data = txn.get("data", {}) or {}
 
         if txn_data and txn_data.get("txn"):
             body_json = json.dumps(txn_data, separators=(",", ":"), sort_keys=True)
@@ -462,11 +452,11 @@ class AnchorHandle:
                 await self._cache.add_txn(
                     ledger_type, ident, txn_id, added, body_json, latest
                 )
-            return (ident, txn_id, added, body_json)
+            return ident, txn_id, added, body_json
 
     async def get_txn_range(self, ledger_type, start=None, end=None):
         pos = start or 1
-        ledger_type = LedgerType.for_value(ledger_type)
+        ledger_type = LedgerType.from_value(ledger_type)
         rows = await self._cache.get_txn_range(ledger_type, pos, end)
         if rows:
             pos += len(rows)
@@ -484,7 +474,7 @@ class AnchorHandle:
     async def get_txn_search(
         self, ledger_type, query, txn_type=None, limit=-1, offset=0
     ):
-        ledger_type = LedgerType.for_value(ledger_type)
+        ledger_type = LedgerType.from_value(ledger_type)
         if txn_type == "":
             txn_type = None
         await self.sync_ledger_cache(ledger_type)
@@ -504,41 +494,37 @@ class AnchorHandle:
         LOGGER.info("Get nym: %s", did)
         if not await self.get_nym(did):
             LOGGER.info("Send nym: %s/%s", did, verkey)
-            req_json = await ledger.build_nym_request(
+            request = ledger.build_nym_request(
                 self.did, did, verkey, alias or None, role
             )
-            await self.submit_request(req_json, True, True)
+            await self.submit_request(request, True, True)
 
     async def seed_to_did(self, seed):
         """
         Resolve a DID and verkey from a seed
         """
-        seed = seed_as_bytes(seed)
-        vk = bytes(SigningKey(seed).verify_key)
-        did = base58.b58encode(vk[:16]).decode("ascii")
-        verkey = base58.b58encode(vk).decode("ascii")
-        return (did, verkey)
+        return await run_thread(nacl_seed_to_did, seed)
 
     async def init_cache(self):
-        LOGGER.info("Syncing ledger cache...")
+        LOGGER.info("Init ledger cache...")
         for ledger_type in LedgerType:
             await self.sync_ledger_cache(ledger_type, True)
-        LOGGER.info("Finished sync")
+        LOGGER.info("Finished cache init")
         asyncio.get_event_loop().create_task(self.maintain_cache())
 
     async def maintain_cache(self):
         while True:
             for ledger_type in LedgerType:
-                done = await self.update_ledger_cache(ledger_type)
+                _ = await self.update_ledger_cache(ledger_type)
             await asyncio.sleep(RESYNC_TIME)
 
     async def update_ledger_cache(self, ledger_type: LedgerType):
-        LOGGER.debug("Resyncing ledger cache: %s", ledger_type.name)
+        LOGGER.debug("Updating  ledger cache: %s", ledger_type.name)
         try:
             await self.sync_ledger_cache(ledger_type)
         except asyncio.TimeoutError:
             pass
-        LOGGER.debug("Finished resync")
+        LOGGER.debug("Finished cache update")
 
     def compare_txns(self, txnA: dict, txnB: dict) -> bool:
         match = True
@@ -559,7 +545,7 @@ class AnchorHandle:
         done = False
         fetched = 0
         try:
-            locked = await asyncio.wait_for(
+            _ = await asyncio.wait_for(
                 self._sync_lock.acquire(), None if wait else 0.01
             )
         except asyncio.TimeoutError:
@@ -575,8 +561,8 @@ class AnchorHandle:
                     not cache_txn
                     or not txn
                     or not self.compare_txns(
-                        json.loads(cache_txn[3]), json.loads(txn[3])
-                    )
+                    json.loads(cache_txn[3]), json.loads(txn[3])
+                )
                 ):
                     await self._cache.reset()
             while not done:
@@ -621,24 +607,9 @@ class AnchorHandle:
         if not self.ready or not self.did:
             raise NotReadyException()
 
-        req_json = await ledger.build_get_validator_info_request(self.did)
-        node_data = await self.submit_request(req_json, True)
-        node_aliases = list(node_data.keys())
-        node_aliases.sort()
-
-        ret = []
-        for node in node_aliases:
-            try:
-                reply = json.loads(node_data[node])
-                if "result" not in reply:
-                    continue
-                data = reply["result"].get("data")
-                data["Node_info"]["Name"] = node
-                ret.append(data)
-            # Some of the nodes a not reachable.
-            except json.decoder.JSONDecodeError:
-                continue
-        return ret
+        request = ledger.build_get_validator_info_request(self.did)
+        node_data = await self.submit_request(request, as_action=True)
+        return format_validator_info(node_data)
 
     @property
     def public_config(self):
