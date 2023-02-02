@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import Sequence
 import tempfile
+import sys
 
 import aiohttp
 import aiosqlite
@@ -16,7 +17,9 @@ import nacl.signing
 import indy_vdr
 from indy_vdr import ledger, open_pool, LedgerType, VdrError, VdrErrorCode
 
-from .utils import env_bool, is_int, run_thread
+# Import utils from the path relative anchor.py (this file).
+sys.path.insert(1, os.path.realpath(os.path.dirname(__file__)))
+from utils import env_bool, is_int, run_thread
 
 LOGGER = logging.getLogger(__name__)
 
