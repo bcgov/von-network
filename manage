@@ -6,7 +6,10 @@ export DOCKERHOST=$(getDockerHost)
 
 SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-von}"
-export DEFAULT_CLI_SCRIPT_DIR='./cli-scripts'
+
+export TMP_FOLDER='./tmp'
+export CLI_SCRIPTS_FOLDER='./cli-scripts'
+export DEFAULT_CLI_SCRIPT_DIR="${CLI_SCRIPTS_FOLDER}"
 
 export LEDGER_TIMEOUT="${LEDGER_TIMEOUT:-60}"
 export LEDGER_URL_CONFIG="${LEDGER_URL_CONFIG}"
@@ -25,7 +28,6 @@ dockerCompose="docker-compose --log-level ERROR --build"
 if [[ $(docker compose version 2> /dev/null) == 'Docker Compose'* ]]; then
   dockerCompose="docker --log-level error compose"
 fi
-echo "Using: ${dockerCompose}"
 
 # =================================================================================================================
 # Usage:
@@ -533,26 +535,29 @@ function generateGenesisFiles() {
     exit 1
   fi
 
-  if [[ "${trustee_csv}" != ./tmp/* ]]; then
-    trustee_csv="./tmp/${trustee_csv}"
+  if [[ "${trustee_csv}" != ${TMP_FOLDER}/* ]]; then
+    trustee_csv="${TMP_FOLDER}/${trustee_csv}"
   fi
 
   if [ ! -f "${trustee_csv}" ]; then
-    echoYellow "${trustee_csv} not found, please make sure you placed ${trustee_csv} in the ./tmp folder."
+    echoYellow "${trustee_csv} not found, please make sure you placed ${trustee_csv} in the ${TMP_FOLDER} folder."
     exit 1
   fi
 
-  if [[ "${steward_csv}" != ./tmp/* ]]; then
-    steward_csv="./tmp/${steward_csv}"
+  if [[ "${steward_csv}" != ${TMP_FOLDER}/* ]]; then
+    steward_csv="${TMP_FOLDER}/${steward_csv}"
   fi
 
   if [ ! -f "${steward_csv}" ]; then
-    echoYellow "${steward_csv} not found, please make sure you placed ${steward_csv} in the ./tmp folder."
+    echoYellow "${steward_csv} not found, please make sure you placed ${steward_csv} in the ${TMP_FOLDER} folder."
     exit 1
   fi
 
-  echo "Downloading the latest version of ${genesis_from_files_filename} from ${genesis_from_files_url} ..."
-  curl -s -L -o ./cli-scripts/${genesis_from_files_filename} ${genesis_from_files_url}
+  if [ ! -f "${CLI_SCRIPTS_FOLDER}/${genesis_from_files_filename}" ]; then
+    echo "Downloading the latest version of ${genesis_from_files_filename} from ${genesis_from_files_url} ..."
+    curl -s -L -o ${CLI_SCRIPTS_FOLDER}/${genesis_from_files_filename} ${genesis_from_files_url}
+    chmod +x ${CLI_SCRIPTS_FOLDER}/${genesis_from_files_filename}
+  fi
 
   # Escape spaces in path ...
   trustee_csv_esc=$(echo ${trustee_csv##*/} | sed 's/ /\\ /g')
@@ -594,8 +599,8 @@ function apply-taa() {
   done
 
   # Create temp files for the AML and ATT
-  amlPath="./tmp/aml-$(date +"%s").txt"
-  taaPath="./tmp/att-$(date +"%s").txt"
+  amlPath="${TMP_FOLDER}/aml-$(date +"%s").txt"
+  taaPath="${TMP_FOLDER}/att-$(date +"%s").txt"
 
   # Download the AML and ATT files
   curl -s -o ${amlPath} "${amlUrl}"
@@ -823,9 +828,31 @@ function getVolumeMount() {
   echo ${path}
 }
 
+function checkFolderPermissions() {
+  # Create the tmp folder if it does not exist ...
+  if [ ! -d "${TMP_FOLDER}" ]; then
+    echo "Creating ${TMP_FOLDER} ..."
+    mkdir -p tmp
+  fi
+
+  # Ensure folder permissions are set correctly for use inside the docker container ...
+  setFolderReadWriteAll "${TMP_FOLDER}"
+  setFolderReadWriteAll "${CLI_SCRIPTS_FOLDER}"
+}
+
+function setFolderReadWriteAll() {
+  folder=${1}
+  permissions=$(stat -c '%a' ${folder})
+
+  if [[ "${permissions:0-1}" != 5 ]]; then
+    echo "Setting ${folder} to read/write for all users ..."
+    chmod ${folder} a+rws
+  fi
+}
 # =================================================================================================================
 
 pushd "${SCRIPT_HOME}" >/dev/null
+checkFolderPermissions
 COMMAND=$(toLower ${1})
 shift || COMMAND=usage
 
