@@ -42,5 +42,4 @@ load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 did list
 wallet close
-wallet detach ${walletName}
 exit

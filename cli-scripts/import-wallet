@@ -48,5 +48,4 @@ wallet import ${walletName} key export_path=${importPath} export_key storage_typ
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 did list
 wallet close
-wallet detach ${walletName}
 exit

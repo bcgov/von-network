@@ -114,5 +114,4 @@ did use ${authorDid}
 ledger cred-def sign=true endorser=${endorserDid} schema_id=${schemaId} signature_type=${signatureType} tag=${tag} primary=${primaryKey}
 ledger save-transaction file=${outputFile}
 wallet close
-wallet detach ${walletName}
 exit
