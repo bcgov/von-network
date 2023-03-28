@@ -83,5 +83,4 @@ ledger load-transaction file=${inputFile}
 ledger sign-multi
 ledger save-transaction file=${outputFile}
 wallet close
-wallet detach ${walletName}
 exit
