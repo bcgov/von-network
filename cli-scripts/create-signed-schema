@@ -108,5 +108,4 @@ ledger schema sign=true endorser=${endorserDid} name=${schemaName} version=${sch
 ledger save-transaction file=${outputFile}
 did list
 wallet close
-wallet detach ${walletName}
 exit
