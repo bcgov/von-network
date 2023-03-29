@@ -46,5 +46,4 @@ wallet open ${walletName} key storage_credentials=${storageCredentials}
 did new seed
 did list
 wallet close
-wallet detach ${walletName}
 exit

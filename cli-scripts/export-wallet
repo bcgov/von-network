@@ -49,5 +49,4 @@ load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
 wallet open ${walletName} key storage_credentials=${storageCredentials}
 wallet export export_path=${exportPath} export_key
 wallet close
-wallet detach ${walletName}
 exit
