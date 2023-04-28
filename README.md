@@ -188,13 +188,13 @@ The Indy nodes are configured to talk to each other via their "public" address n
 Once the nodes are all running and have connected to each other, you can run the Indy client to test the connection in a separate terminal window:
 
 ```bash
-./manage cli
+./manage indy-cli
 ```
 
 If you want to connect to a remote indy-node pool, you can optionally supply an ip address. (Currently only supports a test network running on a single machine with a single ip address.)
 
 ```bash
-./manage cli <ip address>
+./manage indy-cli <ip address>
 ```
 
 The Indy CLI should boot up and you should see the following:
