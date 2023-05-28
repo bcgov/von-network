@@ -102,7 +102,7 @@ def format_validator_info(node_data):
             else:
                 data = {"Node_info": {"Name": node}, "error": "unknown error"}
         ret.append(data)
-    
+
     return ret
 
 
@@ -686,7 +686,7 @@ def txn_extract_terms(txn_json):
 
         elif txntype == "102":
             # CRED_DEF
-            result["data"] = " ".join(txn["data"]["data"]["primary"]["r"].keys())
+            result["data"] = " ".join(txn["data"]["data"]["primary"].keys())
 
     return txntype, result, ledger_size
 
