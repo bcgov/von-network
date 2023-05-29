@@ -22,7 +22,7 @@ export SHELL_CMD='bash'
 # --------------------------------------------------------------------------------------------------------
 
 # Default to deprecated V1 'docker-compose'.
-dockerCompose="docker-compose --log-level ERROR --build"
+dockerCompose="docker-compose --log-level ERROR"
 
 # Prefer 'docker compose' V2 if available
 if [[ $(docker compose version 2> /dev/null) == 'Docker Compose'* ]]; then
