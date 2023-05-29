@@ -1,3 +1,6 @@
+import os
+import logging
+
 NETWORK_NAME = 'sandbox'
 
 LEDGER_DIR = '/home/indy/ledger'
@@ -10,3 +13,5 @@ NODE_INFO_DIR = LEDGER_DIR
 
 CLI_BASE_DIR = '/home/indy/.indy-cli/'
 CLI_NETWORK_DIR = '/home/indy/.indy-cli/networks'
+
+logLevel = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper())
