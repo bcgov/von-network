@@ -634,6 +634,7 @@ function backup() {
     backupDir=${ROOT_BACKUP_DIR}/${datePart}/${timePart}
     backupVolumeMount=$(getVolumeMount ./${ROOT_BACKUP_DIR})/
     mkdir -p ./${backupDir}
+    chmod -R ug+rw ./${backupDir}
     if [ ! -z "${_msg}" ]; then
       echo "${_msg}" > ./${backupDir}/ReadMe.txt
     fi
