@@ -1,0 +1,364 @@
+# ===================================================================================
+# Start an Indy-cli Session and Update a list of Auth_Rules
+# -----------------------------------------------------------------------------------
+# Start an interactive indy-cli session with a connected pool, wallet, and did,
+# and apply a list of auth rules.
+#
+#  - The ledger pool MUST exist.
+#  - A wallet containing the DID MUST exist.
+#
+# This batch script is designed to be used with von-network.  To use it place the
+# script in the cli-scripts folder of your working copy of von-network and follow
+# the examples below to run it.
+#
+# Examples:
+# ./manage \
+#  indy-cli auth_rules \
+#  walletName=endorser_wallet \
+#  poolName=localpool \
+#  useDid=DFuDqCYpeDNXLuc3MKooX3
+#
+# ./manage \
+#  indy-cli auth_rules \
+#  walletName=endorser_wallet \
+#  storageType=postgres_storage \
+#  storageConfig='{"url":"192.168.65.3:5435"}' \
+#  storageCredentials='{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+#  poolName=localpool \
+#  useDid=DFuDqCYpeDNXLuc3MKooX3
+#
+# Params:
+# walletName:
+#  - The name of the wallet to be used for the operation.
+#
+# storageType:
+#  - Optional - The wallet storage type. Defaults to 'default'.
+#  - Remote Wallet Example; postgres_storage
+#  - Local Wallet Example; default
+#
+# storageConfig:
+#  - Optional - The wallet storage configuration. Defaults to '{}'.
+#  - Remote Wallet Example; '{"url":"192.168.65.3:5435"}'
+#  - Local Wallet Example; '{}'
+#
+# storageCredentials:
+#  - Optional - The wallet storage credentials. Defaults to '{}'.
+#  - Remote Wallet Example; '{"account":"DB_USER","password":"DB_PASSWORD","admin_account":"postgres","admin_password":"mysecretpassword"}'
+#  - Local Wallet Example; '{}'
+#
+# poolName:
+#  - The name of the ledger pool to use during the operations.
+#  - Example; sandbox
+#
+# useDid:
+#  - The DID to use for the session.
+# ===================================================================================
+
+load-plugin library=libindystrgpostgres.so initializer=postgresstorage_init
+
+pool connect ${poolName}
+
+-wallet attach ${walletName} storage_type=${storageType} storage_config=${storageConfig}
+wallet open ${walletName} key storage_credentials=${storageCredentials}
+did use ${useDid}
+
+# Roles:
+#  - Trustee                  0
+#  - Steward                  2
+#  - Endorser                 101
+#  - Network_Monitor          201
+#  - User (non-privileged)    <None>
+
+# =================================================================================================================================================================
+# Add/Edit DID
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Trustee DID
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=ADD field=role old_value=* new_value=0 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Add Steward DID
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=ADD field=role old_value=* new_value=2 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Add Endorser DID
+#  - Require 1 Trustee signatures
+ledger auth-rule txn_type=NYM action=ADD field=role old_value=* new_value=101 constraint="{"sig_count":1,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Add Network_Monitor DID
+#  - Require 1 Trustee signature || 1 Steward signature
+ledger auth-rule txn_type=NYM action=ADD field=role old_value=* new_value=201 constraint="{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"role":"0","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":false}]}"
+
+# Add non-privileged DID
+#  - Require 1 Trustee signature || 1 Endorser signature
+ledger auth-rule txn_type=NYM action=ADD field=role old_value=* constraint="{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"role":"0","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"101","constraint_id":"ROLE","need_to_be_owner":false}]}"
+
+# Edit DID - Change Role from Trustee to Steward
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=0 new_value=2 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Trustee to Endorser
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=0 new_value=101 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Trustee to Network_Monitor
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=0 new_value=201 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Trustee to non-privileged
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=0 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Steward to Trustee
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=2 new_value=0 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Steward to Endorser
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=2 new_value=101 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Steward to Network_Monitor
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=2 new_value=201 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Steward to non-privileged
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=2 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Endorser to Trustee
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=101 new_value=0 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Endorser to Steward
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=101 new_value=2 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Endorser to Network_Monitor
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=101 new_value=201 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Endorser to non-privileged
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=101 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Network_Monitor to Trustee
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=201 new_value=0 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Network_Monitor to Steward
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=201 new_value=2 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Network_Monitor to Endorser
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=201 new_value=101 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from Network_Monitor to non-privileged
+#  - Require 1 Trustee signature || 1 Network_Monitor (owner) signature
+ledger auth-rule txn_type=NYM action=EDIT field=role old_value=201 constraint="{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"role":"0","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"201","constraint_id":"ROLE","need_to_be_owner":true}]}"
+
+# Edit DID - Change Role from non-privileged to Trustee
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role new_value=0 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from non-privileged to Steward
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role new_value=2 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from non-privileged to Endorser
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role new_value=101 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change Role from non-privileged to Network_Monitor
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=NYM action=EDIT field=role new_value=201 constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit DID - Change verkey
+#  - Require owner signature
+ledger auth-rule txn_type=NYM action=EDIT field=verkey old_value=* new_value=* constraint="{"sig_count":1,"role":"*","constraint_id":"ROLE","need_to_be_owner":true}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add/Edit ATTRIB
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add ATTRIB
+#  - Require owner signature
+ledger auth-rule txn_type=ATTRIB action=ADD field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"*","constraint_id":"ROLE","need_to_be_owner":true}"
+
+# Edit   ATTRIB
+#  - Require owner signature
+ledger auth-rule txn_type=ATTRIB action=EDIT field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"*","constraint_id":"ROLE","need_to_be_owner":true}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add/Edit Schema
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Schema
+#  - Require 1 Endorser signature
+ledger auth-rule txn_type=SCHEMA action=ADD field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"101","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit Schema
+#  - Forbidden
+ledger auth-rule txn_type=SCHEMA action=EDIT field=* old_value=* new_value=* constraint="{"constraint_id":"FORBIDDEN"}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add/Edit SET_CONTEXT (200) [aka Rich Schema]
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Set Context
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=200 action=ADD field=* old_value=* new_value=* constraint="{"constraint_id":"FORBIDDEN"}"
+
+# Edit Set Context
+#  - Forbidden
+ledger auth-rule txn_type=200 action=EDIT field=* old_value=* new_value=* constraint="{"constraint_id":"FORBIDDEN"}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add Claim Def
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Claim Def
+#  - Require 1 Endorser signature
+ledger auth-rule txn_type=CLAIM_DEF action=ADD field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"101","constraint_id":"ROLE","need_to_be_owner":false}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add/Edit Node
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Node - Set active
+#  - Require 1 Steward signature
+ledger auth-rule txn_type=NODE action=ADD field=services old_value=* new_value=['VALIDATOR'] constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Add Node - Set inactive
+#  - Require 1 Steward signature
+ledger auth-rule txn_type=NODE action=ADD field=services  old_value=* new_value=[] constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit Node - Set inactive
+#  - Require 2 Trustee signatures || 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=services  old_value=['VALIDATOR'] new_value=[] constraint="{"constraint_id":"OR","auth_constraints":[{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}]}"
+
+# Edit Node - Set active
+#  - Require 2 Trustee signatures || 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=services  old_value=[] new_value=['VALIDATOR'] constraint="{"constraint_id":"OR","auth_constraints":[{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}]}"
+
+# Edit Node - update registered node ip address
+#  - Require 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=node_ip  old_value=* new_value=* constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}"
+
+# Edit Node - update registered node port
+#  - Require 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=node_port  old_value=* new_value=* constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}"
+
+# Edit Node - update registered client ip address
+#  - Require 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=client_ip  old_value=* new_value=* constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}"
+
+# Edit Node - update registered client port
+#  - Require 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=client_port  old_value=* new_value=* constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}"
+
+# Edit Node - update registered blskey
+#  - Require 1 Steward (owner) signature
+ledger auth-rule txn_type=NODE action=EDIT field=blskey  old_value=* new_value=* constraint="{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":true}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Pool Commands
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Schedule Pool Upgrade
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=POOL_UPGRADE  action=ADD field=action old_value=* new_value=start constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit scheduled Pool Upgrade
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=POOL_UPGRADE action=EDIT field=action old_value=start new_value=cancel constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit scheduled Pool Upgrade
+#  - Require 1 Trustee signature
+ledger auth-rule txn_type=POOL_RESTART action=ADD field=action old_value=* new_value=* constraint="{"sig_count":1,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit Pool Configuration
+#  - Require 2 Trustee signatures
+ledger auth-rule  txn_type=POOL_CONFIG action=EDIT field=action old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Query validator-info for a node
+#  - Require 1 Trustee signature || 1 Steward signature || 1 Network_Monitor signature
+ledger auth-rule txn_type=GET_VALIDATOR_INFO action=ADD field=* old_value=* new_value=* constraint="{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"role":"0","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"2","constraint_id":"ROLE","need_to_be_owner":false},{"sig_count":1,"role":"201","constraint_id":"ROLE","need_to_be_owner":false}]}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add/Edit Revocation Registry Definitions
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Revocation Registry Definition
+#  - Require 1 Endorser signature
+ledger auth-rule txn_type=REVOC_REG_DEF action=ADD field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"101","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit Revocation Registry Definition
+#  - Require 1 Owner signature
+ledger auth-rule txn_type=REVOC_REG_DEF action=EDIT field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"*","constraint_id":"ROLE","need_to_be_owner":true}"
+# =================================================================================================================================================================
+
+
+# =================================================================================================================================================================
+# Add/Edit Revocation Registry Entries
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add Revocation Registry Entry
+#  - Require 1 Owner signature
+ledger auth-rule txn_type=REVOC_REG_ENTRY action=ADD field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"*","constraint_id":"ROLE","need_to_be_owner":true}"
+
+# Edit Revocation Registry Entry
+#  - Require 1 Owner signature
+ledger auth-rule txn_type=REVOC_REG_ENTRY action=EDIT field=* old_value=* new_value=* constraint="{"sig_count":1,"role":"*","constraint_id":"ROLE","need_to_be_owner":true}"
+# =================================================================================================================================================================
+
+
+# =================================================================================================================================================================
+# Edit Auth Rules - Bulk
+# Note:
+#  - The update for txn_type=AUTH_RULE (singular auth rule edit) is not enabled in this batch file.
+#    It is applied separately after this batch file has been run and the new rules have been reviewed and validated.
+#    This ensures rules can be updated or the batch file corrected and rerun before that ability to edit the rules is finally secured.
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Batch Edit Auth Rules (AUTH_RULES = 122)
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=122 action=EDIT field=* old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit Auth Rules
+#  - Require 2 Trustee signatures
+#  - DISABLED ON PURPOSE - DO NOT UNCOMMENT!
+#  - Here for reference only.  To be run after this batch file have been successfully run and all other rules have been set.
+# ledger auth-rule txn_type=AUTH_RULE action=EDIT field=* old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add/Edit AML/TAA
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Add AML
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=TXN_AUTHR_AGRMT_AML action=ADD field=* old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Add TAA
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=TXN_AUTHR_AGRMT action=ADD field=* old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+
+# Edit TAA
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=TXN_AUTHR_AGRMT action=EDIT field=* old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+# =================================================================================================================================================================
+
+# =================================================================================================================================================================
+# Add DISABLE_ALL_TXN_AUTHR_AGRMTS (8)
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#  - Require 2 Trustee signatures
+ledger auth-rule txn_type=8 action=ADD field=* old_value=* new_value=* constraint="{"sig_count":2,"role":"0","constraint_id":"ROLE","need_to_be_owner":false}"
+# =================================================================================================================================================================
