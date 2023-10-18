@@ -7,6 +7,12 @@ A portable development level Indy Node network, including a Ledger Browser. The 
 
 `von-network` is being developed as part of the Verifiable Organizations Network (VON). For more information on VON see https://vonx.io.  Even, better - join in with what we are doing and contribute to VON, Aries and Indy communities.
 
+# VON Network is Not a Production Level Indy Node Network
+
+VON Network is not a production level Indy Node network.  It was designed as a provisional network for development and testing purposes only.  It provides you with an exceptionally simple way to spin up an Indy Node network, but is lacking many of the features and safeguards needed for a production level network.
+
+VON Network is provided as is for development and testing.  Please do not use it for production environments.
+
 ## The VON-Network Ledger Browser and API
 
 With the Ledger Browser (for example: [http://greenlight.bcovrin.vonx.io/](http://greenlight.bcovrin.vonx.io/)), you can see:
