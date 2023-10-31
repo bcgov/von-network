@@ -856,7 +856,7 @@ function setFolderReadWriteAll() {
 
   if [[ "${permissions:0-1}" != 5 ]]; then
     echo "Setting ${folder} to read/write for all users ..."
-    chmod ${folder} a+rws
+    chmod a+rws ${folder}
   fi
 }
 # =================================================================================================================
