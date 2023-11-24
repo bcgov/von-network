@@ -41,6 +41,8 @@ services:
       - WEB_ANALYTICS_SCRIPT=${WEB_ANALYTICS_SCRIPT}
       - INFO_SITE_TEXT=${INFO_SITE_TEXT}
       - INFO_SITE_URL=${INFO_SITE_URL}
+      - INDY_SCAN_URL=${INDY_SCAN_URL}
+      - INDY_SCAN_TEXT=${INDY_SCAN_TEXT}
     networks:
       - von
     ports:
