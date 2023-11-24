@@ -1,0 +1,31 @@
+<div class="panel panel-default panel-ledger-status" style="display: none" v-show="ready">
+    <div class="panel-heading">
+        <h2>
+            <span class="fa fa-sitemap"></span>
+            Ledger State
+        </h2>
+    </div>
+    <div class="panel-body">
+        <div class="panel panel-node" v-if="syncing">
+            <div class="panel-body loading">
+                <p>
+                    <span class="fa fa-info-circle"></span> Fetching transactions
+                </p>
+            </div>
+        </div>
+        <p>
+            View the state of the ledgers:
+        </p>
+        <p>
+            {% if INDY_SCAN_URL %}
+            <a href="{{ INDY_SCAN_URL }}" class="tool" target="_blank"><span class="fa fa-chevron-right left"></span>{{ INDY_SCAN_TEXT }} <i class="fa fa-external-link"></i></a>
+            {% else %}
+            <a href="/browse/domain" class="tool"><span class="fa fa-chevron-right left"></span>Domain</a>
+            <br>
+            <a href="/browse/pool" class="tool"><span class="fa fa-chevron-right left"></span>Pool</a>
+            <br>
+            <a href="/browse/config" class="tool"><span class="fa fa-chevron-right left"></span>Config</a>
+            {% endif %}
+        </p>
+    </div>
+</div>
