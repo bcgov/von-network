@@ -258,11 +258,23 @@ The node pool can have a trust anchor write a did for you. That feature is avail
 It is possible to customize some of the aspects of the Ledger Browser at run-time, by using the following environment variables:
 
 - `REGISTER_NEW_DIDS`: if set to `True`, it will enable the user interface allowing new identity owners to write a DID to the ledger. It defaults to `False`.
-- `LEDGER_INSTANCE_NAME`: the name of the ledger instance the Ledger Brwoser is connected to. Defaults to `Ledger Browser`.
+- `LEDGER_INSTANCE_NAME`: the name of the ledger instance the Ledger Browser is connected to. Defaults to `Ledger Browser`.
 - `INFO_SITE_URL`: a URL that will be displayed in the header, and can be used to reference another external website containing details/resources on the current ledger browser instance.
 - `INFO_SITE_TEXT`: the display text used for the `INFO_SITE_URL`. If not specified, it will default to the value set for `INFO_SITE_URL`.
 - `WEB_ANALYTICS_SCRIPT`: the JavaScript code used by web analytics servers. Populate this environment variable if you want to track the usage of your site with Matomo, Google Analytics or any other JavaScript based trackers. Include the whole ```<script type="text/javascript">...</script>``` tag, ensuring quotes are escaped properly for your command-line interpreter (e.g.: bash, git bash, etc.).
 - `LEDGER_CACHE_PATH`: if set, it will instruct the ledger to create an on-disk cache, rather than in-memory.  The image supplies a folder for this purpose; `$HOME/.indy_client/ledger-cache`.  The file should be placed into this directory (e.g.: `/home/indy/.indy-client/ledger-cache/ledger_cache_file` or `$HOME/.indy_client/ledger-cache/ledger_cache_file`).
+- `INDY_SCAN_URL`: the URL to the external IndyScan ledger browser instance for the network.  This will replace the links to the builtin ledger browser tools.
+- `INDY_SCAN_TEXT`: the display text used for the `INDY_SCAN_URL`. If not specified, it will default to the value set for `INDY_SCAN_URL`.
+
+## Using IndyScan with VON Network
+
+[IndyScan](https://github.com/Patrik-Stas/indyscan) is production level transaction explorer for Hyperledger Indy networks.  It's a great tool for exploring and searching through the transactions on the various ledgers.
+
+You might be asking...  Why would I want to use IndyScan with `von-network`, when `von-network` has a built-in ledger browser?
+
+The short answer is performance at scale.  The built-in ledger browser works great for most local development purposes.  However, it starts running into performance issues when your instance contains over 100,000 transactions.  IndyScan on the other hand is backed by Elasticsearch and can easily scale well beyond that limitation.  So if you're hosting an instance of `von-network` for your organization to use for testing, like BC Gov does with [BCovrin Test](http://test.bcovrin.vonx.io/), you'll want to look into switching over to IndyScan as your ledger browser.
+
+To use IndyScan as your ledger browser for `von-network`, you're responsible for setting up and hosting your own instance of IndyScan.  Please refer to the [IndyScan](https://github.com/Patrik-Stas/indyscan) repository for information on how to accomplish this.  Once your IndyScan instance is up and running you can configure your `von-network` instance to provide a link to it on the main page by using the `INDY_SCAN_URL` and `INDY_SCAN_TEXT` variables described in the previous section.  The link to your IndyScan instance will replace the links to `von-network`'s built in ledger browser tools.
 
 ## Contributing
 
