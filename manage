@@ -154,6 +154,8 @@ usage () {
                 taaVersion=0.1 \
                 taaRatificationTime="2022-08-09T11:05:00PDT"
 
+  truncateLogs - Truncate the container logs.
+
   indy-cli - Run Indy-Cli commands in a Indy-Cli container environment.
 
         $0 indy-cli -h
@@ -859,6 +861,47 @@ function setFolderReadWriteAll() {
     chmod a+rws ${folder}
   fi
 }
+
+function isUsingWSL() {
+    kernelVersion=$(docker -l error info 2> /dev/null | grep "Kernel Version")
+    if [[ "$OSTYPE" == "msys" ]] && [[ "${kernelVersion}" == *'WSL'* ]]; then
+      return 0
+    else
+      return 1
+    fi
+}
+
+function getContainers() {
+      initEnv "$@"
+      ${dockerCompose} \
+        ps --all | tail -n +2 | awk '{ print $1 }'
+}
+
+varDockerFolder="/var/lib/docker"
+varDockerFolderMsys="//wsl$/docker-desktop-data/version-pack-data/community/docker"
+function truncateLogs() {
+
+  if [[ "$OSTYPE" == "msys" ]] && ! isUsingWSL ; then
+    echoYellow "Currently, the truncateLogs function is only supported in Windows when using Docker on WSL"
+    exit 1
+  fi
+
+  containers=$(getContainers)
+  for container in ${containers}; do
+    log=$(docker inspect -f '{{.LogPath}}' ${container} 2> /dev/null)
+
+    if [[ "$OSTYPE" == "msys" ]]; then
+      log="${log/${varDockerFolder}/${varDockerFolderMsys}}"
+    fi
+
+    if [ -f "${log}" ]; then
+      echo "Truncating log for ${container}: ${log}"
+      truncate -s 0 ${log}
+    else
+      echoYellow "Unable to locate log for ${container}: ${log}"
+    fi
+  done
+}
 # =================================================================================================================
 
 pushd "${SCRIPT_HOME}" >/dev/null
@@ -963,6 +1006,10 @@ case "${COMMAND}" in
       volume=${1}
       volumeMountFolder=${2}
       debugVolume ${volume} ${volumeMountFolder}
+    ;;
+  truncatelogs)
+    isUsingWSL
+    truncateLogs
     ;;
   *)
       usage;;
