@@ -1,12 +1,21 @@
 #!/bin/bash
 export MSYS_NO_PATHCONV=1
 
-# Set default platform to linux/amd64 when running on Arm based MAC since there are no arm based images available currently.
+# Default Options
+export TA_RATIFICATION_TIME_OPS='+%s --date='
+export STAT_OPS='-c '%a''
+
+# MAC OS Options
 if [[ $OSTYPE == 'darwin'* ]]; then
+  # Set default platform to linux/amd64 when running on Arm based MAC since there are no arm based images available currently.
   architecture=$(uname -m)
   if [[ "${architecture}" == 'arm'* ]] || [[ "${architecture}" == 'aarch'* ]]; then
     export DOCKER_DEFAULT_PLATFORM=linux/amd64
   fi
+
+  # Set the date and stat options appropriatly for MAC OS.
+  export TA_RATIFICATION_TIME_OPS='-jf '%Y-%m-%dT%H:%M:%S%Z' +%s '
+  export STAT_OPS='-f '%A''
 fi
 
 # getDockerHost; for details refer to https://github.com/bcgov/DITP-DevOps/tree/main/code/snippets#getdockerhost
@@ -595,12 +604,7 @@ function apply-taa() {
 
         if [[ "${arg}" == *"taaRatificationTime"* ]]; then
           taaRatificationTime=${arg#*=}
-          if [[ "$OSTYPE" == "darwin"* ]]; then
-            # Mac OSX
-            taaRatificationTimestamp=$(date -jf "%Y-%m-%dT%H:%M:%S%Z" "${taaRatificationTime}" +%s)
-          else
-            taaRatificationTimestamp=$(date --date="${taaRatificationTime}" +"%s")
-          fi
+          taaRatificationTimestamp=$(date ${TA_RATIFICATION_TIME_OPS}"${taaRatificationTime}")
           continue
         fi
 
@@ -610,8 +614,8 @@ function apply-taa() {
   done
 
   # Create temp files for the AML and ATT
-  amlPath="${TMP_FOLDER}/aml-$(date +"%s").txt"
-  taaPath="${TMP_FOLDER}/att-$(date +"%s").txt"
+  amlPath="${TMP_FOLDER}/aml-$(date +%s).txt"
+  taaPath="${TMP_FOLDER}/att-$(date +%s).txt"
 
   # Download the AML and ATT files
   curl -s -o ${amlPath} "${amlUrl}"
@@ -854,7 +858,7 @@ function checkFolderPermissions() {
 
 function setFolderReadWriteAll() {
   folder=${1}
-  permissions=$(stat -c '%a' ${folder})
+  permissions=$(stat ${STAT_OPS} ${folder})
 
   if [[ "${permissions:0-1}" != 5 ]]; then
     echo "Setting ${folder} to read/write for all users ..."
