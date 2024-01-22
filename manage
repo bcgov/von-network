@@ -857,12 +857,15 @@ function checkFolderPermissions() {
 }
 
 function setFolderReadWriteAll() {
-  folder=${1}
-  permissions=$(stat ${STAT_OPS} ${folder})
+  # This has no impact on Windows.  The chmod command will run but the permissions don't actually change.
+  if [[ "$OSTYPE" != "msys" ]]; then
+    folder=${1}
+    permissions=$(stat ${STAT_OPS} ${folder})
 
-  if [[ "${permissions:0-1}" != 5 ]]; then
-    echo "Setting ${folder} to read/write for all users ..."
-    chmod a+rws ${folder}
+    if [[ "${permissions:0-1}" != 7 ]]; then
+      echo "Setting ${folder} to read/write for all users ..."
+      chmod a+rws ${folder}
+    fi
   fi
 }
 
