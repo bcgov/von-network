@@ -23,7 +23,7 @@ jobs:
 
       - name: Lowercase repo owner
         id: lowercase_repo_owner
-        uses: ASzc/change-string-case-action@v1
+        uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ github.repository_owner }}
 
