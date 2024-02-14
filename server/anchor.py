@@ -123,7 +123,22 @@ async def _fetch_url(the_url):
 
 
 async def _fetch_genesis_txn(genesis_url: str, target_path: str) -> bool:
-    (r_status, data) = await _fetch_url(genesis_url)
+
+    # Check if the protocol is http or file
+    if "http" in genesis_url:
+        (r_status, data) = await _fetch_url(genesis_url)
+    elif "file" in genesis_url:
+        # get the path to the file.
+        # substring of genesis_url without file:// 
+        genesis_url_path = genesis_url[7:]
+        # print the path to file
+        LOGGER.info("Genesis file local path: %s", genesis_url_path)
+        # read file to data variable
+        data = open(genesis_url_path,"r").read()
+    # neither of supported protocols
+    else:
+        raise AnchorException("Not used supported protocols https(s) or file for Genesis transaction file url")
+
 
     # check data is valid json
     lines = data.splitlines()

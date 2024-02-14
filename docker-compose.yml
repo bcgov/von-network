@@ -50,6 +50,7 @@ services:
     volumes:
       - ./config:/home/indy/config
       - ./server:/home/indy/server
+      - ./tmp:/tmp
       - webserver-cli:/home/indy/.indy-cli
       - webserver-ledger:/home/indy/ledger
 
