@@ -1,7 +1,8 @@
 FROM bcgovimages/von-image:node-1.12-6
-
-ENV LOG_LEVEL ${LOG_LEVEL:-info}
-ENV RUST_LOG ${RUST_LOG:-warning}
+ARG LOG_LEVEL=info
+ARG RUST_LOG=warning
+ENV LOG_LEVEL=$LOG_LEVEL
+ENV RUST_LOG=$RUST_LOG
 
 ADD config ./config
 ADD server/requirements.txt server/
