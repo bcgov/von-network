@@ -1,8 +1,15 @@
 FROM bcgovimages/von-image:node-1.12-6
+ARG user=indy
 ARG LOG_LEVEL=info
 ARG RUST_LOG=warning
 ENV LOG_LEVEL=$LOG_LEVEL
 ENV RUST_LOG=$RUST_LOG
+
+USER root
+RUN apt-get update -y && \
+    apt-get install -y \
+    xz-utils
+USER $user
 
 ADD config ./config
 ADD server/requirements.txt server/

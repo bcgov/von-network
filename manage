@@ -731,7 +731,7 @@ function restoreArchive()
         --user root \
         -v ${archiveVolumeMount}:/${ROOT_BACKUP_DIR} \
         -v ${volume}:/target_volume von-network-base \
-        tar --same-owner -xzvpf ${archiveToRestore} -C /target_volume/ ${tarOptions}
+        tar --same-owner -xvpf ${archiveToRestore} -C /target_volume/ ${tarOptions}
     else
       echo -e \\n"Restore aborted."
     fi
