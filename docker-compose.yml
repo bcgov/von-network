@@ -26,6 +26,7 @@ services:
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - NODE_PORTS=${NODE1_PORT1:-9701},${NODE1_PORT2:-9702},${NODE2_PORT1:-9703},${NODE2_PORT2:-9704},${NODE3_PORT1:-9705},${NODE3_PORT2:-9706},${NODE4_PORT1:-9707},${NODE4_PORT2:-9708}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
@@ -80,21 +81,22 @@ services:
   #
   nodes:
     image: von-network-base
-    command: ./scripts/start_nodes.sh
+    command: ./scripts/start_nodes.sh ${NODE1_PORT1:-9701} ${NODE1_PORT2:-9702} ${NODE2_PORT1:-9703} ${NODE2_PORT2:-9704} ${NODE3_PORT1:-9705} ${NODE3_PORT2:-9706} ${NODE4_PORT1:-9707} ${NODE4_PORT2:-9708}
     networks:
       - von
     ports:
-      - 9701:9701
-      - 9702:9702
-      - 9703:9703
-      - 9704:9704
-      - 9705:9705
-      - 9706:9706
-      - 9707:9707
-      - 9708:9708
+      - ${NODE1_EXPOSED_PORT1:-${NODE1_PORT1:-9701}}:${NODE1_PORT1:-9701}
+      - ${NODE1_EXPOSED_PORT2:-${NODE1_PORT2:-9702}}:${NODE1_PORT2:-9702}
+      - ${NODE2_EXPOSED_PORT1:-${NODE2_PORT1:-9703}}:${NODE2_PORT1:-9703}
+      - ${NODE2_EXPOSED_PORT2:-${NODE2_PORT2:-9704}}:${NODE2_PORT2:-9704}
+      - ${NODE3_EXPOSED_PORT1:-${NODE3_PORT1:-9705}}:${NODE3_PORT1:-9705}
+      - ${NODE3_EXPOSED_PORT2:-${NODE3_PORT2:-9706}}:${NODE3_PORT2:-9706}
+      - ${NODE4_EXPOSED_PORT1:-${NODE4_PORT1:-9707}}:${NODE4_PORT1:-9707}
+      - ${NODE4_EXPOSED_PORT2:-${NODE4_PORT2:-9708}}:${NODE4_PORT2:-9708}
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - NODE_PORTS=${NODE1_PORT1:-9701},${NODE1_PORT2:-9702},${NODE2_PORT1:-9703},${NODE2_PORT2:-9704},${NODE3_PORT1:-9705},${NODE3_PORT2:-9706},${NODE4_PORT1:-9707},${NODE4_PORT2:-9708}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
@@ -103,15 +105,16 @@ services:
 
   node1:
     image: von-network-base
-    command: ./scripts/start_node.sh 1
+    command: ./scripts/start_node.sh 1 ${NODE1_PORT1:-9701} ${NODE1_PORT2:-9702}
     networks:
       - von
     ports:
-      - 9701:9701
-      - 9702:9702
+      - ${NODE1_EXPOSED_PORT1:-${NODE1_PORT1:-9701}}:${NODE1_PORT1:-9701}
+      - ${NODE1_EXPOSED_PORT2:-${NODE1_PORT2:-9702}}:${NODE1_PORT2:-9702}
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - NODE_PORTS=${NODE1_PORT1:-9701},${NODE1_PORT2:-9702},${NODE2_PORT1:-9703},${NODE2_PORT2:-9704},${NODE3_PORT1:-9705},${NODE3_PORT2:-9706},${NODE4_PORT1:-9707},${NODE4_PORT2:-9708}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
@@ -120,15 +123,16 @@ services:
 
   node2:
     image: von-network-base
-    command: ./scripts/start_node.sh 2
+    command: ./scripts/start_node.sh 2 ${NODE2_PORT1:-9703} ${NODE2_PORT2:-9704}
     networks:
       - von
     ports:
-      - 9703:9703
-      - 9704:9704
+      - ${NODE2_EXPOSED_PORT1:-${NODE2_PORT1:-9703}}:${NODE2_PORT1:-9703}
+      - ${NODE2_EXPOSED_PORT2:-${NODE2_PORT2:-9704}}:${NODE2_PORT2:-9704}
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - NODE_PORTS=${NODE1_PORT1:-9701},${NODE1_PORT2:-9702},${NODE2_PORT1:-9703},${NODE2_PORT2:-9704},${NODE3_PORT1:-9705},${NODE3_PORT2:-9706},${NODE4_PORT1:-9707},${NODE4_PORT2:-9708}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
@@ -137,15 +141,16 @@ services:
 
   node3:
     image: von-network-base
-    command: ./scripts/start_node.sh 3
+    command: ./scripts/start_node.sh 3 ${NODE3_PORT1:-9705} ${NODE3_PORT2:-9706}
     networks:
       - von
     ports:
-      - 9705:9705
-      - 9706:9706
+      - ${NODE3_EXPOSED_PORT1:-${NODE3_PORT1:-9705}}:${NODE3_PORT1:-9705}
+      - ${NODE3_EXPOSED_PORT2:-${NODE3_PORT2:-9706}}:${NODE3_PORT2:-9706}
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - NODE_PORTS=${NODE1_PORT1:-9701},${NODE1_PORT2:-9702},${NODE2_PORT1:-9703},${NODE2_PORT2:-9704},${NODE3_PORT1:-9705},${NODE3_PORT2:-9706},${NODE4_PORT1:-9707},${NODE4_PORT2:-9708}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
@@ -154,15 +159,16 @@ services:
 
   node4:
     image: von-network-base
-    command: ./scripts/start_node.sh 4
+    command: ./scripts/start_node.sh 4 ${NODE4_PORT1:-9707} ${NODE4_PORT2:-9708}
     networks:
       - von
     ports:
-      - 9707:9707
-      - 9708:9708
+      - ${NODE4_EXPOSED_PORT1:-${NODE4_PORT1:-9707}}:${NODE4_PORT1:-9707}
+      - ${NODE4_EXPOSED_PORT2:-${NODE4_PORT2:-9708}}:${NODE4_PORT2:-9708}
     environment:
       - IP=${IP}
       - IPS=${IPS}
+      - NODE_PORTS=${NODE1_PORT1:-9701},${NODE1_PORT2:-9702},${NODE2_PORT1:-9703},${NODE2_PORT2:-9704},${NODE3_PORT1:-9705},${NODE3_PORT2:-9706},${NODE4_PORT1:-9707},${NODE4_PORT2:-9708}
       - DOCKERHOST=${DOCKERHOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - RUST_LOG=${RUST_LOG}
