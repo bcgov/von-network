@@ -2,13 +2,21 @@
 
 set -e
 
+PARAMS=""
+
 if [ ! -z "$IPS" ]; then
-    echo von_generate_transactions -s "$IPS" -n "$NODE_NUM"
-    von_generate_transactions -s "$IPS" -n "$NODE_NUM"
+    PARAMS+=" -s \"$IPS\""
 elif [ ! -z "$IP" ]; then
-    echo von_generate_transactions -i "$IP" -n "$NODE_NUM"
-    von_generate_transactions -i "$IP" -n "$NODE_NUM"
-else
-    echo von_generate_transactions -n "$NODE_NUM"
-    von_generate_transactions -n "$NODE_NUM"
+    PARAMS+=" -s \"$IP\""
 fi
+
+if [ ! -z "$NODE_PORTS" ]; then
+    PARAMS+=" -p $NODE_PORTS"
+fi
+
+if [ ! -z "$NODE_NUM" ]; then
+    PARAMS+=" -n $NODE_NUM"
+fi
+
+echo von_generate_transactions $PARAMS
+von_generate_transactions $PARAMS
