@@ -1,0 +1,3 @@
+WALLET_ENCRYPTION_KEY=prompt_skipped
+INDY_WALLET_SEED=prompt_skipped
+INDY_WALLET_DID=prompt_skipped

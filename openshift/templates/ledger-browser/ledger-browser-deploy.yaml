@@ -101,8 +101,8 @@ objects:
         name: ${NAME}
         weight: 100
 
-  - kind: DeploymentConfig
-    apiVersion: v1
+  - kind: Deployment
+    apiVersion: apps/v1
     metadata:
       name: ${NAME}
       annotations:
@@ -114,22 +114,12 @@ objects:
     spec:
       strategy:
         type: Recreate
-      triggers:
-        - type: ImageChange
-          imageChangeParams:
-            automatic: true
-            containerNames:
-              - ${NAME}
-            from:
-              kind: ImageStreamTag
-              namespace: ${IMAGE_NAMESPACE}
-              name: ${SOURCE_IMAGE_NAME}:${TAG_NAME}
-        - type: ConfigChange
       replicas: 1
       selector:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
-        env: ${TAG_NAME}
+        matchLabels:
+          app: ${NAME}
+          app-group: ${APP_GROUP}
+          env: ${TAG_NAME}
       template:
         metadata:
           name: ${NAME}
@@ -144,7 +134,7 @@ objects:
                 claimName: ${PERSISTENT_VOLUME_NAME}
           containers:
             - name: ${NAME}
-              image: " "
+              image: image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${NAME}:${TAG_NAME}
               command:
                 - ./scripts/start_webserver.sh
               ports:

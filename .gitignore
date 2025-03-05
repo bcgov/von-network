@@ -8,6 +8,7 @@ backup/
 
 # tmp script files
 *_DeploymentConfig.json
+*_Deployment.json
 *_BuildConfig.json
 tmp/
 
