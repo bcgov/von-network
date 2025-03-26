@@ -204,7 +204,7 @@ usage () {
 
   debugVolume <volume> [volumeMountFolder] - Mount a named volume into a 'debug' instance of the 'von-network-base' image with an interactive shell.
           Provides a containerized environment to perform analysis on the ledger databases and files.
-          Starting with 'bcgovimages/von-image:node-1.12-4' the base image for von-network contains the RocksDB sst_dump tool that can be used to verify
+          Starting with 'von-image:node-1.12-4' the base image for von-network contains the RocksDB sst_dump tool that can be used to verify
           and inspect the RocksDB database files; '*.sst' files.
           For example the command 'find /debug_volume/ -name "*.sst" | xargs -I {} sst_dump --file={} --command=verify' can be used to do a quick
           verification on all the database files once the container starts.
