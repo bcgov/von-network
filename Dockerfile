@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:node-1.12-6
+FROM ghcr.io/bcgov/von-image:node-1.12-6
 ARG user=indy
 ARG LOG_LEVEL=info
 ARG RUST_LOG=warning
