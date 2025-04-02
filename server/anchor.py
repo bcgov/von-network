@@ -78,7 +78,11 @@ GENESIS_VERIFIED = False
 
 LEDGER_SEED = os.getenv("LEDGER_SEED")
 
-REGISTER_NEW_DIDS = env_bool("REGISTER_NEW_DIDS", False)
+REGISTER_NEW_DIDS = env_bool("REGISTER_NEW_DIDS", "False")
+
+DISPLAY_LEDGER_STATE = env_bool("DISPLAY_LEDGER_STATE", "True")
+
+ENABLE_LEDGER_CACHE = env_bool("ENABLE_LEDGER_CACHE", "True")
 
 AML_CONFIG = os.getenv("AML_CONFIG_FILE", "/home/indy/config/aml.json")
 TAA_CONFIG = os.getenv("TAA_CONFIG_FILE", "/home/indy/config/taa.json")
@@ -190,6 +194,7 @@ class AnchorHandle:
         self._ready = False
         self._ledger_lock: asyncio.Lock = None
         self._register_dids = bool(REGISTER_NEW_DIDS and LEDGER_SEED)
+        self._display_ledger_state = bool(DISPLAY_LEDGER_STATE)
         self._seed = seed_as_bytes(LEDGER_SEED) if LEDGER_SEED else None
         self._sync_lock: asyncio.Lock = None
         self._syncing = False
@@ -319,7 +324,13 @@ class AnchorHandle:
                     raise
             self._ledger_lock = asyncio.Lock()
             self._sync_lock = asyncio.Lock()
-            asyncio.get_event_loop().create_task(self.init_cache())
+
+            if ENABLE_LEDGER_CACHE is True:
+                LOGGER.info("Ledger cache enabled, initializing cache ...")
+                asyncio.get_event_loop().create_task(self.init_cache())
+            else:
+                LOGGER.info("Ledger cache disabled, skipping initialization.")
+
             self._ready = True
         except Exception as e:
             LOGGER.exception("Initialization error:")
@@ -522,7 +533,7 @@ class AnchorHandle:
             await asyncio.sleep(RESYNC_TIME)
 
     async def update_ledger_cache(self, ledger_type: LedgerType):
-        LOGGER.debug("Updating  ledger cache: %s", ledger_type.name)
+        LOGGER.debug("Updating ledger cache: %s", ledger_type.name)
         try:
             await self.sync_ledger_cache(ledger_type)
         except asyncio.TimeoutError:
@@ -547,6 +558,11 @@ class AnchorHandle:
     async def sync_ledger_cache(self, ledger_type: LedgerType, wait=False):
         done = False
         fetched = 0
+
+        if ENABLE_LEDGER_CACHE is False:
+            LOGGER.info("Ledger cache disabled, ignoring sync request.")
+            return done
+
         try:
             _ = await asyncio.wait_for(
                 self._sync_lock.acquire(), None if wait else 0.01
@@ -620,6 +636,7 @@ class AnchorHandle:
             "anonymous": self.anonymous,
             "init_error": self._init_error,
             "register_new_dids": self._register_dids,
+            "display_ledger_state": self._display_ledger_state,
             "ready": self.ready,
             "syncing": self._syncing,
         }

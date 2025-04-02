@@ -9,6 +9,7 @@ var app = new Vue({
     reg_error: null,
     reg_result: null,
     register_new_dids: false,
+    display_ledger_state: false,
     loading: false,
     status: null,
     syncing: false
@@ -34,6 +35,7 @@ var app = new Vue({
             self.init_error = result.init_error;
             self.ready = result.ready;
             self.register_new_dids = result.register_new_dids;
+            self.display_ledger_state = result.display_ledger_state;
             self.syncing = result.syncing;
             if (self.ready) {
               self.status = result.validators ? self.formatValidatorStatus(result.validators) : null;

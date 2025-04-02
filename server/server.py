@@ -8,8 +8,13 @@ import shutil
 import yaml
 import aiohttp_jinja2
 import jinja2
+import sys
 
 from aiohttp import web
+
+# Import utils from the path relative anchor.py (this file).
+sys.path.insert(1, os.path.realpath(os.path.dirname(__file__)))
+from utils import env_bool
 
 from .anchor import (
     AnchorHandle,
@@ -17,6 +22,7 @@ from .anchor import (
     INDY_ROLE_TYPES,
     INDY_TXN_TYPES,
     REGISTER_NEW_DIDS,
+    DISPLAY_LEDGER_STATE
 )
 
 logging.basicConfig(level=(os.getenv("LOG_LEVEL", "").upper() or logging.INFO))
@@ -28,33 +34,43 @@ os.chdir(os.path.dirname(__file__))
 
 LOGGER.info("REGISTER_NEW_DIDS is set to %s", REGISTER_NEW_DIDS)
 
+LOGGER.info("DISPLAY_LEDGER_STATE is set to %s", DISPLAY_LEDGER_STATE)
+
+ENABLE_BROWSER_ROUTES = env_bool("ENABLE_BROWSER_ROUTES", "True")
+LOGGER.info("ENABLE_BROWSER_ROUTES is set to %s", ENABLE_BROWSER_ROUTES)
+
 LEDGER_INSTANCE_NAME = os.getenv("LEDGER_INSTANCE_NAME", "Ledger Browser")
 LOGGER.info('LEDGER_INSTANCE_NAME is set to "%s"', LEDGER_INSTANCE_NAME)
+
+LEDGER_DESCRIPTION = os.getenv("LEDGER_DESCRIPTION", "Contributed by the Province of British Columbia")
+LOGGER.info('LEDGER_DESCRIPTION is set to "%s"', LEDGER_DESCRIPTION)
 
 WEB_ANALYTICS_SCRIPT = os.getenv("WEB_ANALYTICS_SCRIPT", "")
 LOGGER.info(
     "Web analytics are %s", "ENABLED" if not "WEB_ANALYTICS_SCRIPT" else "DISABLED"
 )
 
-
 INFO_SITE_URL = os.getenv("INFO_SITE_URL")
 INFO_SITE_TEXT = os.getenv("INFO_SITE_TEXT") or os.getenv("INFO_SITE_URL")
+
 INDY_SCAN_URL = os.getenv("INDY_SCAN_URL")
 INDY_SCAN_TEXT = os.getenv("INDY_SCAN_TEXT") or os.getenv("INDY_SCAN_URL")
 
 APP = web.Application()
 aiohttp_jinja2.setup(APP, loader=jinja2.FileSystemLoader("./static"))
 
-ROUTES = web.RouteTableDef()
+BASE_ROUTES = web.RouteTableDef()
+LEDGER_BROWSER_ROUTES = web.RouteTableDef()
+DID_REGISTRATION_ROUTES = web.RouteTableDef()
+
 TRUST_ANCHOR = AnchorHandle()
 
-
-@ROUTES.get("/")
+@BASE_ROUTES.get("/")
 @aiohttp_jinja2.template("index.html")
 async def index(request):
     return {
-        "REGISTER_NEW_DIDS": TRUST_ANCHOR._register_dids,
         "LEDGER_INSTANCE_NAME": LEDGER_INSTANCE_NAME,
+        "LEDGER_DESCRIPTION": LEDGER_DESCRIPTION,
         "WEB_ANALYTICS_SCRIPT": WEB_ANALYTICS_SCRIPT,
         "INFO_SITE_TEXT": INFO_SITE_TEXT,
         "INFO_SITE_URL": INFO_SITE_URL,
@@ -63,7 +79,7 @@ async def index(request):
     }
 
 
-@ROUTES.get("/browse/{ledger_ident:.*}")
+@LEDGER_BROWSER_ROUTES.get("/browse/{ledger_ident:.*}")
 @aiohttp_jinja2.template("ledger.html")
 async def browse(request):
     return {
@@ -74,12 +90,12 @@ async def browse(request):
     }
 
 
-@ROUTES.get("/favicon.ico")
+@BASE_ROUTES.get("/favicon.ico")
 async def favicon(request):
     return web.FileResponse("static/favicon.ico")
 
 
-ROUTES.static("/include", "./static/include")
+BASE_ROUTES.static("/include", "./static/include")
 
 
 def json_response(data, status=200, **kwargs):
@@ -95,7 +111,7 @@ def not_ready_json():
     return web.json_response(data={"detail": "Not ready"}, status=503)
 
 
-@ROUTES.get("/status")
+@BASE_ROUTES.get("/status")
 async def status(request):
     status = TRUST_ANCHOR.public_config
     if status["ready"] and not status["anonymous"] and request.query.get("validators"):
@@ -111,7 +127,7 @@ async def status(request):
     return json_response(status)
 
 
-@ROUTES.get("/status/text")
+@BASE_ROUTES.get("/status/text")
 async def status_text(request):
     try:
         response = await TRUST_ANCHOR.validator_info()
@@ -129,7 +145,7 @@ async def status_text(request):
     return web.Response(text="\n".join(text))
 
 
-@ROUTES.get("/ledger/{ledger_name}")
+@LEDGER_BROWSER_ROUTES.get("/ledger/{ledger_name}")
 async def ledger_json(request):
     if not TRUST_ANCHOR.ready:
         return not_ready_json()
@@ -180,7 +196,7 @@ async def ledger_json(request):
     return response
 
 
-@ROUTES.get("/ledger/{ledger_name}/text")
+@LEDGER_BROWSER_ROUTES.get("/ledger/{ledger_name}/text")
 async def ledger_text(request):
     if not TRUST_ANCHOR.ready:
         return not_ready_json()
@@ -259,7 +275,7 @@ async def ledger_text(request):
     return response
 
 
-@ROUTES.get("/ledger/{ledger_name}/{txn_ident}")
+@LEDGER_BROWSER_ROUTES.get("/ledger/{ledger_name}/{txn_ident}")
 async def ledger_seq(request):
     ident = request.match_info["txn_ident"]
     ledger = request.match_info["ledger_name"]
@@ -273,7 +289,7 @@ async def ledger_seq(request):
 
 
 # Expose genesis transaction for easy connection.
-@ROUTES.get("/genesis")
+@BASE_ROUTES.get("/genesis")
 async def genesis(request):
     if not TRUST_ANCHOR.ready:
         return not_ready_json()
@@ -282,7 +298,7 @@ async def genesis(request):
 
 
 # Easily write dids for new identity owners
-@ROUTES.post("/register")
+@DID_REGISTRATION_ROUTES.post("/register")
 async def register(request):
     if not TRUST_ANCHOR.ready:
         return not_ready_json()
@@ -341,9 +357,23 @@ async def boot(app):
 
 
 if __name__ == "__main__":
-    APP.add_routes(ROUTES)
+    APP.add_routes(BASE_ROUTES)
+
+    if ENABLE_BROWSER_ROUTES is True:
+        LOGGER.info("Including ledger browser routes ...")
+        APP.add_routes(LEDGER_BROWSER_ROUTES)
+    else:
+        LOGGER.info("Deleting ledger browser routes ...")
+        del LEDGER_BROWSER_ROUTES
+
+    if REGISTER_NEW_DIDS is True:
+        LOGGER.info("Including DID registration routes ...")
+        APP.add_routes(DID_REGISTRATION_ROUTES)
+    else:
+        LOGGER.info("Deleting DID registration routes ...")
+        del DID_REGISTRATION_ROUTES
+
     APP.on_startup.append(boot)
     LOGGER.info("Running webserver...")
     PORT = int(os.getenv("PORT", "8000"))
     web.run_app(APP, host="0.0.0.0", port=PORT)
-
