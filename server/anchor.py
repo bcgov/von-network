@@ -101,6 +101,15 @@ def format_validator_info(node_data):
         else:
             if "result" in reply:
                 data = reply["result"]["data"]
+                # Remove unnecessary info
+                data.pop("Protocol", None)
+                data.pop("Memory_profiler", None)
+                data.pop("Hardware", None)
+                data.pop("Extractions", None)
+                if "Software" in data:
+                    data["Software"].pop("Indy_packages", None)
+                    data["Software"].pop("Installed_packages", None)
+                    data["Software"].pop("OS_version", None)
             elif "reason" in reply:
                 data = {"Node_info": {"Name": node}, "error": reply["reason"]}
             else:
