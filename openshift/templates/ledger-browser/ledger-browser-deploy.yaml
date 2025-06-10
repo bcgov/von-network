@@ -1,7 +1,7 @@
 kind: Template
 apiVersion: v1
 metadata:
-  name: ${NAME}-deployment-template
+  name: ${NAME}${SUFFIX}-deployment-template
   annotations:
     description: Deployment template for the von-network ledger browser.
     iconClass: icon-python
@@ -9,10 +9,9 @@ objects:
   - kind: NetworkPolicy
     apiVersion: networking.k8s.io/v1
     metadata:
-      name: ${NAME}-allow-ingress
+      name: ${NAME}${SUFFIX}-allow-ingress
       labels:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
+        app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
     spec:
       description: |
@@ -24,51 +23,30 @@ objects:
                   network.openshift.io/policy-group: ingress
       podSelector:
         matchLabels:
-          app: ${NAME}
-          app-group: ${APP_GROUP}
+          app: ${NAME}${SUFFIX}
           env: ${TAG_NAME}
       policyTypes:
         - Ingress
 
-  - kind: PersistentVolumeClaim
-    apiVersion: v1
-    metadata:
-      name: ${PERSISTENT_VOLUME_NAME}
-      labels:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
-        env: ${TAG_NAME}
-    spec:
-      storageClassName: ${PERSISTENT_VOLUME_CLASS}
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: ${PERSISTENT_VOLUME_SIZE}
-
   - kind: Secret
     apiVersion: v1
     metadata:
-      name: ${WALLET_CREDENTIAL_STORE_NAME}
+      name: ${NAME}${SUFFIX}
       labels:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
+        app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
-    data:
-      key: ${WALLET_ENCRYPTION_KEY}
-      seed: ${INDY_WALLET_SEED}
-      did: ${INDY_WALLET_DID}
+    stringData:
+      seed: ${LEDGER_SEED}
     type: Opaque
 
   - kind: Service
     apiVersion: v1
     metadata:
-      name: ${NAME}
+      name: ${NAME}${SUFFIX}
       annotations:
         description: Exposes and load balances the application pods
       labels:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
+        app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
     spec:
       ports:
@@ -76,21 +54,19 @@ objects:
           port: 8080
           targetPort: ${{PORT}}
       selector:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
+        app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
 
   - kind: Route
     apiVersion: v1
     metadata:
-      name: ${NAME}
+      name: ${NAME}${SUFFIX}
       labels:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
+        app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
         certbot-managed: ${CERTBOT_MANAGED_ROUTE}
     spec:
-      host: ${APPLICATION_DOMAIN}
+      host: ${FQDN_HOST_NAME}
       port:
         targetPort: 8080-tcp
       tls:
@@ -98,18 +74,17 @@ objects:
         termination: edge
       to:
         kind: Service
-        name: ${NAME}
+        name: ${NAME}${SUFFIX}
         weight: 100
 
   - kind: Deployment
     apiVersion: apps/v1
     metadata:
-      name: ${NAME}
+      name: ${NAME}${SUFFIX}
       annotations:
         description: Defines how to deploy the application server
       labels:
-        app: ${NAME}
-        app-group: ${APP_GROUP}
+        app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
     spec:
       strategy:
@@ -117,24 +92,18 @@ objects:
       replicas: 1
       selector:
         matchLabels:
-          app: ${NAME}
-          app-group: ${APP_GROUP}
+          app: ${NAME}${SUFFIX}
           env: ${TAG_NAME}
       template:
         metadata:
-          name: ${NAME}
+          name: ${NAME}${SUFFIX}
           labels:
-            app: ${NAME}
-            app-group: ${APP_GROUP}
+            app: ${NAME}${SUFFIX}
             env: ${TAG_NAME}
         spec:
-          volumes:
-            - name: ${NAME}
-              persistentVolumeClaim:
-                claimName: ${PERSISTENT_VOLUME_NAME}
           containers:
-            - name: ${NAME}
-              image: image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${NAME}:${TAG_NAME}
+            - name: ${NAME}${SUFFIX}
+              image: ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
               command:
                 - ./scripts/start_webserver.sh
               ports:
@@ -157,29 +126,38 @@ objects:
                   path: /
                   port: 8080
               env:
-                - name: GENESIS_URL
-                  value: ${GENESIS_URL}
-                - name: IP
-                  value: ${IP}
-                - name: PORT
-                  value: ${PORT}
-                - name: REGISTER_NEW_DIDS
-                  value: ${REGISTER_NEW_DIDS}
                 - name: LEDGER_INSTANCE_NAME
                   value: ${LEDGER_INSTANCE_NAME}
+                - name: LEDGER_DESCRIPTION
+                  value: ${LEDGER_DESCRIPTION}
                 - name: INFO_SITE_TEXT
                   value: ${INFO_SITE_TEXT}
                 - name: INFO_SITE_URL
                   value: ${INFO_SITE_URL}
-                - name: WEB_ANALYTICS_SCRIPT
-                  value: ${WEB_ANALYTICS_SCRIPT}
-                - name: LEDGER_CACHE_PATH
-                  value: ${LEDGER_CACHE_PATH}
+                - name: INDY_SCAN_TEXT
+                  value: ${INDY_SCAN_TEXT}
+                - name: INDY_SCAN_URL
+                  value: ${INDY_SCAN_URL}
+                - name: GENESIS_URL
+                  value: ${GENESIS_URL}
                 - name: LEDGER_SEED
                   valueFrom:
                     secretKeyRef:
-                      name: ${WALLET_CREDENTIAL_STORE_NAME}
+                      name: ${NAME}${SUFFIX}
                       key: seed
+                - name: ENABLE_LEDGER_CACHE
+                  value: ${ENABLE_LEDGER_CACHE}
+                - name: REGISTER_NEW_DIDS
+                  value: ${REGISTER_NEW_DIDS}
+                - name: ENABLE_BROWSER_ROUTES
+                  value: ${ENABLE_BROWSER_ROUTES}
+                - name: DISPLAY_LEDGER_STATE
+                  value: ${DISPLAY_LEDGER_STATE}
+
+                - name: IP
+                  value: ${IP}
+                - name: PORT
+                  value: ${PORT}
               resources:
                 requests:
                   cpu: ${CPU_REQUEST}
@@ -187,73 +165,112 @@ objects:
                 limits:
                   cpu: ${CPU_LIMIT}
                   memory: ${MEMORY_LIMIT}
-              volumeMounts:
-                - name: ${NAME}
-                  mountPath: ${VOLUME_MOUNT_PATH}
 
 parameters:
   - name: NAME
     displayName: Name
     description: The name assigned to all of the OpenShift resources associated to the server instance.
     required: true
-    value: ledger-browser
-  - name: APP_GROUP
-    displayName: App Group
-    description: The name assigned to all of the deployments in this project.
+    value: candy-monitor
+  - name: SUFFIX
+    displayName: Suffix
+    description: A suffix applied to all of the objects in this template.
+    required: false
+    value: ''
+
+
+  - name: IMAGE_REGISTRY
+    displayName: Image Registry
+    description: The name of the image registry containing the image to use for this resource.
     required: true
-    value: von-network
-  - name: SOURCE_IMAGE_NAME
-    displayName: Source Image Name
+    value: ghcr.io/bcgov
+  - name: IMAGE_NAME
+    displayName: Image Name
     description: The name of the image to use for this resource.
     required: true
     value: von-network-base
-  - name: IMAGE_NAMESPACE
-    displayName: Image Namespace
+  - name: IMAGE_TAG
+    displayName: Image Tag
+    description: The tag of the image to use for this resource.
     required: true
-    description: The namespace of the OpenShift project containing the image stream for the application.
-    value: ca7f8f
-  - name: APPLICATION_DOMAIN
-    displayName: Application Hostname
-    description: The exposed hostname that will route to the Django service, if left blank a value will be defaulted.
-    value: sovrin-mainnet-browser.vonx.io
+    value: '1.10'
+
+
+  - name: FQDN_HOST_NAME
+    displayName: Fully Qualified Domain Name
+    description: The fully qualified domain name of the host.
+    required: true
+    value: dev.candy-monitor.vonx.io
   - name: CERTBOT_MANAGED_ROUTE
     displayName: Certbot Managed Route
     description: Flag indicating whether the routes certificates are managed by CertBot.
     required: true
     value: 'false'
-  - name: WALLET_ENCRYPTION_KEY
-    displayName: Wallet Encryption Key
-    description: The encryption key to be used for the wallets.  Needs to be basee64 encoded.
-    required: true
-    generate: expression
-    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
-  - name: INDY_WALLET_SEED
-    displayName: Indy Wallet Seed
-    description: The Seed used for the indy wallet.  Needs to be basee64 encoded.
-    required: true
-    generate: expression
-    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
-  - name: INDY_WALLET_DID
-    displayName: Indy Wallet DID
-    description: The DID associated to the indy wallet.  Needs to be basee64 encoded.
+
+
+  - name: LEDGER_INSTANCE_NAME
+    displayName: Ledger Instance Name
+    description: The name of the ledger instance to which the ledger monitor/browser is connected.
     required: false
-    generate: expression
-    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
-  - name: WALLET_CREDENTIAL_STORE_NAME
-    displayName: Wallet Credential Store Name
-    description: The name of the wallet credential store (aka The name of the secret that contains the wallet credentials).
-    required: true
-    value: wallet-credentials
-  - name: TAG_NAME
-    displayName: Environment TAG name
-    description: The TAG name for this environment, e.g., dev, test, prod
-    value: prod
-    required: true
+    value: CANdy-Dev
+  - name: LEDGER_DESCRIPTION
+    displayName: Ledger Description
+    description: A description for the ledger instance.
+    required: false
+    value: "Maintained by BC, ON, and QC"
+  - name: INFO_SITE_TEXT
+    displayName: Site Info Text
+    description: The display text used for the `INFO_SITE_URL`. If not specified, it will default to the value set for `INFO_SITE_URL`.
+    required: false
+    value: dtrust-reconu
+  - name: INFO_SITE_URL
+    displayName: Site Info URL
+    description: A URL that will be displayed in the header, and can be used to reference another external website containing details/resources on the current ledger browser instance.
+    required: false
+    value: https://github.com/ICCS-ISAC/dtrust-reconu/
+  - name: INDY_SCAN_TEXT
+    displayName: IndyScan Text
+    description: The display text used for the `INDY_SCAN_URL`.
+    required: false
+    value: CANdyScan
+  - name: INDY_SCAN_URL
+    displayName: IndyScan URL
+    description: The URL to the external IndyScan ledger browser instance for the network.  This will replace the links to the builtin ledger browser tools.
+    required: false
+    value: https://candyscan.idlab.org/home/CANDY_DEV/
   - name: GENESIS_URL
     displayName: Genesis Url
     description: URL for downloading a copy of the genesis file defining the ledger connection for the environment.
-    required: false
-    value: https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
+    required: true
+    value: https://raw.githubusercontent.com/ICCS-ISAC/Candy/refs/heads/main/environments/dev/pool_transactions_genesis
+  - name: LEDGER_SEED
+    displayName: Ledger Seed
+    description:  The ledger monitor seed to use when connecting to the ledger.
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+  - name: ENABLE_LEDGER_CACHE
+    displayName: Enable Ledger Cache
+    description: Flag to enable/disable the ledger cache.  It's best to disable the cache when the ledger monitor/browser is used in conjunction with IndyScan.
+    required: true
+    value: 'False'
+  - name: REGISTER_NEW_DIDS
+    displayName: Register New Dids
+    description: If set to `True`, it will enable the user interface allowing new identity owners to write a DID to the ledger. It defaults to `False`.
+    required: true
+    value: 'False'
+  - name: ENABLE_BROWSER_ROUTES
+    displayName: Enable Browser Routes
+    description: Flag to enable/disable the ledger browser related APIs.  It's best to disable the browser routes when the ledger monitor/browser is used in conjunction with IndyScan.
+    required: true
+    value: 'False'
+  - name: DISPLAY_LEDGER_STATE
+    displayName: Display Ledger State
+    description: Flag to enable/disable the ledger state controls in the UI.
+    required: true
+    value: 'True'
+
+
   - name: IP
     displayName: Host IP
     description: The IP on which the server should listen.
@@ -264,73 +281,32 @@ parameters:
     description: The port on which the server should listen.
     required: false
     value: "8080"
-  - name: REGISTER_NEW_DIDS
-    displayName: Register New Dids
-    description: If set to `True`, it will enable the user interface allowing new identity owners to write a DID to the ledger. It defaults to `False`.
-    required: false
-    value: "False"
-  - name: LEDGER_INSTANCE_NAME
-    displayName: Register New Dids
-    description: The name of the ledger instance the Ledger Brwoser is connected to. Defaults to `Ledger Browser`.
-    required: false
-    value: Sovrin Main Net
-  - name: INFO_SITE_TEXT
-    displayName: Site Info Text
-    description: The display text used for the `INFO_SITE_URL`. If not specified, it will default to the value set for `INFO_SITE_URL`.
-    required: false
-    value: Verifiable Organizations Network
-  - name: INFO_SITE_URL
-    displayName: Site Info URL
-    description: A URL that will be displayed in the header, and can be used to reference another external website containing details/resources on the current ledger browser instance.
-    required: false
-    value: https://vonx.io/
-  - name: WEB_ANALYTICS_SCRIPT
-    displayName: Web Analytics Script
-    description: The JavaScript code used by web analytics servers. Populate this environment variable if you want to track the usage of your site with Matomo, Google Analytics or any other JavaScript based trackers. Include the whole tag, ensuring quotes are escaped properly.
-    required: false
-    value: <!-- Matomo --><script type="text/javascript">var _paq = window._paq || [];/* tracker methods like "setCustomDimension" should be called before "trackPageView" */_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function() {var u="//matomo.vonx.io/";_paq.push(['setTrackerUrl', u+'matomo.php']);_paq.push(['setSiteId', '3']);var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);})();</script><!-- End Matomo Code -->
-  - name: LEDGER_CACHE_PATH
-    displayName: Ledger Cache Path
-    description: The path to the ledger cache database.
-    required: false
-    value: /home/indy/.indy_client/ledger-cache/ledger-cache-db
-  - name: VOLUME_MOUNT_PATH
-    displayName: Volume Mount Path
-    description: Volume mount path
+
+
+  - name: TAG_NAME
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
     required: true
-    value: /home/indy/.indy_client/ledger-cache
-  - name: PERSISTENT_VOLUME_NAME
-    displayName: Persistent Volume Name
-    description: The name of the persistent volume associated with the deployment.
-    required: true
-    value: ledger-browser-pvc
-  - name: PERSISTENT_VOLUME_SIZE
-    displayName: Persistent Volume Size
-    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
-    required: true
-    value: 5Gi
-  - name: PERSISTENT_VOLUME_CLASS
-    displayName: Persistent Volume Class name
-    description: The class of the volume
-    required: false
-    value: netapp-block-standard
+    value: dev
+
+
   - name: CPU_REQUEST
     displayName: Resources CPU Request
     description: The resources CPU request (in cores) for this build.
     required: true
-    value: 0m
+    value: 10m
   - name: CPU_LIMIT
     displayName: Resources CPU Limit
     description: The resources CPU limit (in cores) for this build.
     required: true
-    value: 1000m
+    value: 500m
   - name: MEMORY_REQUEST
     displayName: Resources Memory Request
     description: The resources Memory request (in Mi, Gi, etc) for this build.
     required: true
-    value: 0Mi
+    value: 10Mi
   - name: MEMORY_LIMIT
     displayName: Resources Memory Limit
     description: The resources Memory limit (in Mi, Gi, etc) for this build.
     required: true
-    value: 4000Mi
+    value: 500Mi

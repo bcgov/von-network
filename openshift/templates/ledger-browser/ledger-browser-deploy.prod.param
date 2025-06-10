@@ -1,0 +1,31 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/ledger-browser/ledger-browser-deploy.yaml
+#=========================================================
+# NAME=candy-monitor
+# SUFFIX=
+# IMAGE_REGISTRY=ghcr.io/bcgov
+# IMAGE_NAME=von-network-base
+# IMAGE_TAG=1.10
+FQDN_HOST_NAME=candy-monitor.digitaltrust.gov.bc.ca
+CERTBOT_MANAGED_ROUTE=true
+LEDGER_INSTANCE_NAME=CANdy-Prod
+# LEDGER_DESCRIPTION=Maintained by BC, ON, and QC
+# INFO_SITE_TEXT=dtrust-reconu
+# INFO_SITE_URL=https://github.com/ICCS-ISAC/dtrust-reconu/
+# INDY_SCAN_TEXT=CANdyScan
+INDY_SCAN_URL=https://candyscan.idlab.org/home/CANDY_PROD/
+GENESIS_URL=https://raw.githubusercontent.com/ICCS-ISAC/Candy/refs/heads/main/environments/prod/pool_transactions_genesis
+# LEDGER_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# ENABLE_LEDGER_CACHE=False
+# REGISTER_NEW_DIDS=False
+# ENABLE_BROWSER_ROUTES=False
+# DISPLAY_LEDGER_STATE=True
+# IP=0.0.0.0
+# PORT=8080
+TAG_NAME=prod
+# CPU_REQUEST=10m
+# CPU_LIMIT=500m
+# MEMORY_REQUEST=10Mi
+# MEMORY_LIMIT=500Mi

@@ -1,33 +1,31 @@
 #=========================================================
 # OpenShift template parameters for:
 # Component: .
-# Template File: templates/ledger-browser/ledger-browser-deploy.json
+# Template File: ../openshift/templates/ledger-browser/ledger-browser-deploy.yaml
 #=========================================================
-NAME=ledger-browser
-APP_GROUP=von-network
-SOURCE_IMAGE_NAME=von-network-base
-IMAGE_NAMESPACE=ca7f8f-tools
-APPLICATION_DOMAIN=sovrin-mainnet-browser.vonx.io
-CERTBOT_MANAGED_ROUTE=true
-# WALLET_ENCRYPTION_KEY=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
-# INDY_WALLET_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
-# INDY_WALLET_DID=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
-WALLET_CREDENTIAL_STORE_NAME=ledger-browser-wallet-credentials
-TAG_NAME=prod
-GENESIS_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_live_genesis
+NAME=candy-monitor
+SUFFIX=
+IMAGE_REGISTRY=ghcr.io/bcgov
+IMAGE_NAME=von-network-base
+IMAGE_TAG=1.10
+FQDN_HOST_NAME=dev.candy-monitor.vonx.io
+CERTBOT_MANAGED_ROUTE=false
+LEDGER_INSTANCE_NAME=CANdy-Dev
+LEDGER_DESCRIPTION=Maintained by BC, ON, and QC
+INFO_SITE_TEXT=dtrust-reconu
+INFO_SITE_URL=https://github.com/ICCS-ISAC/dtrust-reconu/
+INDY_SCAN_TEXT=CANdyScan
+INDY_SCAN_URL=https://candyscan.idlab.org/home/CANDY_DEV/
+GENESIS_URL=https://raw.githubusercontent.com/ICCS-ISAC/Candy/refs/heads/main/environments/dev/pool_transactions_genesis
+# LEDGER_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+ENABLE_LEDGER_CACHE=False
+REGISTER_NEW_DIDS=False
+ENABLE_BROWSER_ROUTES=False
+DISPLAY_LEDGER_STATE=True
 IP=0.0.0.0
 PORT=8080
-REGISTER_NEW_DIDS=False
-LEDGER_INSTANCE_NAME=Sovrin Main Net
-INFO_SITE_TEXT=Verifiable Organizations Network
-INFO_SITE_URL=https://vonx.io/
-WEB_ANALYTICS_SCRIPT=<!-- Matomo --><script type="text/javascript">var _paq = window._paq || [];/* tracker methods like "setCustomDimension" should be called before "trackPageView" */_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function() {var u="//matomo.vonx.io/";_paq.push(['setTrackerUrl', u+'matomo.php']);_paq.push(['setSiteId', '3']);var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);})();</script><!-- End Matomo Code -->
-LEDGER_CACHE_PATH=/home/indy/.indy_client/ledger-cache/ledger-cache-db
-VOLUME_MOUNT_PATH=/home/indy/.indy_client/ledger-cache
-PERSISTENT_VOLUME_NAME=ledger-browser-pvc
-PERSISTENT_VOLUME_SIZE=5Gi
-PERSISTENT_VOLUME_CLASS=netapp-block-standard
-CPU_REQUEST=0m
-CPU_LIMIT=1000m
-MEMORY_REQUEST=0Mi
-MEMORY_LIMIT=4000Mi
+TAG_NAME=dev
+CPU_REQUEST=10m
+CPU_LIMIT=500m
+MEMORY_REQUEST=10Mi
+MEMORY_LIMIT=500Mi
