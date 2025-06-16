@@ -15,7 +15,7 @@ LEDGER_DESCRIPTION=Maintained by BC, ON, and QC
 INFO_SITE_TEXT=dtrust-reconu
 INFO_SITE_URL=https://github.com/ICCS-ISAC/dtrust-reconu/
 INDY_SCAN_TEXT=CANdyScan
-INDY_SCAN_URL=https://candyscan.idlab.org/home/CANDY_DEV/
+INDY_SCAN_URL=https://candyscan.digitaltrust.gov.bc.ca/home/CANDY_DEV/
 GENESIS_URL=https://raw.githubusercontent.com/ICCS-ISAC/Candy/refs/heads/main/environments/dev/pool_transactions_genesis
 # LEDGER_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
 ENABLE_LEDGER_CACHE=False

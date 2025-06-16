@@ -237,7 +237,7 @@ parameters:
     displayName: IndyScan URL
     description: The URL to the external IndyScan ledger browser instance for the network.  This will replace the links to the builtin ledger browser tools.
     required: false
-    value: https://candyscan.idlab.org/home/CANDY_DEV/
+    value: https://candyscan.digitaltrust.gov.bc.ca/home/CANDY_DEV/
   - name: GENESIS_URL
     displayName: Genesis Url
     description: URL for downloading a copy of the genesis file defining the ledger connection for the environment.
