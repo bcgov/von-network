@@ -65,6 +65,8 @@ objects:
         app: ${NAME}${SUFFIX}
         env: ${TAG_NAME}
         certbot-managed: ${CERTBOT_MANAGED_ROUTE}
+      annotations:
+        haproxy.router.openshift.io/timeout: 240s
     spec:
       host: ${FQDN_HOST_NAME}
       port:
