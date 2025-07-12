@@ -17,6 +17,8 @@ usage () {
         Specify the ip address to use in the genesis transaction file.
     -s <ip addresses>
         Specify a comma delimited list of addresses to use in the genesis transaction file.
+    -p <ip ports>
+        Specify a comma delimited list of ports (2 for each ip) to use in the genesis transaction file.
     -n <node number>
         Specify the number to use for the given node.
     -h
@@ -25,6 +27,7 @@ usage () {
     Examples:
         $0 -i x.x.x.x -n y
         $0 -s "a.a.a.a,b.b.b.b,c.c.c.c,d.d.d.d" -n x
+        $0 -s "a.a.a.a,b.b.b.b,c.c.c.c,d.d.d.d" -p "a1,a2,b1,b2,c1,c2,d1,d2" -n x
 
         Use with Docker Compose:
         export DOCKERHOST=x.x.x.x
@@ -33,12 +36,13 @@ EOF
 exit 1
 }
 
-options=':i:s:n:h'
+options=':i:s:p:n:h'
 while getopts $options option
 do
     case $option in
         i  ) ipAddress=$OPTARG;;
         s  ) ipAddresses=$OPTARG;;
+        p  ) ipPorts=$OPTARG;;
         n  ) nodeNum=$OPTARG;;
         h  ) usage; exit;;
         \? ) echo -e "Unknown option: -$OPTARG" >&2; exit 1;;
@@ -81,10 +85,14 @@ else
     exit 1
 fi
 
+
 echo -e \\n\\n"================================================================================================"
 echo -e "Generating genesis transaction file:"
 echo -e "nodeArg: ${nodeArg}"
 echo -e "ipAddresses: ${ipsArg}"
+if [ ! -z "$ipPorts" ]; then
+    echo -e "ipPorts: ${ipPorts}"
+fi
 echo -e "genesisFilePath: ${genesisFilePath}"
 echo -e "------------------------------------------------------------------------------------------------"
 # Use supplied IP address
@@ -104,6 +112,37 @@ generate_indy_pool_transactions \
 echo -e \\n"------------------------------------------------------------------------------------------------"
 echo -e "Generated genesis transaction file; ${genesisFilePath}"\\n
 cat ${genesisFilePath}
+
+if [ ! -z "$ipPorts" ]; then
+    # Define the default and new port lists
+    ipPortsDefaults="9701,9702,9703,9704,9705,9706,9707,9708"
+
+    # Convert the comma-separated strings into arrays
+    IFS=',' read -r -a defaultPortsArray <<< "$ipPortsDefaults"
+    IFS=',' read -r -a newPortsArray <<< "$ipPorts"
+    
+    # Build the sed commands
+    sedComand=""
+
+    # Loop over both arrays and replace default ports with new ports
+    for (( i=0; i<${#newPortsArray[@]}; i+=2 )); do
+        # Replace the pair of default ports with new ports
+        defaultNodePort="${defaultPortsArray[i]}"
+        defaultClientPort="${defaultPortsArray[i+1]}"
+        
+        newNodePort="${newPortsArray[i]}"
+        newClientPort="${newPortsArray[i+1]}"
+
+        echo -e "cat ${genesisFilePath} | sed \"s~:$defaultNodePort,~:$newNodePort,~g\" | sed \"s~:$defaultClientPort,~:$newClientPort,~g\" > ${genesisFilePath}.tmp"
+        cat ${genesisFilePath} | sed "s~:$defaultNodePort,~:$newNodePort,~g" | sed "s~:$defaultClientPort,~:$newClientPort,~g" > ${genesisFilePath}.tmp
+        cat ${genesisFilePath}.tmp > ${genesisFilePath}
+        rm ${genesisFilePath}.tmp
+    done
+
+    echo -e \\n"------------------------------------------------------------------------------------------------"
+    echo -e "Updated genesis transaction file; ${genesisFilePath}"\\n
+    cat ${genesisFilePath}
+fi
 
 if [ ! -z "$remapPorts" ]; then
     echo -e \\n"------------------------------------------------------------------------------------------------"

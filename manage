@@ -356,6 +356,7 @@ function initEnv() {
     fi
   fi
   export IP="$IP" IPS="$IPS"
+  export NODE_PORTS="$NODE_PORTS"
 
   export LEDGER_SEED=${LEDGER_SEED}
 
