@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 export MSYS_NO_PATHCONV=1
 
 # Default Options
